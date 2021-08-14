@@ -1,0 +1,26 @@
+[package]
+authors = ['Daniel Yu <leptonyu@gmail.com>']
+categories = ['config']
+description = 'A rust configuration loader'
+documentation = 'https://docs.rs/cfg-derive/'
+edition = "2018"
+homepage = 'https://github.com/leptonyu/cfg-rs'
+keywords = [
+  'configuration',
+  'config',
+  'settings',
+  'env',
+  'environment',
+]
+license = 'MIT'
+name = "cfg-derive"
+readme = 'README.md'
+repository = 'https://github.com/leptonyu/cfg-rs'
+version = "0.1.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = '1'
+syn = {version = '1', features = ['extra-traits']}

@@ -1,0 +1,37 @@
+name: Rust
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: |
+          #!/bin/bash
+          set -e
+          cargo test --verbose
+          cargo test --verbose --all-features
+          cargo test --verbose --lib ## Default feature
+          cargo test --verbose --lib --no-default-features 
+          cargo test --verbose --lib --no-default-features --features=toml
+          cargo test --verbose --lib --no-default-features --features=yaml
+          cargo test --verbose --lib --no-default-features --features=rand
+
+          cargo run --example simple --features="full"
+      - name: Run benches
+        run: |
+          #!/bin/bash
+          set -e
+          cargo bench --all-features

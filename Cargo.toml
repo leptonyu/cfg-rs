@@ -1,0 +1,60 @@
+[package]
+authors = ['Daniel Yu <leptonyu@gmail.com>']
+categories = ['config']
+description = 'A rust configuration loader'
+documentation = 'https://docs.rs/cfg-rs/'
+edition = "2018"
+homepage = 'https://github.com/leptonyu/cfg-rs'
+keywords = [
+  'configuration',
+  'config',
+  'settings',
+  'env',
+  'environment',
+]
+license = 'MIT'
+name = "cfg-rs"
+readme = 'README.md'
+repository = 'https://github.com/leptonyu/cfg-rs'
+version = "0.1.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = [
+  '--cfg',
+  'docsrs',
+]
+
+[package.metadata.playground]
+all-features = true
+
+[workspace]
+members = [
+  '.',
+  'cfg-derive',
+]
+
+[features]
+default = []
+full = ["toml", "yaml", "json", "rand"]
+yaml = ["yaml-rust"]
+
+[dependencies]
+cfg-derive = {path = './cfg-derive', version = '^0.1'}
+json = {version = "^0.12", optional = true}
+rand = {version = "^0.8", optional = true}
+toml = {version = "^0.5", optional = true}
+yaml-rust = {version = "^0.4.5", optional = true}
+
+[dev-dependencies]
+criterion = '0.3'
+quickcheck = '1'
+quickcheck_macros = '1'
+
+[[example]]
+name = "simple"
+required-features = ["full"]
+
+[[bench]]
+harness = false
+name = "core"
