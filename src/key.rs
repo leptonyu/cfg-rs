@@ -1,4 +1,8 @@
-use std::{collections::HashSet, slice::Iter};
+use std::{
+    collections::HashSet,
+    hash::{Hash, Hasher},
+    slice::Iter,
+};
 
 /// Config values.
 #[derive(Debug)]
@@ -256,5 +260,71 @@ mod test {
             "a.b[1][1].a[1]":
             "a", "b", 1, 1, "a", 1
         );
+    }
+}
+
+impl Hash for SubKey<'_> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            SubKey::Str(i) => (*i).hash(state),
+            SubKey::Int(i) => i.hash(state),
+        }
+    }
+}
+
+pub struct HashedSubKey<'a, H: Hasher> {
+    hasher: H,
+    keys: Vec<SubKey<'a>>,
+}
+
+impl<H: Hasher> Hash for HashedSubKey<'_, H> {
+    fn hash<X: Hasher>(&self, state: &mut X) {
+        self.hasher.finish().hash(state);
+    }
+}
+
+impl<H: Hasher> PartialEq for HashedSubKey<'_, H> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.hasher.finish() != other.hasher.finish() {
+            return false;
+        }
+        if self.keys.len() != other.keys.len() {
+            return false;
+        }
+        for i in 0..self.keys.len() {
+            if self.keys[i] != other.keys[i] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl<H: Hasher> Eq for HashedSubKey<'_, H> {}
+
+impl<'a, H: Hasher> HashedSubKey<'a, H> {
+    pub fn new(hasher: H) -> Self {
+        Self {
+            hasher,
+            keys: vec![],
+        }
+    }
+
+    pub fn push(&mut self, key: &'a str) -> usize {
+        let mut size = 0;
+        for item in key.split(&['.', '[', ']'][..]) {
+            if item.is_empty() {
+                continue;
+            }
+            size += 1;
+            let sub = if let Ok(i) = item.parse() {
+                SubKey::Int(i)
+            } else {
+                SubKey::Str(item)
+            };
+            sub.hash(&mut self.hasher);
+            self.keys.push(sub);
+        }
+        size
     }
 }
