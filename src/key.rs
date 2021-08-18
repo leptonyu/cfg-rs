@@ -4,6 +4,8 @@ use std::{
     slice::Iter,
 };
 
+use std::collections::hash_map::DefaultHasher;
+
 /// Config values.
 #[derive(Debug)]
 pub struct ConfigKey<'a> {
@@ -192,7 +194,13 @@ mod test {
         ($origin:expr => $norm:expr) => {
             let mut key = ConfigKey::new();
             key.push($origin);
-            assert_eq!(key.as_str(), $norm)
+            assert_eq!(key.as_str(), $norm);
+            let mut key = HashedSubKey::default();
+            key.push($origin);
+            assert_eq!(&key.to_string(), $norm);
+            let mut kez = HashedSubKey::default();
+            kez.push($norm);
+            assert_eq!(true, &key == &kez);
         };
     }
 
@@ -216,16 +224,26 @@ mod test {
     macro_rules! should_ls {
         ($($origin:literal => $norm:literal,)+) => {
             let mut key = ConfigKey::new();
+            let mut kez = HashedSubKey::default();
             let mut vec = vec![];
+            let mut ved = vec![];
             $(
                 key.push($origin);
+                kez.push($origin);
                 assert_eq!($norm, key.as_str());
+                assert_eq!($norm, &kez.to_string());
                 vec.push(key.as_str().to_owned());
+                ved.push(kez.to_string());
             )+
 
             while let Some(v) = vec.pop() {
                 assert_eq!(&v, key.as_str());
                 key.pop();
+            }
+
+            while let Some(v) = ved.pop() {
+                assert_eq!(v, kez.to_string());
+                kez.pop();
             }
         };
     }
@@ -245,6 +263,13 @@ mod test {
     macro_rules! should_iter {
         ($origin:literal: $($norm:literal),+) => {
             let mut key = ConfigKey::new();
+            key.push($origin);
+            let mut iter = key.iter();
+            $(
+                let v: SubKey<'_> = $norm.into();
+                assert_eq!(&v, iter.next().unwrap());
+            )+
+            let mut key = HashedSubKey::default();
             key.push($origin);
             let mut iter = key.iter();
             $(
@@ -274,7 +299,8 @@ impl Hash for SubKey<'_> {
 
 pub struct HashedSubKey<'a, H: Hasher> {
     hasher: H,
-    keys: Vec<SubKey<'a>>,
+    sub: Vec<usize>,
+    keys: Vec<(H, SubKey<'a>)>,
 }
 
 impl<H: Hasher> Hash for HashedSubKey<'_, H> {
@@ -292,7 +318,7 @@ impl<H: Hasher> PartialEq for HashedSubKey<'_, H> {
             return false;
         }
         for i in 0..self.keys.len() {
-            if self.keys[i] != other.keys[i] {
+            if self.keys[i].1 != other.keys[i].1 {
                 return false;
             }
         }
@@ -302,15 +328,22 @@ impl<H: Hasher> PartialEq for HashedSubKey<'_, H> {
 
 impl<H: Hasher> Eq for HashedSubKey<'_, H> {}
 
-impl<'a, H: Hasher> HashedSubKey<'a, H> {
+impl Default for HashedSubKey<'_, DefaultHasher> {
+    fn default() -> Self {
+        Self::new(DefaultHasher::new())
+    }
+}
+
+impl<'a, H: Hasher + Clone> HashedSubKey<'a, H> {
     pub fn new(hasher: H) -> Self {
         Self {
             hasher,
+            sub: vec![],
             keys: vec![],
         }
     }
 
-    pub fn push(&mut self, key: &'a str) -> usize {
+    pub fn push(&mut self, key: &'a str) {
         let mut size = 0;
         for item in key.split(&['.', '[', ']'][..]) {
             if item.is_empty() {
@@ -322,9 +355,55 @@ impl<'a, H: Hasher> HashedSubKey<'a, H> {
             } else {
                 SubKey::Str(item)
             };
+            let hash = self.hasher.clone();
             sub.hash(&mut self.hasher);
-            self.keys.push(sub);
+            self.keys.push((hash, sub));
         }
-        size
+        self.sub.push(size);
+    }
+
+    pub fn pop(&mut self) {
+        if let Some(s) = self.sub.pop() {
+            if s > 0 {
+                for (h, _) in self.keys.drain(self.keys.len() - s..) {
+                    self.hasher = h;
+                }
+            }
+        }
+    }
+
+    pub fn iter(&self) -> HashedKeyIter<'_, H> {
+        HashedKeyIter(self.keys.iter())
+    }
+}
+
+pub struct HashedKeyIter<'a, H>(Iter<'a, (H, SubKey<'a>)>);
+
+impl<'a, H> Iterator for HashedKeyIter<'a, H> {
+    type Item = &'a SubKey<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|i| &i.1)
+    }
+}
+
+impl<H: Hasher> ToString for HashedSubKey<'_, H> {
+    fn to_string(&self) -> String {
+        let mut s = String::new();
+        for (_, k) in self.keys.iter() {
+            match k {
+                SubKey::Str(v) => {
+                    if !s.is_empty() {
+                        s.push('.');
+                    }
+                    s.push_str(v);
+                }
+                SubKey::Int(v) => {
+                    s.push('[');
+                    s.push_str(&v.to_string());
+                    s.push(']');
+                }
+            }
+        }
+        s
     }
 }
