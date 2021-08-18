@@ -321,8 +321,8 @@ impl Hash for SubKey<'_> {
 pub struct HashKey<'a, H: Hasher> {
     hasher: H,
     current: String,
-    sub: Vec<usize>,
-    keys: Vec<(H, SubKey<'a>, String)>,
+    sub: Vec<(usize, String)>,
+    keys: Vec<(H, SubKey<'a>)>,
 }
 
 impl<H: Hasher> Hash for HashKey<'_, H> {
@@ -362,9 +362,9 @@ impl<'a, H: Hasher + Clone> HashKey<'a, H> {
     pub(crate) fn push<K: Into<SubKeySeq<'a>>>(&mut self, key: K) {
         let v: SubKeySeq<'a> = key.into();
         let mut size = 0;
+        let curr = self.current.clone();
         for sub in v.0 {
             size += 1;
-            let curr = self.current.clone();
             match &sub {
                 SubKey::Str(i) => {
                     if !self.current.is_empty() {
@@ -380,16 +380,16 @@ impl<'a, H: Hasher + Clone> HashKey<'a, H> {
             }
             let hash = self.hasher.clone();
             sub.hash(&mut self.hasher);
-            self.keys.push((hash, sub, curr));
+            self.keys.push((hash, sub));
         }
-        self.sub.push(size);
+        self.sub.push((size, curr));
     }
 
     #[allow(dead_code)]
     pub(crate) fn pop(&mut self) {
-        if let Some(s) = self.sub.pop() {
+        if let Some((s, c)) = self.sub.pop() {
             if s > 0 {
-                for (h, _, c) in self.keys.drain(self.keys.len() - s..) {
+                for (h, _) in self.keys.drain(self.keys.len() - s..) {
                     self.hasher = h;
                     self.current = c;
                     return;
@@ -416,7 +416,7 @@ impl<'a, H: Hasher + Clone> HashKey<'a, H> {
     }
 }
 
-pub(crate) struct HashKeyIter<'a, H>(Iter<'a, (H, SubKey<'a>, String)>);
+pub(crate) struct HashKeyIter<'a, H>(Iter<'a, (H, SubKey<'a>)>);
 
 impl<'a, H> Iterator for HashKeyIter<'a, H> {
     type Item = &'a SubKey<'a>;
