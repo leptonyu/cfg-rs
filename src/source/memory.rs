@@ -79,7 +79,7 @@ impl MemoryValue {
 
     #[allow(dead_code)]
     pub(crate) fn with_prefix(&self, key: &str) -> Option<&Self> {
-        let mut ck = ConfigKey::new();
+        let mut ck = ConfigKey::default();
         ck.push(key);
         self.sub_value(&ck)
     }

@@ -46,9 +46,7 @@ fn parse_placeholder<'a>(
             "$" => {
                 let pos_1 = pos + 1;
                 if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
-                    return Err(ConfigError::ConfigRecursiveError(
-                        current_key.as_str().to_owned(),
-                    ));
+                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                 }
                 let last = stack.pop();
                 stack.push(merge(last, &value[..pos]));
@@ -58,9 +56,7 @@ fn parse_placeholder<'a>(
             "\\" => {
                 let pos_1 = pos + 1;
                 if value.len() == pos_1 {
-                    return Err(ConfigError::ConfigRecursiveError(
-                        current_key.as_str().to_owned(),
-                    ));
+                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                 }
                 let last = stack.pop();
                 let mut v = merge(last, &value[..pos]);
@@ -76,9 +72,7 @@ fn parse_placeholder<'a>(
                     _ => (&v[..], None),
                 };
                 if !history.insert(key.to_string()) {
-                    return Err(ConfigError::ConfigRecursiveError(
-                        current_key.as_str().to_owned(),
-                    ));
+                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                 }
                 let v = match source
                     .new_context()
@@ -95,11 +89,7 @@ fn parse_placeholder<'a>(
                 stack.push(v);
                 value = &value[pos + 1..];
             }
-            _ => {
-                return Err(ConfigError::ConfigRecursiveError(
-                    current_key.as_str().to_owned(),
-                ))
-            }
+            _ => return Err(ConfigError::ConfigRecursiveError(current_key.to_string())),
         }
     }
     if let Some(mut v) = stack.pop() {
@@ -143,7 +133,7 @@ impl<'a> ConfigContext<'a> {
     /// Get current key in contxt.
     #[inline]
     pub fn current_key(&self) -> String {
-        self.key.as_str().to_owned()
+        self.key.to_string()
     }
 
     #[inline]
@@ -195,7 +185,7 @@ impl Configuration {
 
     pub(crate) fn new_context(&self) -> ConfigContext<'_> {
         ConfigContext {
-            key: ConfigKey::new(),
+            key: ConfigKey::default(),
             source: self,
         }
     }
