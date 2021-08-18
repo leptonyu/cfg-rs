@@ -392,6 +392,7 @@ impl<'a, H: Hasher + Clone> HashKey<'a, H> {
                 for (h, _, c) in self.keys.drain(self.keys.len() - s..) {
                     self.hasher = h;
                     self.current = c;
+                    return;
                 }
             }
         }
