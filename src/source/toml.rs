@@ -1,29 +1,39 @@
 //! Toml config source.
 
-use crate::{ConfigError, ConfigValue};
+use crate::ConfigError;
 pub use toml::Value;
 
-use super::{file::FileConfigSource, memory::MemoryValue};
-
-impl Into<MemoryValue> for Value {
-    fn into(self) -> MemoryValue {
-        let mut mv = MemoryValue::new();
-        match self {
-            Value::String(v) => mv.value = Some(ConfigValue::Str(v)),
-            Value::Integer(v) => mv.value = Some(ConfigValue::Int(v)),
-            Value::Float(v) => mv.value = Some(ConfigValue::Float(v)),
-            Value::Boolean(v) => mv.value = Some(ConfigValue::Bool(v)),
-            Value::Datetime(v) => mv.value = Some(ConfigValue::Str(v.to_string())),
-            Value::Array(v) => mv.array = v.into_iter().map(|v| v.into()).collect(),
-            Value::Table(v) => mv.table = v.into_iter().map(|(k, v)| (k, v.into())).collect(),
-        }
-        mv
-    }
-}
+use super::{file::FileConfigSource, memory::PrefixHashSource};
 
 impl FileConfigSource for Value {
-    fn load(content: String) -> Result<MemoryValue, ConfigError> {
-        Ok(toml::from_str::<Value>(&content)?.into())
+    fn load(content: String) -> Result<Self, ConfigError> {
+        Ok(toml::from_str::<Value>(&content)?)
+    }
+
+    fn push_value(self, source: &mut PrefixHashSource<'_>) {
+        match self {
+            Value::String(v) => source.insert(v),
+            Value::Integer(v) => source.insert(v),
+            Value::Float(v) => source.insert(v),
+            Value::Boolean(v) => source.insert(v),
+            Value::Datetime(v) => source.insert(v.to_string()),
+            Value::Array(v) => {
+                let mut i = 0;
+                for x in v {
+                    source.push(i);
+                    i += 1;
+                    x.push_value(source);
+                    source.pop();
+                }
+            }
+            Value::Table(v) => {
+                for (k, v) in v {
+                    source.push(k.as_str());
+                    v.push_value(source);
+                    source.pop();
+                }
+            }
+        }
     }
 
     fn ext() -> &'static str {

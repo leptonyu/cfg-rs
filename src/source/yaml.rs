@@ -1,50 +1,36 @@
 //! Yaml config source.
 
-use std::collections::HashMap;
-
 use yaml_rust::{Yaml, YamlLoader};
 
-use crate::{ConfigError, ConfigValue};
+use crate::ConfigError;
 
-use super::{file::FileConfigSource, memory::MemoryValue};
+use super::{file::FileConfigSource, memory::PrefixHashSource};
 
 /// Yaml source.
 #[allow(missing_debug_implementations)]
 pub struct Value(Vec<Yaml>);
 
-impl Into<MemoryValue> for Value {
-    fn into(self) -> MemoryValue {
-        let mut mv = MemoryValue::new();
-        for y in self.0 {
-            convert(y, &mut mv);
-        }
-        mv
-    }
-}
-
-fn convert(y: Yaml, mv: &mut MemoryValue) {
+fn convert(y: Yaml, source: &mut PrefixHashSource<'_>) {
     match y {
-        Yaml::Real(v) => mv.value = Some(ConfigValue::Str(v)),
-        Yaml::Integer(v) => mv.value = Some(ConfigValue::Int(v)),
-        Yaml::String(v) => mv.value = Some(ConfigValue::Str(v)),
-        Yaml::Boolean(v) => mv.value = Some(ConfigValue::Bool(v)),
+        Yaml::Real(v) => source.insert(v),
+        Yaml::Integer(v) => source.insert(v),
+        Yaml::String(v) => source.insert(v),
+        Yaml::Boolean(v) => source.insert(v),
         Yaml::Array(v) => {
-            mv.array = v
-                .into_iter()
-                .map(|v| {
-                    let mut mv = MemoryValue::new();
-                    convert(v, &mut mv);
-                    mv
-                })
-                .collect()
+            let mut i = 0;
+            for x in v {
+                source.push(i);
+                i += 1;
+                convert(x, source);
+                source.pop();
+            }
         }
         Yaml::Hash(v) => {
-            mv.table = HashMap::new();
-            for (k, x) in v {
+            for (k, v) in v {
                 if let Some(k) = k.as_str() {
-                    let mut v = MemoryValue::new();
-                    convert(x, &mut v);
-                    mv.table.insert(k.to_owned(), v);
+                    source.push(k);
+                    convert(v, source);
+                    source.pop();
                 }
             }
         }
@@ -53,11 +39,17 @@ fn convert(y: Yaml, mv: &mut MemoryValue) {
 }
 
 impl FileConfigSource for Value {
-    fn load(content: String) -> Result<MemoryValue, ConfigError> {
-        Ok(Value(YamlLoader::load_from_str(&content)?).into())
+    fn load(content: String) -> Result<Self, ConfigError> {
+        Ok(Value(YamlLoader::load_from_str(&content)?))
     }
 
     fn ext() -> &'static str {
         "yaml"
+    }
+
+    fn push_value(self, source: &mut PrefixHashSource<'_>) {
+        for y in self.0 {
+            convert(y, source);
+        }
     }
 }

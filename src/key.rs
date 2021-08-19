@@ -4,7 +4,7 @@ use std::{
     slice::Iter,
 };
 ///Config Values
-//pub type ConfigKey<'a> = HashKey<'a>;
+// pub type ConfigKey<'a> = HashKey<'a>;
 pub type ConfigKey<'a> = DefaultKey<'a>;
 
 /// Config values.
@@ -88,6 +88,7 @@ impl<'a> Iterator for SubKeyIter<'a> {
     }
 }
 
+#[doc(hidden)]
 /// Sub key list.
 #[derive(Debug)]
 pub struct SubKeyList<'a> {
@@ -103,6 +104,7 @@ impl<'a> SubKeyList<'a> {
         }
     }
 
+    #[allow(dead_code)]
     /// Add string key.
     pub(crate) fn insert_str(&mut self, key: &'a str) {
         if let Ok(i) = key.parse() {
@@ -112,6 +114,7 @@ impl<'a> SubKeyList<'a> {
         }
     }
 
+    #[allow(dead_code)]
     /// Add index of array.
     pub(crate) fn insert_int(&mut self, key: usize) {
         if let Some(u) = self.int_key {
@@ -143,6 +146,12 @@ impl<'a> Into<SubKey<'a>> for usize {
 impl<'a> Into<SubKeyIter<'a>> for usize {
     fn into(self) -> SubKeyIter<'a> {
         SubKeyIter::Int(Some(self))
+    }
+}
+
+impl<'a> Into<SubKeyIter<'a>> for &'a String {
+    fn into(self) -> SubKeyIter<'a> {
+        self.as_str().into()
     }
 }
 
@@ -218,15 +227,14 @@ impl<'a> DefaultKey<'a> {
     }
 
     #[allow(dead_code)]
+    pub(crate) fn push_row(&mut self, key_long: String, keys: Vec<SubKey<'a>>) {
+        self.node.push(KeyNode { key_long, keys });
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn pop(&mut self) {
         self.node.pop();
     }
-}
-
-pub(crate) fn normalize_key(key: &str) -> String {
-    let mut ck = DefaultKey::new();
-    ck.push(key);
-    ck.as_str().to_string()
 }
 
 #[cfg(test)]

@@ -47,7 +47,7 @@ impl EnvironmentPrefixedSource {
         let mut body = MemorySource::new(format!("env:{}*", prefix));
         for (k, v) in vars() {
             if let Some(kk) = k.strip_prefix(&prefix) {
-                body = body.set(&kk.to_lowercase().replace('_', "."), v);
+                body = body.set(kk.to_lowercase().replace('_', "."), v);
             }
         }
         Self(prefix, body)
@@ -65,6 +65,7 @@ impl ConfigSource for EnvironmentPrefixedSource {
         self.1.collect_keys(prefix, sub)
     }
 
+    #[inline]
     fn name(&self) -> &str {
         self.1.name()
     }

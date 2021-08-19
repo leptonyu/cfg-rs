@@ -1,5 +1,6 @@
 use std::{
     any::Any,
+    cmp::Ordering,
     collections::{HashMap, HashSet},
     ffi::OsString,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, SocketAddrV4, SocketAddrV6},
@@ -317,11 +318,11 @@ impl FromValue for Duration {
 /// Auto derive `FromStringValue` for enums.
 #[macro_export]
 macro_rules! impl_enum {
-    ($x:path {$($k:literal => $v:expr)+ }) => {
+    ($x:path {$($($k:pat)|* => $v:expr)+ }) => {
         impl $crate::value::FromStringValue for $x {
             fn from_str_value(context: &mut $crate::configuration::ConfigContext<'_>, value: &str) -> Result<Self, $crate::err::ConfigError> {
                 match &value.to_lowercase()[..] {
-                    $($k => Ok($v),)+
+                    $($($k)|* => Ok($v),)+
                     _ => Err(context.parse_error(value)),
                 }
             }
@@ -333,6 +334,12 @@ impl_enum!(Shutdown{
     "read" => Shutdown::Read
     "write" => Shutdown::Write
     "both" => Shutdown::Both
+});
+
+impl_enum!(Ordering{
+    "lt" | "less" => Ordering::Less
+    "eq" | "equal" => Ordering::Equal
+    "gt" | "greater" => Ordering::Greater
 });
 
 #[cfg(test)]

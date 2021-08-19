@@ -40,31 +40,6 @@ pub(crate) struct SourceOption {
     json: EnabledOption,
 }
 
-fn collect_flattern_keys<'a>(
-    iter: impl Iterator<Item = &'a str>,
-    prefix: &ConfigKey<'_>,
-    sub: &mut SubKeyList<'a>,
-) {
-    let pstr = prefix.as_str();
-    let pat: &[_] = &['.', ']', '['];
-    iter.for_each(|k| {
-        if let Some(v) = k.strip_prefix(pstr) {
-            match &v[0..1] {
-                "." | "[" => {
-                    let mut v = &v[1..];
-                    if let Some(k) = v.find(pat) {
-                        v = &v[..k];
-                    }
-                    if !v.is_empty() {
-                        sub.insert_str(v);
-                    }
-                }
-                _ => {}
-            }
-        }
-    });
-}
-
 #[allow(unused_mut, unused_variables)]
 pub(crate) fn register_files(
     mut config: Configuration,

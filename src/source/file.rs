@@ -3,12 +3,15 @@ use std::{marker::PhantomData, path::PathBuf};
 
 use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
 
-use super::memory::MemoryValue;
+use super::memory::{HashSource, PrefixHashSource};
 
 /// File configuration source.
-pub trait FileConfigSource: Send + Sync {
+pub trait FileConfigSource: Send + Sync + Sized {
     /// Load source from string.
-    fn load(content: String) -> Result<MemoryValue, ConfigError>;
+    fn load(content: String) -> Result<Self, ConfigError>;
+
+    /// Push value
+    fn push_value(self, source: &mut PrefixHashSource<'_>);
 
     /// Configuration file extension.
     fn ext() -> &'static str;
@@ -19,7 +22,7 @@ pub trait FileConfigSource: Send + Sync {
 pub struct FileSource<S: FileConfigSource> {
     name: String,
     path: PathBuf,
-    source: MemoryValue,
+    source: HashSource,
     _data: PhantomData<S>,
 }
 
@@ -72,10 +75,12 @@ impl<S: FileConfigSource> FileSource<S> {
         Ok(())
     }
 
-    fn load_file(path: &PathBuf) -> Result<MemoryValue, ConfigError> {
+    fn load_file(path: &PathBuf) -> Result<HashSource, ConfigError> {
+        let mut source = HashSource::new();
         if path.exists() {
-            return S::load(std::fs::read_to_string(path.clone())?);
+            let value = S::load(std::fs::read_to_string(path.clone())?)?;
+            value.push_value(&mut source.prefixed());
         }
-        Ok(MemoryValue::new())
+        Ok(source)
     }
 }
