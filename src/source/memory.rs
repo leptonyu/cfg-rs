@@ -103,3 +103,63 @@ impl MemoryValue {
         }
     }
 }
+
+use std::collections::HashSet;
+pub struct HashSource(HashMap<String, HashValue>);
+pub struct HashValue {
+    sub_str: HashSet<String>,
+    sub_int: Option<usize>,
+    value: Option<ConfigValue<'static>>,
+}
+
+impl HashValue {
+    fn new() -> Self {
+        Self {
+            sub_str: HashSet::new(),
+            sub_int: None,
+            value: None,
+        }
+    }
+
+    fn push_val<V: Into<ConfigValue<'static>>>(&mut self, val: V) {
+        self.value = Some(val.into());
+    }
+
+    fn push_key(&mut self, key: &SubKey<'_>) {
+        match key {
+            SubKey::Str(i) => {
+                self.sub_str.insert(i.to_string());
+            }
+            SubKey::Int(i) => {
+                let v = self.sub_int.get_or_insert(*i);
+                if *v < *i {
+                    *v = *i;
+                }
+            }
+        }
+    }
+}
+
+use crate::key::SubKeyIter;
+impl HashSource {
+    fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    fn insert<V: Into<ConfigValue<'static>>>(&mut self, key: &str, value: V) {
+        let iter: SubKeyIter<'_> = key.into();
+        let mut key = "".to_string();
+        for k in iter {
+            let v = self
+                .0
+                .entry(key.clone())
+                .or_insert_with(|| HashValue::new());
+            v.push_key(&k);
+            k.update_string(&mut key);
+        }
+        self.0
+            .entry(key)
+            .or_insert_with(|| HashValue::new())
+            .push_val(value);
+    }
+}

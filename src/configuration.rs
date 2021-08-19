@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     err::ConfigError,
-    key::{ConfigKey, SubKeySeq},
+    key::{ConfigKey, SubKeyIter},
     source::{
         environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
         register_files, SourceOption,
@@ -103,7 +103,7 @@ fn parse_placeholder<'a>(
 
 impl<'a> ConfigContext<'a> {
     #[inline]
-    pub(crate) fn do_parse_config<T: FromConfig, K: Into<SubKeySeq<'a>>>(
+    pub(crate) fn do_parse_config<T: FromConfig, K: Into<SubKeyIter<'a>>>(
         &mut self,
         partial_key: K,
         default_value: Option<ConfigValue<'_>>,
