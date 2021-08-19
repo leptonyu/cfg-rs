@@ -4,39 +4,35 @@ use yaml_rust::{Yaml, YamlLoader};
 
 use crate::ConfigError;
 
-use super::{file::FileConfigSource, memory::PrefixHashSource};
+use super::{file::FileConfigSource, memory::HashSourceBuilder};
 
+impl FileConfigSource for Yaml {
+    fn load(_content: &str) -> Result<Self, ConfigError> {
+        unimplemented!()
+    }
+
+    fn ext() -> &'static str {
+        "yaml"
+    }
+
+    fn push_value(self, source: &mut HashSourceBuilder<'_>) {
+        match self {
+            Yaml::Real(v) => source.insert(v),
+            Yaml::Integer(v) => source.insert(v),
+            Yaml::String(v) => source.insert(v),
+            Yaml::Boolean(v) => source.insert(v),
+            Yaml::Array(v) => source.insert_array(v),
+            Yaml::Hash(v) => source.insert_map(
+                v.into_iter()
+                    .filter_map(|(k, v)| k.as_str().map(|k| (k.to_string(), v))),
+            ),
+            _ => {}
+        }
+    }
+}
 /// Yaml source.
 #[allow(missing_debug_implementations)]
 pub struct Value(Vec<Yaml>);
-
-fn convert(y: Yaml, source: &mut PrefixHashSource<'_>) {
-    match y {
-        Yaml::Real(v) => source.insert(v),
-        Yaml::Integer(v) => source.insert(v),
-        Yaml::String(v) => source.insert(v),
-        Yaml::Boolean(v) => source.insert(v),
-        Yaml::Array(v) => {
-            let mut i = 0;
-            for x in v {
-                source.push(i);
-                i += 1;
-                convert(x, source);
-                source.pop();
-            }
-        }
-        Yaml::Hash(v) => {
-            for (k, v) in v {
-                if let Some(k) = k.as_str() {
-                    source.push(k);
-                    convert(v, source);
-                    source.pop();
-                }
-            }
-        }
-        _ => {}
-    }
-}
 
 impl FileConfigSource for Value {
     fn load(content: &str) -> Result<Self, ConfigError> {
@@ -47,9 +43,9 @@ impl FileConfigSource for Value {
         "yaml"
     }
 
-    fn push_value(self, source: &mut PrefixHashSource<'_>) {
+    fn push_value(self, source: &mut HashSourceBuilder<'_>) {
         for y in self.0 {
-            convert(y, source);
+            y.push_value(source);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 use crate::ConfigError;
 
-use super::{file::FileConfigSource, memory::PrefixHashSource};
+use super::{file::FileConfigSource, memory::HashSourceBuilder};
 pub use json::JsonValue;
 
 impl FileConfigSource for JsonValue {
@@ -14,28 +14,17 @@ impl FileConfigSource for JsonValue {
         "json"
     }
 
-    fn push_value(self, source: &mut PrefixHashSource<'_>) {
+    fn push_value(self, source: &mut HashSourceBuilder<'_>) {
         match self {
             JsonValue::String(v) => source.insert(v),
             JsonValue::Short(v) => source.insert(v.as_str().to_string()),
             JsonValue::Number(v) => source.insert(v.to_string()),
             JsonValue::Boolean(v) => source.insert(v),
-            JsonValue::Array(v) => {
-                let mut i = 0;
-                for x in v {
-                    source.push(i);
-                    i += 1;
-                    x.push_value(source);
-                    source.pop();
-                }
-            }
-            JsonValue::Object(mut v) => {
-                for (k, v) in v.iter_mut() {
-                    source.push(k);
-                    std::mem::replace(v, JsonValue::Null).push_value(source);
-                    source.pop();
-                }
-            }
+            JsonValue::Array(v) => source.insert_array(v),
+            JsonValue::Object(mut v) => source.insert_map(
+                v.iter_mut()
+                    .map(|(k, v)| (k, std::mem::replace(v, JsonValue::Null))),
+            ),
             JsonValue::Null => {}
         }
     }

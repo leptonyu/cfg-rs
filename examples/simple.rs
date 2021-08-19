@@ -5,6 +5,8 @@ struct Hello {
     json: String,
     toml: String,
     yaml: String,
+    #[config(default = "${random.u8}")]
+    rand: u64,
 }
 
 fn main() -> Result<(), ConfigError> {

@@ -7,6 +7,7 @@ use std::{
 
 use crate::{
     key::{SubKey, SubKeyIter},
+    source::file::FileConfigSource,
     ConfigKey, ConfigSource, ConfigValue, SubKeyList,
 };
 
@@ -69,7 +70,7 @@ pub(crate) struct HashValue {
 
 /// Prefixed hash source.
 #[derive(Debug)]
-pub struct PrefixHashSource<'a> {
+pub struct HashSourceBuilder<'a> {
     key: Vec<String>,
     map: &'a mut HashMap<String, HashValue>,
 }
@@ -111,8 +112,8 @@ impl HashSource {
     }
 
     #[inline]
-    pub(crate) fn prefixed(&mut self) -> PrefixHashSource<'_> {
-        PrefixHashSource {
+    pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {
+        HashSourceBuilder {
             key: vec![],
             map: &mut self.0,
         }
@@ -144,9 +145,32 @@ impl HashSource {
     }
 }
 
-impl PrefixHashSource<'_> {
+impl HashSourceBuilder<'_> {
+    /// Insert map into source.
+    pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: FileConfigSource>(
+        &mut self,
+        iter: I,
+    ) {
+        for (k, v) in iter {
+            self.push(k.borrow());
+            v.push_value(self);
+            self.pop();
+        }
+    }
+
+    /// Insert array into source.
+    pub fn insert_array<I: IntoIterator<Item = S>, S: FileConfigSource>(&mut self, iter: I) {
+        let mut i = 0;
+        for s in iter {
+            self.push(i);
+            i += 1;
+            s.push_value(self);
+            self.pop();
+        }
+    }
+
     #[inline]
-    pub(crate) fn push<'b, K: Into<SubKeyIter<'b>>>(&mut self, key: K) {
+    fn push<'b, K: Into<SubKeyIter<'b>>>(&mut self, key: K) {
         let mut curr = self.curr();
         let mut vs = vec![];
         let iter: SubKeyIter<'b> = key.into();
@@ -163,7 +187,7 @@ impl PrefixHashSource<'_> {
     }
 
     #[inline]
-    pub(crate) fn pop(&mut self) {
+    fn pop(&mut self) {
         self.key.pop();
     }
 
@@ -176,8 +200,9 @@ impl PrefixHashSource<'_> {
             .to_string()
     }
 
+    /// Insert value into source.
     #[inline]
-    pub(crate) fn insert<V: Into<ConfigValue<'static>>>(&mut self, value: V) {
+    pub fn insert<V: Into<ConfigValue<'static>>>(&mut self, value: V) {
         self.map
             .entry(self.curr())
             .or_insert_with(|| HashValue::new())

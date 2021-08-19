@@ -3,7 +3,7 @@ use std::{marker::PhantomData, path::PathBuf};
 
 use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
 
-use super::memory::{HashSource, PrefixHashSource};
+use super::memory::{HashSource, HashSourceBuilder};
 
 /// File configuration source.
 pub trait FileConfigSource: Send + Sync + Sized {
@@ -11,7 +11,7 @@ pub trait FileConfigSource: Send + Sync + Sized {
     fn load(content: &str) -> Result<Self, ConfigError>;
 
     /// Push value
-    fn push_value(self, source: &mut PrefixHashSource<'_>);
+    fn push_value(self, source: &mut HashSourceBuilder<'_>);
 
     /// Configuration file extension.
     fn ext() -> &'static str;
