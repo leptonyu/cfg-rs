@@ -6,8 +6,8 @@ pub use toml::Value;
 use super::{file::FileConfigSource, memory::PrefixHashSource};
 
 impl FileConfigSource for Value {
-    fn load(content: String) -> Result<Self, ConfigError> {
-        Ok(toml::from_str::<Value>(&content)?)
+    fn load(content: &str) -> Result<Self, ConfigError> {
+        Ok(toml::from_str::<Value>(content)?)
     }
 
     fn push_value(self, source: &mut PrefixHashSource<'_>) {

@@ -6,8 +6,8 @@ use super::{file::FileConfigSource, memory::PrefixHashSource};
 pub use json::JsonValue;
 
 impl FileConfigSource for JsonValue {
-    fn load(content: String) -> Result<Self, ConfigError> {
-        Ok(json::parse(&content)?)
+    fn load(content: &str) -> Result<Self, ConfigError> {
+        Ok(json::parse(content)?)
     }
 
     fn ext() -> &'static str {
@@ -38,5 +38,19 @@ impl FileConfigSource for JsonValue {
             }
             JsonValue::Null => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{inline_config_source, Configuration};
+
+    #[test]
+    fn inline_test() -> Result<(), ConfigError> {
+        let v = inline_config_source!(JsonValue: "../../app.json")?;
+        let config = Configuration::new().register_source(v);
+        assert_eq!("json", config.get::<String>("hello.json")?);
+        Ok(())
     }
 }

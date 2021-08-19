@@ -8,7 +8,7 @@ use super::memory::{HashSource, PrefixHashSource};
 /// File configuration source.
 pub trait FileConfigSource: Send + Sync + Sized {
     /// Load source from string.
-    fn load(content: String) -> Result<Self, ConfigError>;
+    fn load(content: &str) -> Result<Self, ConfigError>;
 
     /// Push value
     fn push_value(self, source: &mut PrefixHashSource<'_>);
@@ -78,9 +78,61 @@ impl<S: FileConfigSource> FileSource<S> {
     fn load_file(path: &PathBuf) -> Result<HashSource, ConfigError> {
         let mut source = HashSource::new();
         if path.exists() {
-            let value = S::load(std::fs::read_to_string(path.clone())?)?;
+            let value = S::load(&std::fs::read_to_string(path.clone())?)?;
             value.push_value(&mut source.prefixed());
         }
         Ok(source)
     }
+}
+
+/// File source.
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct InlineSource<S: FileConfigSource> {
+    name: String,
+    source: HashSource,
+    _data: PhantomData<S>,
+}
+
+impl<S: FileConfigSource> InlineSource<S> {
+    fn new(name: String, content: &str) -> Result<Self, ConfigError> {
+        let value = S::load(content)?;
+        let mut source = HashSource::new();
+        value.push_value(&mut source.prefixed());
+        Ok(Self {
+            name,
+            source,
+            _data: PhantomData,
+        })
+    }
+}
+
+#[doc(hidden)]
+pub fn inline_source<S: FileConfigSource>(
+    name: String,
+    content: &str,
+) -> Result<InlineSource<S>, ConfigError> {
+    InlineSource::new(name, content)
+}
+
+impl<S: FileConfigSource> ConfigSource for InlineSource<S> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
+        self.source.get_value(key)
+    }
+
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
+        self.source.collect_keys(prefix, sub)
+    }
+}
+
+/// Inline config source
+#[macro_export]
+macro_rules! inline_config_source {
+    ($ty:ident: $path:literal) => {
+        crate::source::file::inline_source::<$ty>(format!("inline:{}", $path), include_str!($path))
+    };
 }

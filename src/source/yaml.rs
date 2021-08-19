@@ -39,8 +39,8 @@ fn convert(y: Yaml, source: &mut PrefixHashSource<'_>) {
 }
 
 impl FileConfigSource for Value {
-    fn load(content: String) -> Result<Self, ConfigError> {
-        Ok(Value(YamlLoader::load_from_str(&content)?))
+    fn load(content: &str) -> Result<Self, ConfigError> {
+        Ok(Value(YamlLoader::load_from_str(content)?))
     }
 
     fn ext() -> &'static str {
