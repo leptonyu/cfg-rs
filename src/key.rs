@@ -1,16 +1,21 @@
-use std::{collections::HashSet, slice::Iter};
+use std::{cell::RefCell, collections::HashSet, slice::Iter};
+
+use crate::ConfigError;
 
 ///Config Values
-//pub type ConfigKey<'a> = CacheKey<'a>;
-pub type ConfigKey<'a> = HashKey<'a>;
+pub type ConfigKey<'a> = CacheKey<'a>;
+// pub type ConfigKey<'a> = HashKey<'a>;
 
-struct CacheString {
+#[derive(Debug)]
+pub(crate) struct CacheString {
     current: String,
     mark: Vec<(usize, usize)>,
 }
-
+thread_local! {
+    static BUF: RefCell<CacheString> = RefCell::new(CacheString::new());
+}
 impl CacheString {
-    fn new() -> CacheString {
+    pub(crate) fn new() -> CacheString {
         Self {
             current: String::with_capacity(10),
             mark: Vec::with_capacity(5),
@@ -46,14 +51,36 @@ impl CacheString {
         self.mark.clear();
     }
 
-    fn new_key(&mut self) -> CacheKey<'_> {
+    pub(crate) fn new_key(&mut self) -> CacheKey<'_> {
         CacheKey {
             cache: self,
             keys: Vec::with_capacity(5),
         }
     }
+
+    pub(crate) fn with_key<T, F: Fn(&mut Self) -> Result<T, ConfigError>>(
+        f: F,
+    ) -> Result<T, ConfigError> {
+        BUF.with(move |buf| {
+            let borrow = buf.try_borrow_mut();
+            let mut a;
+            let mut b;
+            let buf = match borrow {
+                Ok(buf) => {
+                    a = buf;
+                    &mut *a
+                }
+                _ => {
+                    b = CacheString::new();
+                    &mut b
+                }
+            };
+            (f)(buf)
+        })
+    }
 }
 
+#[derive(Debug)]
 pub struct CacheKey<'a> {
     cache: &'a mut CacheString,
     keys: Vec<SubKey<'a>>,
@@ -66,14 +93,16 @@ impl Drop for CacheKey<'_> {
 }
 
 impl<'a> CacheKey<'a> {
-    fn push<I: Into<SubKeyIter<'a>>>(&mut self, iter: I) {
+    pub(crate) fn push<I: Into<SubKeyIter<'a>>>(&mut self, iter: I) {
         self.cache.push(iter.into(), &mut self.keys);
     }
-    fn pop(&mut self) {
+    pub(crate) fn pop(&mut self) {
         self.cache.pop(&mut self.keys);
     }
-    fn iter(&self) -> HashKeyIter<'_> {
-        HashKeyIter(self.keys.iter())
+
+    #[allow(dead_code)]
+    fn iter(&self) -> Iter<'_, SubKey<'_>> {
+        self.keys.iter()
     }
 
     /// As string
@@ -84,74 +113,6 @@ impl<'a> CacheKey<'a> {
     /// To String.
     pub(crate) fn to_string(&self) -> String {
         self.as_str().to_string()
-    }
-}
-
-#[derive(Debug)]
-pub struct HashKey<'a> {
-    current: String,
-    sub: Vec<(usize, String)>,
-    keys: Vec<SubKey<'a>>,
-}
-
-impl Default for HashKey<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a> HashKey<'a> {
-    fn new() -> Self {
-        Self {
-            current: String::with_capacity(10),
-            sub: Vec::with_capacity(3),
-            keys: Vec::with_capacity(5),
-        }
-    }
-
-    pub(crate) fn push<K: Into<SubKeyIter<'a>>>(&mut self, key: K) {
-        let v: SubKeyIter<'a> = key.into();
-        let mut size = 0;
-        let curr = self.current.clone();
-        for sub in v {
-            size += 1;
-            sub.update_string(&mut self.current);
-            self.keys.push(sub);
-        }
-        self.sub.push((size, curr));
-    }
-
-    pub(crate) fn pop(&mut self) {
-        if let Some((s, c)) = self.sub.pop() {
-            self.current = c;
-            if s > 0 {
-                self.keys.drain(self.keys.len() - s..);
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn iter(&self) -> HashKeyIter<'_> {
-        HashKeyIter(self.keys.iter())
-    }
-
-    /// As string
-    pub(crate) fn as_str(&self) -> &str {
-        &self.current
-    }
-
-    /// To String.
-    pub(crate) fn to_string(&self) -> String {
-        self.as_str().to_string()
-    }
-}
-
-struct HashKeyIter<'a>(Iter<'a, SubKey<'a>>);
-
-impl<'a> Iterator for HashKeyIter<'a> {
-    type Item = &'a SubKey<'a>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
     }
 }
 
@@ -209,7 +170,6 @@ impl<'a> Iterator for SubKeyIter<'a> {
         }
     }
 }
-
 
 #[doc(hidden)]
 /// Sub key list.
@@ -290,16 +250,8 @@ mod test {
             assert_eq!(&key.to_string(), $norm);
             let mut chd = CacheString::new();
             let mut kez = chd.new_key();
-            kez.push($norm);                                        
-            assert_eq!(true, key.as_str() == kez.as_str()); 
-
-            let mut key = HashKey::default();
-            key.push($origin);
-            assert_eq!(&key.to_string(), $norm);
-
-            let mut kez = HashKey::default();
             kez.push($norm);
-            assert_eq!(true, &key.current == &kez.current);
+            assert_eq!(true, key.as_str() == kez.as_str());
         };
     }
 
@@ -322,17 +274,6 @@ mod test {
 
     macro_rules! should_ls {
         ($($origin:literal => $norm:literal,)+) => {
-            let mut key = HashKey::default();
-            let mut vec = vec![];
-            $(
-                key.push($origin);
-                assert_eq!($norm, key.as_str());
-                vec.push(key.to_string());
-            )+
-            while let Some(v) = vec.pop() {
-                assert_eq!(&v, key.as_str());
-                key.pop();
-            }
             let mut che = CacheString::new();
             let mut key = che.new_key();
             let mut vec = vec![];
@@ -362,13 +303,6 @@ mod test {
 
     macro_rules! should_iter {
         ($origin:literal: $($norm:literal),+) => {
-            let mut key = HashKey::default();
-            key.push($origin);
-            let mut iter = key.iter();
-            $(
-                let v: SubKey<'_> = $norm.into();
-                assert_eq!(&v, iter.next().unwrap());
-            )+
             let mut che = CacheString::new();
             let mut key = che.new_key();
             key.push($origin);

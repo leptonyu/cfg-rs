@@ -355,15 +355,15 @@ impl_enum!(Ordering{
 #[cfg(test)]
 mod test {
 
-    use crate::Configuration;
+    use crate::{key::CacheString, Configuration};
 
     use super::*;
 
-    struct TestContext(Configuration);
+    struct TestContext(Configuration, CacheString);
 
     impl TestContext {
         fn new() -> Self {
-            Self(Configuration::new())
+            Self(Configuration::new(), CacheString::new())
         }
 
         #[allow(single_use_lifetimes)]
@@ -371,7 +371,7 @@ mod test {
             &mut self,
             val: impl Into<ConfigValue<'a>>,
         ) -> Result<T, ConfigError> {
-            T::from_value(&mut self.0.new_context(), val.into())
+            T::from_value(&mut self.0.new_context(&mut self.1), val.into())
         }
     }
 

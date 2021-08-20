@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     err::ConfigError,
-    key::{ConfigKey, SubKeyIter},
+    key::{CacheString, ConfigKey, SubKeyIter},
     source::{
         environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
         register_files, SourceOption,
@@ -75,8 +75,9 @@ fn parse_placeholder<'a>(
                 if !history.insert(key.to_string()) {
                     return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                 }
+                let mut cache = CacheString::new();
                 let v = match source
-                    .new_context()
+                    .new_context(&mut cache)
                     .do_parse_config::<String, &str>(key, None, history)
                 {
                     Err(ConfigError::ConfigNotFound(v)) => match def {
@@ -191,9 +192,9 @@ impl Configuration {
         self
     }
 
-    pub(crate) fn new_context(&self) -> ConfigContext<'_> {
+    pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
         ConfigContext {
-            key: ConfigKey::default(),
+            key: cache.new_key(),
             source: self,
         }
     }
@@ -201,8 +202,10 @@ impl Configuration {
     /// Get config from configuration.
     #[inline]
     pub fn get<T: FromConfig>(&self, key: &str) -> Result<T, ConfigError> {
-        let mut context = self.new_context();
-        context.parse_config(key, None)
+        CacheString::with_key(|cache| {
+            let mut context = self.new_context(cache);
+            context.parse_config(key, None)
+        })
     }
 
     /// Get config or use default.
