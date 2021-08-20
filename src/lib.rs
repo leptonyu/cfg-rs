@@ -1,4 +1,33 @@
-//! cfg-rs.
+//! Cfg-rs provides a layered configuration formed by multi config source for rust applications.
+//!
+//! This lib supports:
+//! * Mutiple sources, such as environment variables, toml, yaml and json.
+//! * Easily extends config source by implementing [`crate::source::file::FileConfigSource`].
+//! * Programmatic override config by [`ConfigurationBuilder::set`].
+//! * Auto derive config struct by proc-macro.
+//! * Placeholder parsing with syntax `${config.key}`.
+//! * Using placeholder expresion to get random value by `${random.u64}`, support all integer types.
+//!
+//! See the [examples](https://github.com/leptonyu/cfg-rs/tree/master/examples) for general usage information.
+//!
+//! ```
+//! use cfg_rs::*;
+//!
+//! #[derive(Debug, FromConfig)]
+//! #[config(prefix = "hello")]
+//! struct HelloConfig {
+//!     json: String,
+//!     toml: String,
+//!     yaml: String,
+//!     #[config(default = "${random.u8}")]
+//!     rand: u64,
+//! }
+//! let config = Configuration::init().unwrap();
+//! let hello = config.get_predefined::<HelloConfig>().unwrap();
+//! assert_eq!("json", hello.json);
+//! assert_eq!("toml", hello.toml);
+//! assert_eq!("yaml", hello.yaml);
+//! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
@@ -31,7 +60,7 @@ mod test;
 mod value;
 
 pub use cfg_derive::FromConfig;
-pub use configuration::{ConfigContext, Configuration};
+pub use configuration::{ConfigContext, Configuration, ConfigurationBuilder};
 pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub use key::{ConfigKey, SubKeyList};

@@ -52,6 +52,7 @@ impl<S: FileConfigSource> FileSource<S> {
     pub fn of(dir: &str, name: &str, profile: Option<&str>) -> Result<Self, ConfigError> {
         let mut file = PathBuf::new();
         file.push(dir);
+
         let path = match profile {
             Some(p) => format!("{}-{}.{}", name, p, S::ext()),
             _ => format!("{}.{}", name, S::ext()),

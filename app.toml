@@ -1,5 +1,5 @@
 [hello]
-toml = '2021'
+toml = 'toml'
 
 [suit]
 val.v1 = 1
