@@ -230,7 +230,7 @@ impl Configuration {
     /// Configuration Builder.
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
-            memory: MemorySource::new("commandlines".to_string()),
+            memory: MemorySource::new("config".to_string()),
             prefix: var("CFG_ENV_PREFIX").unwrap_or("CFG".to_owned()),
         }
     }

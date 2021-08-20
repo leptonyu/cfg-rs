@@ -56,4 +56,7 @@ pub trait ConfigSource: Send + Sync {
 
     /// Get all sub keys by prefix.
     fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>);
+
+    /// Is empty.
+    fn is_empty(&self) -> bool;
 }

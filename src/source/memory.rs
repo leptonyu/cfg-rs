@@ -61,6 +61,10 @@ impl ConfigSource for MemorySource {
     fn name(&self) -> &str {
         &self.0
     }
+
+    fn is_empty(&self) -> bool {
+        self.1.is_empty()
+    }
 }
 
 /// Hash Source.
@@ -149,6 +153,10 @@ impl HashSource {
                 sub.insert_int(i);
             }
         }
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 

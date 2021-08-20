@@ -1,7 +1,7 @@
 //! File config source.
 use std::{marker::PhantomData, path::PathBuf};
 
-use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
+use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue, SubKeyList};
 
 use super::memory::{HashSource, HashSourceBuilder};
 
@@ -27,16 +27,23 @@ pub struct FileSource<S: FileConfigSource> {
 }
 
 impl<S: FileConfigSource> ConfigSource for FileSource<S> {
+    #[inline]
     fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
         self.source.get_value(key)
     }
 
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
+    #[inline]
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
         self.source.collect_keys(prefix, sub)
     }
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.source.is_empty()
     }
 }
 
@@ -108,6 +115,7 @@ impl<S: FileConfigSource> InlineSource<S> {
 }
 
 #[doc(hidden)]
+#[inline]
 pub fn inline_source<S: FileConfigSource>(
     name: String,
     content: &str,
@@ -120,12 +128,18 @@ impl<S: FileConfigSource> ConfigSource for InlineSource<S> {
         &self.name
     }
 
+    #[inline]
     fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
         self.source.get_value(key)
     }
 
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
+    #[inline]
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
         self.source.collect_keys(prefix, sub)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.source.is_empty()
     }
 }
 

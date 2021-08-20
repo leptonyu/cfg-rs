@@ -17,9 +17,10 @@ impl LayeredSource {
     /// Register source.
     #[inline]
     pub fn register(&mut self, source: impl ConfigSource + 'static) {
-        self.layer.push(Box::new(source));
+        if !source.is_empty() {
+            self.layer.push(Box::new(source));
+        }
     }
-
     /// Get source names.
     pub fn source_names(&self) -> Vec<&str> {
         self.layer.iter().map(|f| f.name()).collect()
@@ -45,5 +46,9 @@ impl ConfigSource for LayeredSource {
 
     fn name(&self) -> &str {
         "layered_source"
+    }
+
+    fn is_empty(&self) -> bool {
+        false
     }
 }

@@ -44,6 +44,10 @@ impl ConfigSource for Random {
     fn name(&self) -> &str {
         "random"
     }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]

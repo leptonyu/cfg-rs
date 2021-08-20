@@ -10,9 +10,11 @@ struct Hello {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::init()?;
+    let config = Configuration::builder().set("key", "value").init()?;
+    let mut i = 0;
     for name in config.source_names() {
-        println!("{}", name);
+        i += 1;
+        println!("{}: {}", i, name);
     }
     let hello = config.get::<Hello>("hello")?;
     println!("{:?}", hello);

@@ -5,37 +5,6 @@ use crate::{ConfigKey, ConfigSource, ConfigValue};
 
 use super::memory::MemorySource;
 
-/// Simple environment source.
-#[derive(Debug)]
-pub struct EnvironmentSource(MemorySource);
-
-impl EnvironmentSource {
-    /// Create source.
-    pub fn new() -> Self {
-        let mut body = MemorySource::new("env".to_string());
-        for (k, v) in vars() {
-            body = body.set(k, v);
-        }
-        Self(body)
-    }
-}
-
-impl ConfigSource for EnvironmentSource {
-    #[inline]
-    fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
-        self.0.get_value(key)
-    }
-
-    #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
-        self.0.collect_keys(prefix, sub)
-    }
-
-    fn name(&self) -> &str {
-        "env"
-    }
-}
-
 /// Prefixed environment source.
 #[derive(Debug)]
 pub struct EnvironmentPrefixedSource(String, MemorySource);
@@ -68,6 +37,10 @@ impl ConfigSource for EnvironmentPrefixedSource {
     #[inline]
     fn name(&self) -> &str {
         self.1.name()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.1.is_empty()
     }
 }
 
