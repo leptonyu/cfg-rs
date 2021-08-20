@@ -35,9 +35,6 @@ struct IntSuit {
     v1: u8,
     v2: u16,
     v3: u32,
-    v4: u64,
-    v5: u128,
-    v6: usize,
 }
 
 #[allow(dead_code)]
@@ -49,15 +46,12 @@ pub(crate) fn source_test_suit(src: impl ConfigSource + 'static) -> Result<(), C
     assert_eq!(Some(&vec![true, false]), v.bap.get("b2"));
     let brr = vec!["b00"];
     assert_eq!(vec![brr], v.brr);
-    for i in 1..=6 {
+    for i in 1..=3 {
         assert_eq!(Some(&i), v.map.get(&format!("v{}", i)));
     }
     assert_eq!(1, v.int.v1);
     assert_eq!(2, v.int.v2);
     assert_eq!(3, v.int.v3);
-    assert_eq!(4, v.int.v4);
-    assert_eq!(5, v.int.v5);
-    assert_eq!(6, v.int.v6);
 
     assert_eq!(1, v.crr.len());
     let crr = &v.crr[0];
@@ -75,9 +69,6 @@ fn in_memory_test() {
             .set("suit.val.v1", "1")
             .set("suit.val.v2", "2")
             .set("suit.val.v3", "3")
-            .set("suit.val.v4", "4")
-            .set("suit.val.v5", "5")
-            .set("suit.val.v6", "6")
             .set("suit.arr[0]", "a0")
             .set("suit.arr[1]", "a1")
             .set("suit.arr[2]", "a2")

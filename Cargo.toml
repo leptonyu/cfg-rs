@@ -53,7 +53,6 @@ quickcheck_macros = '1'
 
 [[example]]
 name = "simple"
-required-features = ["full"]
 
 [[bench]]
 harness = false
