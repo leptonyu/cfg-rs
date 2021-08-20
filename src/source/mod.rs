@@ -6,17 +6,21 @@ use self::file::FileSource;
 
 pub mod environment;
 pub mod file;
+#[doc(hidden)]
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
 pub mod layered;
 pub mod memory;
+#[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 pub mod random;
+#[doc(hidden)]
 #[cfg(feature = "toml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
 pub mod toml;
+#[doc(hidden)]
 #[cfg(feature = "yaml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
 pub mod yaml;

@@ -1,5 +1,6 @@
 use std::{
     any::{type_name, Any},
+    borrow::Borrow,
     collections::HashSet,
     env::var,
 };
@@ -169,6 +170,13 @@ pub struct Configuration {
     internal: LayeredSource,
 }
 
+/// Configuration Builder.
+#[allow(missing_debug_implementations)]
+pub struct ConfigurationBuilder {
+    memory: MemorySource,
+    prefix: String,
+}
+
 impl Configuration {
     /// Create new configuration.
     pub fn new() -> Self {
@@ -219,14 +227,39 @@ impl Configuration {
         sub
     }
 
-    /// Build default configuration.
-    pub fn build<F: FnOnce(MemorySource) -> Result<MemorySource, ConfigError>>(
-        f: F,
-    ) -> Result<Self, ConfigError> {
+    /// Configuration Builder.
+    pub fn builder() -> ConfigurationBuilder {
+        ConfigurationBuilder {
+            memory: MemorySource::new("commandlines".to_string()),
+            prefix: var("CFG_ENV_PREFIX").unwrap_or("CFG".to_owned()),
+        }
+    }
+
+    /// Init configuration with default config.
+    pub fn init() -> Result<Configuration, ConfigError> {
+        Self::builder().init()
+    }
+}
+
+impl ConfigurationBuilder {
+    /// Set environment prefix.
+    pub fn set_env_prefix<K: ToString>(&mut self, prefix: K) -> &mut Self {
+        self.prefix = prefix.to_string();
+        self
+    }
+
+    /// Set config.
+    pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
+        self.memory.insert(key, value);
+        self
+    }
+
+    /// Init configuration
+    pub fn init(self) -> Result<Configuration, ConfigError> {
         let mut config = Configuration::new();
 
         // Layer 0, commandlines.
-        config = config.register_source((f)(MemorySource::new("commandlines".to_string()))?);
+        config = config.register_source(self.memory);
 
         let option: SourceOption = config.get_predefined()?;
 
@@ -237,8 +270,7 @@ impl Configuration {
         }
 
         // Layer 2, environment.
-        let prefix = var("CFG_ENV_PREFIX").unwrap_or("CFG".to_owned());
-        config = config.register_source(EnvironmentPrefixedSource::new(&prefix));
+        config = config.register_source(EnvironmentPrefixedSource::new(&self.prefix));
 
         // Layer 2, profile file.
         let app = config.get_predefined::<AppConfig>()?;

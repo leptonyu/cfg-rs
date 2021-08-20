@@ -130,6 +130,7 @@ impl<S: FileConfigSource> ConfigSource for InlineSource<S> {
 }
 
 /// Inline config source
+#[doc(hidden)]
 #[macro_export]
 macro_rules! inline_config_source {
     ($ty:ident: $path:literal) => {

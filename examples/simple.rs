@@ -10,7 +10,7 @@ struct Hello {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::build(Ok)?;
+    let config = Configuration::init()?;
     for name in config.source_names() {
         println!("{}", name);
     }

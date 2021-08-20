@@ -26,11 +26,18 @@ impl MemorySource {
     #[inline]
     #[allow(single_use_lifetimes)]
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, k: K, v: V) -> Self {
+        self.insert(k, v);
+        self
+    }
+
+    /// Add config to source.
+    #[inline]
+    #[allow(single_use_lifetimes)]
+    pub(crate) fn insert<K: Borrow<str>, V: Into<ConfigValue<'static>>>(&mut self, k: K, v: V) {
         let mut source = self.1.prefixed();
         source.push(k.borrow());
         source.insert(v);
         source.pop();
-        self
     }
 }
 

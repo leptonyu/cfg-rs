@@ -1,35 +1,73 @@
-use std::{
-    collections::HashSet,
-    hash::{Hash, Hasher},
-    slice::Iter,
-};
+use std::{collections::HashSet, slice::Iter};
+
 ///Config Values
-// pub type ConfigKey<'a> = HashKey<'a>;
-pub type ConfigKey<'a> = DefaultKey<'a>;
+pub type ConfigKey<'a> = HashKey<'a>;
 
-/// Config values.
 #[derive(Debug)]
-#[allow(unreachable_pub)]
-pub struct DefaultKey<'a> {
-    node: Vec<KeyNode<'a>>,
+pub struct HashKey<'a> {
+    current: String,
+    sub: Vec<(usize, String)>,
+    keys: Vec<SubKey<'a>>,
 }
 
-impl<'a> DefaultKey<'a> {
-    #[allow(dead_code)]
-    pub(crate) fn new() -> Self {
-        Self { node: vec![] }
-    }
-    #[allow(dead_code)]
-    pub(crate) fn of(path: &'a str) -> Self {
-        let mut key = Self::new();
-        key.push(path);
-        key
-    }
-}
-
-impl Default for DefaultKey<'_> {
+impl Default for HashKey<'_> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<'a> HashKey<'a> {
+    fn new() -> Self {
+        Self {
+            current: "".to_string(),
+            sub: vec![],
+            keys: vec![],
+        }
+    }
+
+    pub(crate) fn push<K: Into<SubKeyIter<'a>>>(&mut self, key: K) {
+        let v: SubKeyIter<'a> = key.into();
+        let mut size = 0;
+        let curr = self.current.clone();
+        for sub in v {
+            size += 1;
+            sub.update_string(&mut self.current);
+            self.keys.push(sub);
+        }
+        self.sub.push((size, curr));
+    }
+
+    pub(crate) fn pop(&mut self) {
+        if let Some((s, c)) = self.sub.pop() {
+            self.current = c;
+            if s > 0 {
+                self.keys.drain(self.keys.len() - s..);
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn iter(&self) -> HashKeyIter<'_> {
+        HashKeyIter(self.keys.iter())
+    }
+
+    /// As string
+    pub(crate) fn as_str(&self) -> &str {
+        &self.current
+    }
+
+    /// To String.
+    pub(crate) fn to_string(&self) -> String {
+        self.as_str().to_string()
+    }
+}
+
+struct HashKeyIter<'a>(Iter<'a, SubKey<'a>>);
+
+impl<'a> Iterator for HashKeyIter<'a> {
+    type Item = &'a SubKey<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 
@@ -155,105 +193,19 @@ impl<'a> Into<SubKeyIter<'a>> for &'a String {
     }
 }
 
-#[derive(Debug)]
-struct KeyNode<'a> {
-    keys: Vec<SubKey<'a>>,
-    key_long: String,
-}
-
-impl<'a> KeyNode<'a> {
-    fn new(ks: SubKeyIter<'a>, parent: Option<&Self>) -> Self {
-        let mut key_long = "".to_owned();
-        if let Some(p) = parent {
-            key_long.push_str(&p.key_long);
-        }
-        let mut keys = vec![];
-        for k in ks {
-            k.update_string(&mut key_long);
-            keys.push(k);
-        }
-        Self { keys, key_long }
-    }
-}
-
-/// Iterate config key with sub keys.
-#[derive(Debug)]
-#[allow(unreachable_pub)]
-pub struct KeyIter<'a, 'b> {
-    ind: usize,
-    iter: Vec<Iter<'b, SubKey<'a>>>,
-}
-
-impl<'a, 'b> Iterator for KeyIter<'a, 'b> {
-    type Item = &'b SubKey<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while self.ind < self.iter.len() {
-            if let Some(v) = self.iter[self.ind].next() {
-                return Some(v);
-            }
-            self.ind += 1;
-        }
-        None
-    }
-}
-
-impl<'a> DefaultKey<'a> {
-    /// Get normalized key as string.
-    pub(crate) fn as_str(&self) -> &str {
-        if let Some(v) = self.node.last() {
-            return &v.key_long;
-        }
-        ""
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn to_string(&self) -> String {
-        self.as_str().to_string()
-    }
-
-    #[allow(dead_code)]
-    /// Iterate config key as sub keys.
-    pub(crate) fn iter(&self) -> KeyIter<'a, '_> {
-        return KeyIter {
-            ind: 0,
-            iter: self.node.iter().map(|f| f.keys.iter()).collect(),
-        };
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn push<K: Into<SubKeyIter<'a>>>(&mut self, key: K) {
-        self.node.push(KeyNode::new(key.into(), self.node.last()));
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn push_row(&mut self, key_long: String, keys: Vec<SubKey<'a>>) {
-        self.node.push(KeyNode { key_long, keys });
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn pop(&mut self) {
-        self.node.pop();
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
 
     macro_rules! should_eq {
         ($origin:expr => $norm:expr) => {
-            let mut key = DefaultKey::new();
-            key.push($origin);
-            assert_eq!(key.as_str(), $norm);
-
             let mut key = HashKey::default();
             key.push($origin);
             assert_eq!(&key.to_string(), $norm);
 
             let mut kez = HashKey::default();
             kez.push($norm);
-            assert_eq!(true, &key == &kez);
+            assert_eq!(true, &key.current == &kez.current);
         };
     }
 
@@ -276,18 +228,6 @@ mod test {
 
     macro_rules! should_ls {
         ($($origin:literal => $norm:literal,)+) => {
-            let mut key = DefaultKey::new();
-            let mut vec = vec![];
-            $(
-                key.push($origin);
-                assert_eq!($norm, key.as_str());
-                vec.push(key.to_string());
-            )+
-            while let Some(v) = vec.pop() {
-                assert_eq!(&v, key.as_str());
-                key.pop();
-            }
-
             let mut key = HashKey::default();
             let mut vec = vec![];
             $(
@@ -316,14 +256,6 @@ mod test {
 
     macro_rules! should_iter {
         ($origin:literal: $($norm:literal),+) => {
-            let mut key = DefaultKey::new();
-            key.push($origin);
-            let mut iter = key.iter();
-            $(
-                let v: SubKey<'_> = $norm.into();
-                assert_eq!(&v, iter.next().unwrap());
-            )+
-
             let mut key = HashKey::default();
             key.push($origin);
             let mut iter = key.iter();
@@ -340,95 +272,5 @@ mod test {
             "a.b[1][1].a[1]":
             "a", "b", 1, 1, "a", 1
         );
-    }
-}
-
-impl Hash for SubKey<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            SubKey::Str(i) => (*i).hash(state),
-            SubKey::Int(i) => i.hash(state),
-        }
-    }
-}
-
-#[derive(Debug)]
-#[allow(unreachable_pub)]
-pub struct HashKey<'a> {
-    current: String,
-    sub: Vec<(usize, String)>,
-    keys: Vec<SubKey<'a>>,
-}
-
-impl PartialEq for HashKey<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.current == other.current
-    }
-}
-
-impl Eq for HashKey<'_> {}
-
-impl Default for HashKey<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a> HashKey<'a> {
-    pub(crate) fn new() -> Self {
-        Self {
-            current: "".to_string(),
-            sub: vec![],
-            keys: vec![],
-        }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn push<K: Into<SubKeyIter<'a>>>(&mut self, key: K) {
-        let v: SubKeyIter<'a> = key.into();
-        let mut size = 0;
-        let curr = self.current.clone();
-        for sub in v {
-            size += 1;
-            sub.update_string(&mut self.current);
-            self.keys.push(sub);
-        }
-        self.sub.push((size, curr));
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn pop(&mut self) {
-        if let Some((s, c)) = self.sub.pop() {
-            self.current = c;
-            if s > 0 {
-                self.keys.drain(self.keys.len() - s..);
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn iter(&self) -> HashKeyIter<'_> {
-        HashKeyIter(self.keys.iter())
-    }
-
-    /// As string
-    #[allow(dead_code)]
-    pub(crate) fn as_str(&self) -> &str {
-        &self.current
-    }
-
-    /// To String.
-    #[allow(dead_code)]
-    pub(crate) fn to_string(&self) -> String {
-        self.as_str().to_string()
-    }
-}
-
-pub(crate) struct HashKeyIter<'a>(Iter<'a, SubKey<'a>>);
-
-impl<'a> Iterator for HashKeyIter<'a> {
-    type Item = &'a SubKey<'a>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
     }
 }

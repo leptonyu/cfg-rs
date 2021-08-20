@@ -2,7 +2,10 @@ use cfg_rs::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let env = Configuration::build(|f| Ok(f.set("hello", "world"))).unwrap();
+    let env = Configuration::builder()
+        .set("hello", "world")
+        .init()
+        .unwrap();
 
     c.bench_function("hello1", |b| {
         b.iter(|| env.get::<String>(black_box("hello")))
