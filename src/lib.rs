@@ -10,18 +10,6 @@
 //!
 //! See the [examples](https://github.com/leptonyu/cfg-rs/tree/master/examples) for general usage information.
 //!
-//! ```
-//! use cfg_rs::*;
-//!
-//! #[derive(Debug, FromConfig)]
-//! #[config(prefix = "hello")]
-//! struct HelloConfig {
-//!     #[config(default = "${random.u8}")]
-//!     rand: u64,
-//! }
-//! let config = Configuration::init().unwrap();
-//! let hello = config.get_predefined::<HelloConfig>().unwrap();
-//! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
