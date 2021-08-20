@@ -19,9 +19,9 @@ impl Default for HashKey<'_> {
 impl<'a> HashKey<'a> {
     fn new() -> Self {
         Self {
-            current: "".to_string(),
-            sub: vec![],
-            keys: vec![],
+            current: String::with_capacity(10),
+            sub: Vec::with_capacity(3),
+            keys: Vec::with_capacity(5),
         }
     }
 
