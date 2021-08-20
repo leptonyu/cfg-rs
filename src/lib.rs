@@ -16,17 +16,11 @@
 //! #[derive(Debug, FromConfig)]
 //! #[config(prefix = "hello")]
 //! struct HelloConfig {
-//!     json: String,
-//!     toml: String,
-//!     yaml: String,
 //!     #[config(default = "${random.u8}")]
 //!     rand: u64,
 //! }
 //! let config = Configuration::init().unwrap();
 //! let hello = config.get_predefined::<HelloConfig>().unwrap();
-//! assert_eq!("json", hello.json);
-//! assert_eq!("toml", hello.toml);
-//! assert_eq!("yaml", hello.yaml);
 //! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
