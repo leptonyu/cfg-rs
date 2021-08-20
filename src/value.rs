@@ -53,6 +53,15 @@ impl<'a> Into<ConfigValue<'a>> for bool {
     }
 }
 
+impl<V: FromConfig> FromConfig for Result<V, ConfigError> {
+    fn from_config(
+        context: &mut ConfigContext<'_>,
+        value: Option<ConfigValue<'_>>,
+    ) -> Result<Self, ConfigError> {
+        Ok(V::from_config(context, value))
+    }
+}
+
 impl<V: FromConfig> FromConfig for Option<V> {
     fn from_config(
         context: &mut ConfigContext<'_>,
