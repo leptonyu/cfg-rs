@@ -49,3 +49,23 @@ impl FileConfigSource for Value {
         }
     }
 }
+
+/// Inline yaml file.
+#[macro_export]
+#[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
+macro_rules! inline_yaml {
+    ($path:literal) => {
+        crate::inline_config_source!(Value: $path)
+    };
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test::source_test_suit;
+
+    #[test]
+    fn inline_test() -> Result<(), ConfigError> {
+        source_test_suit(inline_yaml!("../../app.yaml")?)
+    }
+}

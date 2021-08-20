@@ -1,1 +1,14 @@
 hello.yaml: yaml
+suit:
+  val.v1: 1
+  val:
+    v2: 2
+    v3: 3
+  arr: ["a0", "a1", "a2"]
+  brr: [["b00"]]
+  map:
+    b1: [true]
+    b2: [true, false]
+  crr:
+    - v1: 1.0
+      v2: 2.0

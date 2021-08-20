@@ -30,16 +30,22 @@ impl FileConfigSource for JsonValue {
     }
 }
 
+/// Inline json file.
+#[macro_export]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+macro_rules! inline_json {
+    ($path:literal) => {
+        crate::inline_config_source!(JsonValue: $path)
+    };
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{inline_config_source, Configuration};
+    use crate::test::source_test_suit;
 
     #[test]
     fn inline_test() -> Result<(), ConfigError> {
-        let v = inline_config_source!(JsonValue: "../../app.json")?;
-        let config = Configuration::new().register_source(v);
-        assert_eq!("json", config.get::<String>("hello.json")?);
-        Ok(())
+        source_test_suit(inline_json!("../../app.json")?)
     }
 }

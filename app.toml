@@ -1,2 +1,18 @@
 [hello]
 toml = '2021'
+
+[suit]
+val.v1 = 1
+val.v2 = 2
+val.v3 = 3
+
+arr = ["a0", "a1", "a2"]
+brr = [["b00"]]
+
+[suit.map]
+b1 = [true]
+b2 = [true, false]
+
+[[suit.crr]]
+v1 = 1.0
+v2 = 2.0

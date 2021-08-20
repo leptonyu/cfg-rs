@@ -26,3 +26,23 @@ impl FileConfigSource for Value {
         "toml"
     }
 }
+
+/// Inline toml file.
+#[macro_export]
+#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+macro_rules! inline_toml {
+    ($path:literal) => {
+        crate::inline_config_source!(Value: $path)
+    };
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test::source_test_suit;
+
+    #[test]
+    fn inline_test() -> Result<(), ConfigError> {
+        source_test_suit(inline_toml!("../../app.toml")?)
+    }
+}

@@ -167,32 +167,33 @@ impl<V: FromStringValue> FromValue for V {
         value: ConfigValue<'_>,
     ) -> Result<Self, ConfigError> {
         match value {
-            ConfigValue::StrRef(s) => {
-                if s.is_empty() {
-                    Err(context.not_found())
-                } else {
-                    V::from_str_value(context, s)
-                }
-            }
-            ConfigValue::Str(s) => {
-                if s.is_empty() {
-                    Err(context.not_found())
-                } else {
-                    V::from_str_value(context, &s)
-                }
-            }
+            ConfigValue::StrRef(s) => V::from_str_value(context, s),
+            ConfigValue::Str(s) => V::from_str_value(context, &s),
             value => Err(context.type_mismatch::<V>(&value)),
         }
     }
 }
 
-impl FromStringValue for bool {
+#[inline]
+fn bool_from_str_value(context: &mut ConfigContext<'_>, value: &str) -> Result<bool, ConfigError> {
+    match &value.to_lowercase()[..] {
+        "true" | "yes" => Ok(true),
+        "false" | "no" => Ok(false),
+        _ => Err(context.parse_error(value)),
+    }
+}
+
+impl FromValue for bool {
     #[inline]
-    fn from_str_value(context: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError> {
-        match &value.to_lowercase()[..] {
-            "true" | "yes" => Ok(true),
-            "false" | "no" => Ok(false),
-            _ => Err(context.parse_error(value)),
+    fn from_value(
+        context: &mut ConfigContext<'_>,
+        value: ConfigValue<'_>,
+    ) -> Result<Self, ConfigError> {
+        match value {
+            ConfigValue::StrRef(s) => bool_from_str_value(context, s),
+            ConfigValue::Str(s) => bool_from_str_value(context, &s),
+            ConfigValue::Bool(s) => Ok(s),
+            value => Err(context.type_mismatch::<bool>(&value)),
         }
     }
 }
