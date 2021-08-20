@@ -1,5 +1,5 @@
 # cfg-rs
-Minimal configuration.
+Minimal configuration, former crate [salak.rs](https://github.com/leptonyu/salak.rs).
 
 [![Crates.io](https://img.shields.io/crates/v/cfg-rs?style=flat-square)](https://crates.io/crates/cfg-rs)
 [![Crates.io](https://img.shields.io/crates/d/cfg-rs?style=flat-square)](https://crates.io/crates/cfg-rs)
