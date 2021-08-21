@@ -51,7 +51,7 @@ fn parse_placeholder<'a>(
     current_key: &ConfigKey<'_>,
     val: &str,
     history: &mut HashSet<String>,
-) -> Result<Option<ConfigValue<'a>>, ConfigError> {
+) -> Result<(bool, Option<ConfigValue<'a>>), ConfigError> {
     CacheValue::with_key(move |cv| {
         cv.clear();
         let mut value = val;
@@ -117,14 +117,14 @@ fn parse_placeholder<'a>(
             }
         }
         if flag {
-            return Ok(Some(value.to_string().into()));
+            return Ok((true, None));
         }
         if cv.stack.pop().unwrap_or(0) == 0 {
             if cv.stack.is_empty() {
-                return Ok(Some(cv.buf.to_string().into()));
+                return Ok((false, Some(cv.buf.to_string().into())));
             }
         }
-        Ok(None)
+        Ok((false, None))
     })
 }
 
@@ -138,10 +138,21 @@ impl<'a> ConfigContext<'a> {
     ) -> Result<T, ConfigError> {
         self.key.push(partial_key);
         let value = match self.source.internal.get_value(&self.key).or(default_value) {
-            Some(ConfigValue::Str(s)) => parse_placeholder(self.source, &self.key, &s, history)?,
-            Some(ConfigValue::StrRef(s)) => parse_placeholder(self.source, &self.key, s, history)?,
+            Some(ConfigValue::Str(s)) => {
+                match parse_placeholder(self.source, &self.key, &s, history)? {
+                    (true, _) => Some(ConfigValue::Str(s)),
+                    (_, v) => v,
+                }
+            }
+            Some(ConfigValue::StrRef(s)) => {
+                match parse_placeholder(self.source, &self.key, s, history)? {
+                    (true, _) => Some(ConfigValue::StrRef(s)),
+                    (false, v) => v,
+                }
+            }
             v => v,
         };
+
         let v = T::from_config(self, value);
         self.key.pop();
         v
