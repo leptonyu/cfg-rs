@@ -413,16 +413,16 @@ mod test {
     #[test]
     fn parse_string_test() {
         let config = build_config();
-        // should_eq!(config: "a" as String = "Ok(\"0\")");
-        // should_eq!(config: "b" as String = "Err(ConfigRecursiveError(\"b\"))");
-        // should_eq!(config: "c" as String = "Ok(\"0\")");
-        // should_eq!(config: "d" as String = "Err(ConfigRecursiveNotFound(\"z\"))");
-        // should_eq!(config: "e" as String = "Ok(\"\")");
-        // should_eq!(config: "f" as String = "Ok(\"0\")");
-        // should_eq!(config: "g" as String = "Ok(\"a\")");
-        // should_eq!(config: "h" as String = "Ok(\"0\")");
-        // should_eq!(config: "i" as String = "Ok(\"${a}\")");
-        // should_eq!(config: "j" as String = "Ok(\"0\")");
+        should_eq!(config: "a" as String = "Ok(\"0\")");
+        should_eq!(config: "b" as String = "Err(ConfigRecursiveError(\"b\"))");
+        should_eq!(config: "c" as String = "Ok(\"0\")");
+        should_eq!(config: "d" as String = "Err(ConfigRecursiveNotFound(\"z\"))");
+        should_eq!(config: "e" as String = "Ok(\"\")");
+        should_eq!(config: "f" as String = "Ok(\"0\")");
+        should_eq!(config: "g" as String = "Ok(\"a\")");
+        should_eq!(config: "h" as String = "Ok(\"0\")");
+        should_eq!(config: "i" as String = "Ok(\"${a}\")");
+        should_eq!(config: "j" as String = "Ok(\"0\")");
         should_eq!(config: "k" as String = "Ok(\"0 0\")");
         should_eq!(config: "l" as String = "Ok(\"0\")");
         should_eq!(config: "m" as String = "Ok(\"hello\")");
