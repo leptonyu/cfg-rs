@@ -61,6 +61,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         .init()
         .unwrap();
 
+    c.bench_function("conf0", |b| b.iter(|| env.get::<AppConfig>("suit")));
     c.bench_function("conf1", |b| b.iter(|| env.get_predefined::<AppConfig>()));
     c.bench_function("conf2", |b| b.iter(|| env.get_predefined::<ConfigSuit>()));
 
