@@ -286,7 +286,7 @@ impl Configuration {
 
     /// Create configuration instance with default settings.
     /// Please refer to [`ConfigurationBuilder::init`] for details.
-    pub fn init() -> Result<Configuration, ConfigError> {
+    pub fn init() -> Result<Self, ConfigError> {
         Self::builder().init()
     }
 }
