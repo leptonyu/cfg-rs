@@ -32,10 +32,12 @@
 #[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
+mod cache;
 mod configuration;
 mod derive;
 mod err;
 mod key;
+
 pub mod source;
 #[cfg(test)]
 mod test;

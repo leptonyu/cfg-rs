@@ -1,12 +1,14 @@
 use std::{
     any::{type_name, Any},
     borrow::Borrow,
+    cell::RefCell,
     collections::HashSet,
     env::var,
 };
 
 use crate::{
     err::ConfigError,
+    impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
         environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
@@ -23,84 +25,107 @@ pub struct ConfigContext<'a> {
     source: &'a Configuration,
 }
 
+struct CacheValue {
+    buf: String,
+    stack: Vec<usize>,
+}
+
+impl CacheValue {
+    fn new() -> Self {
+        Self {
+            buf: String::with_capacity(10),
+            stack: Vec::with_capacity(3),
+        }
+    }
+
+    fn clear(&mut self) {
+        self.buf.clear();
+        self.stack.clear();
+    }
+}
+
+impl_cache!(CacheValue);
+
 fn parse_placeholder<'a>(
     source: &'a Configuration,
     current_key: &ConfigKey<'_>,
-    mut value: &str,
+    val: &str,
     history: &mut HashSet<String>,
 ) -> Result<Option<ConfigValue<'a>>, ConfigError> {
-    let mut buf = String::new();
-    let mut stack = vec![];
-    let pat: &[_] = &['$', '\\', '}'];
-    let mut flag = true;
-    while let Some(pos) = value.find(pat) {
-        flag = false;
-        match &value[pos..=pos] {
-            "$" => {
-                let pos_1 = pos + 1;
-                if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
-                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
-                }
-                buf.push_str(&value[..pos]);
-                stack.push(buf.len());
-                value = &value[pos + 2..];
-            }
-            "\\" => {
-                let pos_1 = pos + 1;
-                if value.len() == pos_1 {
-                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
-                }
-                buf.push_str(&value[..pos]);
-                buf.push_str(&value[pos_1..=pos_1]);
-                value = &value[pos + 2..];
-            }
-            "}" => {
-                let last = match stack.pop() {
-                    Some(last) => last,
-                    _ => {
-                        return Err(ConfigError::ConfigParseError(
-                            current_key.to_string(),
-                            value.to_owned(),
-                        ))
+    CacheValue::with_key(move |cv| {
+        cv.clear();
+        let mut value = val;
+        let pat: &[_] = &['$', '\\', '}'];
+        let mut flag = true;
+        while let Some(pos) = value.find(pat) {
+            flag = false;
+            match &value[pos..=pos] {
+                "$" => {
+                    let pos_1 = pos + 1;
+                    if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
+                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                     }
-                };
-                buf.push_str(&value[..pos]);
-                let v = &(buf.as_str())[last..];
-                let (key, def) = match v.find(':') {
-                    Some(pos) => (&v[..pos], Some(&v[pos + 1..])),
-                    _ => (&v[..], None),
-                };
-                if !history.insert(key.to_string()) {
-                    return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                    cv.buf.push_str(&value[..pos]);
+                    cv.stack.push(cv.buf.len());
+                    value = &value[pos + 2..];
                 }
-                let v = match CacheString::with_key_place(|cache| {
-                    source
-                        .new_context(cache)
-                        .do_parse_config::<String, &str>(key, None, history)
-                }) {
-                    Err(ConfigError::ConfigNotFound(v)) => match def {
-                        Some(v) => v.to_owned(),
-                        _ => return Err(ConfigError::ConfigRecursiveNotFound(v)),
-                    },
-                    ret => ret?,
-                };
-                history.remove(key);
-                buf.truncate(last);
-                buf.push_str(&v);
-                value = &value[pos + 1..];
+                "\\" => {
+                    let pos_1 = pos + 1;
+                    if value.len() == pos_1 {
+                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                    }
+                    cv.buf.push_str(&value[..pos]);
+                    cv.buf.push_str(&value[pos_1..=pos_1]);
+                    value = &value[pos + 2..];
+                }
+                "}" => {
+                    let last = match cv.stack.pop() {
+                        Some(last) => last,
+                        _ => {
+                            return Err(ConfigError::ConfigParseError(
+                                current_key.to_string(),
+                                value.to_owned(),
+                            ))
+                        }
+                    };
+                    cv.buf.push_str(&value[..pos]);
+                    let v = &(cv.buf.as_str())[last..];
+                    let (key, def) = match v.find(':') {
+                        Some(pos) => (&v[..pos], Some(&v[pos + 1..])),
+                        _ => (&v[..], None),
+                    };
+                    if !history.insert(key.to_string()) {
+                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                    }
+                    let v = match CacheString::with_key_place(|cache| {
+                        source
+                            .new_context(cache)
+                            .do_parse_config::<String, &str>(key, None, history)
+                    }) {
+                        Err(ConfigError::ConfigNotFound(v)) => match def {
+                            Some(v) => v.to_owned(),
+                            _ => return Err(ConfigError::ConfigRecursiveNotFound(v)),
+                        },
+                        ret => ret?,
+                    };
+                    history.remove(key);
+                    cv.buf.truncate(last);
+                    cv.buf.push_str(&v);
+                    value = &value[pos + 1..];
+                }
+                _ => return Err(ConfigError::ConfigRecursiveError(current_key.to_string())),
             }
-            _ => return Err(ConfigError::ConfigRecursiveError(current_key.to_string())),
         }
-    }
-    if flag {
-        return Ok(Some(value.to_string().into()));
-    }
-    if stack.pop().unwrap_or(0) == 0 {
-        if stack.is_empty() {
-            return Ok(Some(buf.into()));
+        if flag {
+            return Ok(Some(value.to_string().into()));
         }
-    }
-    Ok(None)
+        if cv.stack.pop().unwrap_or(0) == 0 {
+            if cv.stack.is_empty() {
+                return Ok(Some(cv.buf.to_string().into()));
+            }
+        }
+        Ok(None)
+    })
 }
 
 impl<'a> ConfigContext<'a> {

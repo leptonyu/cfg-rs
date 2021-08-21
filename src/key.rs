@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashSet};
 
-use crate::ConfigError;
+use crate::{impl_cache, ConfigError};
 
 /// Config key, [`crate::ConfigSource`] use this key to access config properties.
 ///
@@ -45,7 +45,6 @@ pub(crate) struct CacheString {
     mark: Vec<(usize, usize)>,
 }
 thread_local! {
-    static BUF: RefCell<CacheString> = RefCell::new(CacheString::new());
     static BUG: RefCell<CacheString> = RefCell::new(CacheString::new());
 }
 impl CacheString {
@@ -90,34 +89,9 @@ impl CacheString {
     ) -> Result<T, ConfigError> {
         BUG.with(move |buf| Self::with_key_buf(buf, f))
     }
-
-    #[inline]
-    pub(crate) fn with_key<T, F: Fn(&mut Self) -> Result<T, ConfigError>>(
-        f: F,
-    ) -> Result<T, ConfigError> {
-        BUF.with(move |buf| Self::with_key_buf(buf, f))
-    }
-
-    fn with_key_buf<T, F: FnMut(&mut Self) -> Result<T, ConfigError>>(
-        buf: &RefCell<CacheString>,
-        mut f: F,
-    ) -> Result<T, ConfigError> {
-        let borrow = buf.try_borrow_mut();
-        let mut a;
-        let mut b;
-        let buf = match borrow {
-            Ok(buf) => {
-                a = buf;
-                &mut *a
-            }
-            _ => {
-                b = CacheString::new();
-                &mut b
-            }
-        };
-        (f)(buf)
-    }
 }
+
+impl_cache!(CacheString);
 
 /// The implementation of [`ConfigKey`].
 #[derive(Debug)]
