@@ -18,7 +18,7 @@
 use quote::{__private::TokenStream, quote};
 use syn::*;
 
-/// Auto derive config.
+#[allow(missing_docs)]
 #[proc_macro_derive(FromConfig, attributes(config))]
 pub fn derive_config(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);

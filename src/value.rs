@@ -10,7 +10,7 @@ use std::{
 
 use crate::{err::ConfigError, ConfigContext, FromConfig};
 
-/// Config value, [`crate::ConfigSource`] use this value to store config properties.
+/// Config value, [ConfigSource](./trait.ConfigSource.html) use this value to store config properties.
 ///
 /// # Placeholder expression
 ///

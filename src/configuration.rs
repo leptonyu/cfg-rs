@@ -18,7 +18,10 @@ use crate::{
     ConfigSource, FromConfig, FromConfigWithPrefix, PartialKeyCollector,
 };
 
-/// Configuration context.
+/// Configuration Context.
+///
+/// Configuration context contains current level of config key and configuration instance.
+/// It is designed for parsing partial config by partial key and default value.
 #[allow(missing_debug_implementations)]
 pub struct ConfigContext<'a> {
     key: ConfigKey<'a>,
@@ -158,7 +161,7 @@ impl<'a> ConfigContext<'a> {
         v
     }
 
-    /// Parse config with sub key.
+    /// Parse partial config by partial key and default value.
     #[inline]
     pub fn parse_config<T: FromConfig>(
         &mut self,
@@ -168,7 +171,7 @@ impl<'a> ConfigContext<'a> {
         self.do_parse_config(partial_key, default_value, &mut HashSet::new())
     }
 
-    /// Get current key in contxt.
+    /// Get current key in context.
     #[inline]
     pub fn current_key(&self) -> String {
         self.key.to_string()
@@ -201,13 +204,17 @@ impl<'a> ConfigContext<'a> {
     }
 }
 
-/// Configuration.
+/// Configuration Instance.
+///
+/// Configuration instance simply contains a multi layered [`ConfigSource`].
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
     internal: LayeredSource,
 }
 
 /// Configuration Builder.
+///
+/// Configuration builder is used for customizing some configs by programming.
 #[allow(missing_debug_implementations)]
 pub struct ConfigurationBuilder {
     memory: MemorySource,
@@ -215,14 +222,15 @@ pub struct ConfigurationBuilder {
 }
 
 impl Configuration {
-    /// Create new configuration.
+    /// Create new empty configuration. Normally you don't need this.
+    /// Try [`Configuration::init`] or [`Configuration::builder`].
     pub fn new() -> Self {
         Self {
             internal: LayeredSource::new(),
         }
     }
 
-    /// Register config source.
+    /// Register customized config source.
     pub fn register_source(mut self, source: impl ConfigSource + 'static) -> Self {
         self.internal.register(source);
         self
@@ -235,7 +243,8 @@ impl Configuration {
         }
     }
 
-    /// Get config from configuration.
+    /// Get config from configuration by key.
+    /// Please refer to [`ConfigKey`] for the key's pattern details.
     #[inline]
     pub fn get<T: FromConfig>(&self, key: &str) -> Result<T, ConfigError> {
         CacheString::with_key(|cache| {
@@ -244,18 +253,19 @@ impl Configuration {
         })
     }
 
-    /// Get config or use default.
+    /// Get config from configuration by key, otherwise return default.
+    /// Please refer to [`ConfigKey`] for the key's pattern details.
     #[inline]
     pub fn get_or<T: FromConfig>(&self, key: &str, def: T) -> Result<T, ConfigError> {
         Ok(self.get::<Option<T>>(key)?.unwrap_or(def))
     }
 
-    /// Get predefined config from configuration.
+    /// Get config with predefined key, which is automatically derived by [FromConfig](./derive.FromConfig.html#struct-annotation-attribute).
     pub fn get_predefined<T: FromConfigWithPrefix>(&self) -> Result<T, ConfigError> {
         self.get(T::prefix())
     }
 
-    /// Get source names.
+    /// Get source names, just for test.
     pub fn source_names(&self) -> Vec<&str> {
         self.internal.source_names()
     }
@@ -266,7 +276,7 @@ impl Configuration {
         sub
     }
 
-    /// Configuration Builder.
+    /// Create a configuration builder to customize the configuration instance.
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
             memory: MemorySource::new("config".to_string()),
@@ -274,26 +284,54 @@ impl Configuration {
         }
     }
 
-    /// Init configuration with default config.
+    /// Create configuration instance with default settings.
+    /// Please refer to [`ConfigurationBuilder::init`] for details.
     pub fn init() -> Result<Configuration, ConfigError> {
         Self::builder().init()
     }
 }
 
 impl ConfigurationBuilder {
-    /// Set environment prefix.
+    /// Set environment prefix, default value if `CFG`.
+    /// By default, following environment variables will be loaded in to configuration.
+    /// # Environment Variable Regex Pattern: `CFG_[0-9a-zA-Z]+`
+    ///
+    /// These are some predefined environment variables:
+    /// * `CFG_ENV_PREFIX=CFG`
+    /// * `CFG_APP_NAME=app`
+    /// * `CFG_APP_DIR=`
+    /// * `CFG_APP_PROFILE=`
+    ///
+    /// You can change `CFG` to other prefix by this method.
     pub fn set_env_prefix<K: ToString>(&mut self, prefix: K) -> &mut Self {
         self.prefix = prefix.to_string();
         self
     }
 
-    /// Set config.
+    /// Set config into configuration by programming.
+    /// You can use this method to set default values.
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
         self.memory.insert(key, value);
         self
     }
 
-    /// Init configuration
+    /// Initialize configuration by multiple predefined sources.
+    ///
+    /// ## Predefined Sources.
+    ///
+    /// 1. [x] Customized by Programming
+    /// 2. [ ] Random Value
+    /// 3. [x] Environment Variable with Prefix `CFG`, referto [`ConfigurationBuilder::set_env_prefix`] for details.
+    /// 4. [ ] Profiled File Source with Path, `${app.dir}/${app.name}-${app.profile}.EXT`. EXT: toml, json, yaml.
+    /// 5. [ ] File Source with Path, `${app.dir}/${app.name}.EXT`. EXT: toml, json, yaml.
+    /// 6. [ ] Customized Source Can be Registered by [`Configuration::register_source`].
+    ///
+    /// ## Crate Feature
+    ///
+    /// * Feature `rand` to enable random value source.
+    /// * Feature `toml` to enable toml supports.
+    /// * Feature `yaml` to enable yaml supports.
+    /// * Feature `json` to enable json supports.
     pub fn init(self) -> Result<Configuration, ConfigError> {
         let mut config = Configuration::new();
 

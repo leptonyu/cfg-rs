@@ -1,8 +1,8 @@
 use crate::FromConfig;
 
-/// Configuration with prefix, used for auto derive.
+/// Config with prefix. This trait is auto derived by [FromConfig](./derive.FromConfig.html#struct-annotation-attribute).
 pub trait FromConfigWithPrefix: FromConfig {
-    /// Prefix of config.
+    /// Predefined key of config, so you don't have to provide it.
     fn prefix() -> &'static str;
 }
 

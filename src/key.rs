@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashSet};
 
 use crate::{impl_cache, ConfigError};
 
-/// Config key, [`crate::ConfigSource`] use this key to access config properties.
+/// Config key, [ConfigSource](./trait.ConfigSource.html) use this key to access config properties.
 ///
 /// It's designed for better querying sources.
 ///

@@ -1,16 +1,5 @@
-//! Cfg-rs provides a layered configuration formed by multi config source for rust applications.
-//!
-//! This lib supports:
-//! * Mutiple sources, such as environment variables, toml, yaml and json.
-//! * Easily extends config source by implementing [`crate::source::file::FileConfigSource`].
-//! * Programmatic override config by [`ConfigurationBuilder::set`].
-//! * Auto derive config struct by proc-macro.
-//! * Placeholder parsing with syntax `${config.key}`.
-//! * Using placeholder expresion to get random value by `${random.u64}`, support all integer types.
-//!
-//! See the [examples](https://github.com/leptonyu/cfg-rs/tree/master/examples) for general usage information.
-//!
-
+#![doc = include_str!("../README.md")]
+#![doc(issue_tracker_base_url = "https://github.com/leptonyu/cfg-rs/issues/")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     anonymous_parameters,
@@ -46,6 +35,51 @@ mod value;
 use key::PartialKeyCollector;
 
 /// Automatic derive [`FromConfig`] instance.
+///
+/// We use annotation attributes to customize the derived instances' behavior.
+/// All attributes in `cfg-rs` have format `#[config(key = value, key2 = value2)]`.
+///
+/// # Struct Annotation Attribute
+///
+/// * `#[config(prefix = "cfg.app")]`
+///
+/// This attr will lead to implement trait [`FromConfigWithPrefix`].
+///
+/// ```ignore,rust
+/// #[derive(FromConfig)]
+/// #[config(prefix = "cfg.test")]
+/// struct Test {
+///   //fields...   
+/// }
+/// ```
+///
+/// # Field Annotation Attribute
+///
+/// * `#[config(name = "val")]`
+///
+/// This attr will replace the default config partial key, which is name of field.
+///
+/// ```ignore,rust
+/// #[derive(FromConfig)]
+/// struct Test {
+///   val: u8,
+///   #[config(name = "val")]
+///   other: u8, // This field `other` will use the same partial key as `val`.
+/// }
+/// ```
+///
+/// * `#[config(default = true)]`
+///
+/// This attr provides default value for underlying field.
+///
+/// ```ignore,rust
+/// #[derive(FromConfig)]
+/// struct Test {
+///   enabled: bool, // User must provide value for this field.
+///   #[config(default = true)]
+///   enabled_with_default: bool, // This field has default value `true`.
+/// }
+/// ```
 pub use cfg_derive::FromConfig;
 pub use configuration::{ConfigContext, Configuration, ConfigurationBuilder};
 pub use derive::FromConfigWithPrefix;
@@ -54,8 +88,11 @@ pub use key::ConfigKey;
 pub use value::ConfigValue;
 
 /// Generate config instance from configuration.
+///
+/// The most power of this crate is automatically deriving this trait.
+/// Please refer to [Derive FromConfig](./derive.FromConfig.html) for details.
 pub trait FromConfig: Sized {
-    /// Generate config.
+    /// Generate config from [`ConfigValue`] under context.
     fn from_config(
         context: &mut ConfigContext<'_>,
         value: Option<ConfigValue<'_>>,

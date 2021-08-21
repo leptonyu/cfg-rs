@@ -27,7 +27,7 @@ impl FileConfigSource for Value {
     }
 }
 
-/// Inline toml file.
+/// Inline toml file as config source.
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
 macro_rules! inline_toml {
