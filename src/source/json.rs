@@ -35,7 +35,7 @@ impl FileConfigSource for JsonValue {
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 macro_rules! inline_json {
     ($path:literal) => {
-        crate::inline_config_source!(JsonValue: $path)
+        crate::inline_config_source!(crate::source::json::JsonValue: $path)
     };
 }
 
@@ -45,6 +45,7 @@ mod test {
     use crate::test::source_test_suit;
 
     #[test]
+    #[allow(unused_qualifications)]
     fn inline_test() -> Result<(), ConfigError> {
         source_test_suit(inline_json!("../../app.json")?)
     }

@@ -148,7 +148,7 @@ impl<S: FileConfigSource> ConfigSource for InlineSource<S> {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! inline_config_source {
-    ($ty:ident: $path:literal) => {
+    ($ty:path: $path:literal) => {
         crate::source::file::inline_source::<$ty>(format!("inline:{}", $path), include_str!($path))
     };
 }

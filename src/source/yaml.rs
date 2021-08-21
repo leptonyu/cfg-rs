@@ -1,5 +1,4 @@
 //! Yaml config source.
-
 use yaml_rust::{Yaml, YamlLoader};
 
 use crate::ConfigError;
@@ -55,7 +54,7 @@ impl FileConfigSource for Value {
 #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
 macro_rules! inline_yaml {
     ($path:literal) => {
-        crate::inline_config_source!(Value: $path)
+        crate::inline_config_source!(crate::source::yaml::Value: $path)
     };
 }
 
@@ -65,6 +64,7 @@ mod test {
     use crate::test::source_test_suit;
 
     #[test]
+    #[allow(unused_qualifications)]
     fn inline_test() -> Result<(), ConfigError> {
         source_test_suit(inline_yaml!("../../app.yaml")?)
     }
