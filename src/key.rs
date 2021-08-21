@@ -55,10 +55,10 @@ impl CacheString {
         }
     }
 
-    fn push<'a, I: IntoIterator<Item = SubKey<'a>>>(
+    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(
         &mut self,
         iter: I,
-        keys: &mut Vec<SubKey<'a>>,
+        keys: &mut Vec<PartialKey<'a>>,
     ) {
         let mut step = 0;
         let len = self.current.len();
@@ -70,10 +70,10 @@ impl CacheString {
         self.mark.push((step, len));
     }
 
-    fn pop(&mut self, keys: &mut Vec<SubKey<'_>>) {
+    fn pop(&mut self, keys: &mut Vec<PartialKey<'_>>) {
         if let Some((s, l)) = self.mark.pop() {
             if s > 0 {
-                keys.drain(keys.len() - s..);
+                keys.truncate(keys.len() - s);
                 self.current.truncate(l);
             }
         }
@@ -113,10 +113,11 @@ impl CacheString {
     }
 }
 
+/// The implementation of [`ConfigKey`].
 #[derive(Debug)]
 pub struct CacheKey<'a> {
     cache: &'a mut CacheString,
-    keys: Vec<SubKey<'a>>,
+    keys: Vec<PartialKey<'a>>,
 }
 
 impl Drop for CacheKey<'_> {
@@ -126,7 +127,7 @@ impl Drop for CacheKey<'_> {
 }
 
 impl<'a> CacheKey<'a> {
-    pub(crate) fn push<I: Into<SubKeyIter<'a>>>(&mut self, iter: I) {
+    pub(crate) fn push<I: Into<PartialKeyIter<'a>>>(&mut self, iter: I) {
         self.cache.push(iter.into(), &mut self.keys);
     }
     pub(crate) fn pop(&mut self) {
@@ -134,7 +135,7 @@ impl<'a> CacheKey<'a> {
     }
 
     #[allow(dead_code)]
-    fn iter(&self) -> Iter<'_, SubKey<'_>> {
+    fn iter(&self) -> Iter<'_, PartialKey<'_>> {
         self.keys.iter()
     }
 
@@ -149,23 +150,26 @@ impl<'a> CacheKey<'a> {
     }
 }
 
+/// Partial key, plese refer to [`ConfigKey`].
 #[allow(single_use_lifetimes)]
 #[derive(Debug, PartialEq, Eq)]
-pub enum SubKey<'a> {
+pub enum PartialKey<'a> {
+    /// String Partial Key.
     Str(&'a str),
+    /// Index Partial Key.
     Int(usize),
 }
 
-impl SubKey<'_> {
+impl PartialKey<'_> {
     #[inline]
     pub(crate) fn update_string(&self, key_long: &mut String) {
         match self {
-            SubKey::Int(i) => {
+            PartialKey::Int(i) => {
                 key_long.push('[');
                 key_long.push_str(&i.to_string());
                 key_long.push(']');
             }
-            SubKey::Str(v) => {
+            PartialKey::Str(v) => {
                 if !key_long.is_empty() {
                     key_long.push('.');
                 }
@@ -177,42 +181,41 @@ impl SubKey<'_> {
 
 #[derive(Debug)]
 #[allow(variant_size_differences)]
-pub enum SubKeyIter<'a> {
+pub enum PartialKeyIter<'a> {
     Str(std::str::Split<'a, &'a [char]>),
     Int(Option<usize>),
 }
 
-impl<'a> Iterator for SubKeyIter<'a> {
-    type Item = SubKey<'a>;
+impl<'a> Iterator for PartialKeyIter<'a> {
+    type Item = PartialKey<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            SubKeyIter::Str(s) => {
+            PartialKeyIter::Str(s) => {
                 while let Some(v) = s.next() {
                     if v.is_empty() {
                         continue;
                     }
                     return Some(if let Ok(i) = v.parse() {
-                        SubKey::Int(i)
+                        PartialKey::Int(i)
                     } else {
-                        SubKey::Str(v)
+                        PartialKey::Str(v)
                     });
                 }
                 None
             }
-            SubKeyIter::Int(x) => x.take().map(|x| x.into()),
+            PartialKeyIter::Int(x) => x.take().map(|x| x.into()),
         }
     }
 }
 
-#[doc(hidden)]
-/// Sub key list.
+/// Partial key collector.
 #[derive(Debug)]
-pub struct SubKeyList<'a> {
+pub struct PartialKeyCollector<'a> {
     pub(crate) str_key: HashSet<&'a str>,
     pub(crate) int_key: Option<usize>,
 }
 
-impl<'a> SubKeyList<'a> {
+impl<'a> PartialKeyCollector<'a> {
     pub(crate) fn new() -> Self {
         Self {
             str_key: HashSet::new(),
@@ -242,31 +245,31 @@ impl<'a> SubKeyList<'a> {
     }
 }
 
-impl<'a> Into<SubKey<'a>> for &'a str {
-    fn into(self) -> SubKey<'a> {
-        SubKey::Str(self)
+impl<'a> Into<PartialKey<'a>> for &'a str {
+    fn into(self) -> PartialKey<'a> {
+        PartialKey::Str(self)
     }
 }
-impl<'a> Into<SubKeyIter<'a>> for &'a str {
-    fn into(self) -> SubKeyIter<'a> {
-        SubKeyIter::Str(self.split(&['.', '[', ']'][..]))
-    }
-}
-
-impl<'a> Into<SubKey<'a>> for usize {
-    fn into(self) -> SubKey<'a> {
-        SubKey::Int(self)
+impl<'a> Into<PartialKeyIter<'a>> for &'a str {
+    fn into(self) -> PartialKeyIter<'a> {
+        PartialKeyIter::Str(self.split(&['.', '[', ']'][..]))
     }
 }
 
-impl<'a> Into<SubKeyIter<'a>> for usize {
-    fn into(self) -> SubKeyIter<'a> {
-        SubKeyIter::Int(Some(self))
+impl<'a> Into<PartialKey<'a>> for usize {
+    fn into(self) -> PartialKey<'a> {
+        PartialKey::Int(self)
     }
 }
 
-impl<'a> Into<SubKeyIter<'a>> for &'a String {
-    fn into(self) -> SubKeyIter<'a> {
+impl<'a> Into<PartialKeyIter<'a>> for usize {
+    fn into(self) -> PartialKeyIter<'a> {
+        PartialKeyIter::Int(Some(self))
+    }
+}
+
+impl<'a> Into<PartialKeyIter<'a>> for &'a String {
+    fn into(self) -> PartialKeyIter<'a> {
         self.as_str().into()
     }
 }
@@ -341,7 +344,7 @@ mod test {
             key.push($origin);
             let mut iter = key.iter();
             $(
-                let v: SubKey<'_> = $norm.into();
+                let v: PartialKey<'_> = $norm.into();
                 assert_eq!(&v, iter.next().unwrap());
             )+
         };

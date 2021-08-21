@@ -1,5 +1,5 @@
 //! Random source.
-use crate::{ConfigKey, ConfigSource, ConfigValue, SubKeyList};
+use crate::{ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -24,7 +24,7 @@ impl ConfigSource for Random {
         }
     }
 
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>) {
         if prefix.as_str() == "random" {
             sub.insert_str("u8");
             sub.insert_str("u16");

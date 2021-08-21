@@ -41,11 +41,14 @@ pub mod source;
 mod test;
 mod value;
 
+use key::PartialKeyCollector;
+
+/// Automatic derive [`FromConfig`] instance.
 pub use cfg_derive::FromConfig;
 pub use configuration::{ConfigContext, Configuration, ConfigurationBuilder};
 pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
-pub use key::{ConfigKey, SubKeyList};
+pub use key::ConfigKey;
 pub use value::ConfigValue;
 
 /// Generate config instance from configuration.
@@ -66,7 +69,7 @@ pub trait ConfigSource: Send + Sync {
     fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>>;
 
     /// Get all sub keys by prefix.
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>);
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>);
 
     /// Is empty.
     fn is_empty(&self) -> bool;

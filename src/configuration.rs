@@ -7,13 +7,13 @@ use std::{
 
 use crate::{
     err::ConfigError,
-    key::{CacheString, ConfigKey, SubKeyIter},
+    key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
         environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
         register_files, SourceOption,
     },
     value::ConfigValue,
-    ConfigSource, FromConfig, FromConfigWithPrefix, SubKeyList,
+    ConfigSource, FromConfig, FromConfigWithPrefix, PartialKeyCollector,
 };
 
 /// Configuration context.
@@ -105,7 +105,7 @@ fn parse_placeholder<'a>(
 
 impl<'a> ConfigContext<'a> {
     #[inline]
-    pub(crate) fn do_parse_config<T: FromConfig, K: Into<SubKeyIter<'a>>>(
+    pub(crate) fn do_parse_config<T: FromConfig, K: Into<PartialKeyIter<'a>>>(
         &mut self,
         partial_key: K,
         default_value: Option<ConfigValue<'_>>,
@@ -160,7 +160,7 @@ impl<'a> ConfigContext<'a> {
         ConfigError::ConfigParseError(self.current_key(), value.to_owned())
     }
 
-    pub(crate) fn collect_keys(&self) -> SubKeyList<'a> {
+    pub(crate) fn collect_keys(&self) -> PartialKeyCollector<'a> {
         self.source.collect_keys(&self.key)
     }
 }
@@ -224,8 +224,8 @@ impl Configuration {
         self.internal.source_names()
     }
 
-    fn collect_keys(&self, prefix: &ConfigKey<'_>) -> SubKeyList<'_> {
-        let mut sub = SubKeyList::new();
+    fn collect_keys(&self, prefix: &ConfigKey<'_>) -> PartialKeyCollector<'_> {
+        let mut sub = PartialKeyCollector::new();
         self.internal.collect_keys(prefix, &mut sub);
         sub
     }

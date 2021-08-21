@@ -38,7 +38,11 @@ impl ConfigSource for LayeredSource {
     }
 
     #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
+    fn collect_keys<'a>(
+        &'a self,
+        prefix: &ConfigKey<'_>,
+        sub: &mut crate::PartialKeyCollector<'a>,
+    ) {
         for s in &self.layer {
             s.collect_keys(prefix, sub);
         }

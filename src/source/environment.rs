@@ -30,7 +30,11 @@ impl ConfigSource for EnvironmentPrefixedSource {
     }
 
     #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut crate::SubKeyList<'a>) {
+    fn collect_keys<'a>(
+        &'a self,
+        prefix: &ConfigKey<'_>,
+        sub: &mut crate::PartialKeyCollector<'a>,
+    ) {
         self.1.collect_keys(prefix, sub)
     }
 

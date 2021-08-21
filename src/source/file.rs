@@ -1,7 +1,7 @@
 //! File config source.
 use std::{marker::PhantomData, path::PathBuf};
 
-use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue, SubKeyList};
+use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector};
 
 use super::memory::{HashSource, HashSourceBuilder};
 
@@ -33,7 +33,7 @@ impl<S: FileConfigSource> ConfigSource for FileSource<S> {
     }
 
     #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>) {
         self.source.collect_keys(prefix, sub)
     }
 
@@ -135,7 +135,7 @@ impl<S: FileConfigSource> ConfigSource for InlineSource<S> {
     }
 
     #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>) {
         self.source.collect_keys(prefix, sub)
     }
 

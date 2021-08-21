@@ -1,8 +1,13 @@
-//! Configuration sources module.
+//! Configuration sources module, use it when you want to extend config sources.
 use crate::*;
 
 #[allow(unused_imports)]
 use self::file::FileSource;
+
+/// Config key module.
+pub mod key {
+    pub use crate::key::{CacheKey, PartialKey, PartialKeyCollector};
+}
 
 pub mod environment;
 pub mod file;

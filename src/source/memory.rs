@@ -6,9 +6,9 @@ use std::{
 };
 
 use crate::{
-    key::{SubKey, SubKeyIter},
+    key::{PartialKey, PartialKeyIter},
     source::file::FileConfigSource,
-    ConfigKey, ConfigSource, ConfigValue, SubKeyList,
+    ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector,
 };
 
 /// In memory source.
@@ -54,7 +54,7 @@ impl ConfigSource for MemorySource {
     }
 
     #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
+    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>) {
         self.1.collect_keys(prefix, sub)
     }
 
@@ -102,12 +102,12 @@ impl HashValue {
     }
 
     #[inline]
-    fn push_key(&mut self, key: &SubKey<'_>) {
+    fn push_key(&mut self, key: &PartialKey<'_>) {
         match key {
-            SubKey::Str(i) => {
+            PartialKey::Str(i) => {
                 self.sub_str.insert(i.to_string());
             }
-            SubKey::Int(i) => {
+            PartialKey::Int(i) => {
                 let v = self.sub_int.get_or_insert(*i);
                 if *v < *i {
                     *v = *i;
@@ -144,7 +144,11 @@ impl HashSource {
             })
     }
 
-    pub(crate) fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut SubKeyList<'a>) {
+    pub(crate) fn collect_keys<'a>(
+        &'a self,
+        prefix: &ConfigKey<'_>,
+        sub: &mut PartialKeyCollector<'a>,
+    ) {
         if let Some(v) = self.0.get(prefix.as_str()) {
             for k in v.sub_str.iter() {
                 sub.str_key.insert(k.as_str());
@@ -185,10 +189,10 @@ impl HashSourceBuilder<'_> {
     }
 
     #[inline]
-    fn push<'b, K: Into<SubKeyIter<'b>>>(&mut self, key: K) {
+    fn push<'b, K: Into<PartialKeyIter<'b>>>(&mut self, key: K) {
         let mut curr = self.curr();
         let mut vs = vec![];
-        let iter: SubKeyIter<'b> = key.into();
+        let iter: PartialKeyIter<'b> = key.into();
         for k in iter {
             let v = self
                 .map
