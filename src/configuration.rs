@@ -96,7 +96,9 @@ fn parse_placeholder<'a>(
         return Ok(Some(value.to_string().into()));
     }
     if stack.pop().unwrap_or(0) == 0 {
-        return Ok(Some(buf.into()));
+        if stack.is_empty() {
+            return Ok(Some(buf.into()));
+        }
     }
     Ok(None)
 }
