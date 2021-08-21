@@ -75,11 +75,11 @@ fn parse_placeholder<'a>(
                 if !history.insert(key.to_string()) {
                     return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
                 }
-                let mut cache = CacheString::new();
-                let v = match source
-                    .new_context(&mut cache)
-                    .do_parse_config::<String, &str>(key, None, history)
-                {
+                let v = match CacheString::with_key_place(|cache| {
+                    source
+                        .new_context(cache)
+                        .do_parse_config::<String, &str>(key, None, history)
+                }) {
                     Err(ConfigError::ConfigNotFound(v)) => match def {
                         Some(v) => v.to_owned(),
                         _ => return Err(ConfigError::ConfigRecursiveNotFound(v)),
