@@ -50,7 +50,7 @@ impl FileConfigSource for Value {
     }
 }
 
-/// Inline yaml file as config source.
+/// Inline yaml file macro function, return Result<[ConfigSource](./trait.ConfigSource.html), [`ConfigError`]>.
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
 macro_rules! inline_yaml {

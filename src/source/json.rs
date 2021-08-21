@@ -30,7 +30,7 @@ impl FileConfigSource for JsonValue {
     }
 }
 
-/// Inline json file as config source.
+/// Inline json file macro function, return Result<[ConfigSource](./trait.ConfigSource.html), [`ConfigError`]>.
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 macro_rules! inline_json {

@@ -344,7 +344,15 @@ impl FromValue for Duration {
     }
 }
 
-/// Auto derive `FromStringValue` for enums.
+/// Implement [`FromConfig`] for enums.
+///
+/// ```ignore,rust
+/// impl_enum!(Ordering{
+///     "lt" | "less" => Ordering::Less
+///     "eq" | "equal" => Ordering::Equal
+///     "gt" | "greater" => Ordering::Greater
+/// });
+/// ```
 #[macro_export]
 macro_rules! impl_enum {
     ($x:path {$($($k:pat)|* => $v:expr)+ }) => {
