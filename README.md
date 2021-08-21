@@ -20,6 +20,7 @@ This lib supports:
 * Auto derive config struct by proc-macro.
 * Placeholder parsing with syntax `${config.key}`.
 * Using placeholder expresion to get random value by `${random.u64}`, support all integer types.
+* With high performance when parsing.
 
 See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for general usage information.
 
