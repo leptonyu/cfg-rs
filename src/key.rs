@@ -55,6 +55,7 @@ impl CacheString {
         }
     }
 
+    #[inline]
     #[allow(single_use_lifetimes)]
     fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) {
         let mut step = 0;
@@ -66,6 +67,7 @@ impl CacheString {
         self.mark.push((step, len));
     }
 
+    #[inline]
     fn pop(&mut self) {
         if let Some((s, l)) = self.mark.pop() {
             if s > 0 {
@@ -74,11 +76,13 @@ impl CacheString {
         }
     }
 
+    #[inline]
     fn clear(&mut self) {
         self.current.clear();
         self.mark.clear();
     }
 
+    #[inline]
     pub(crate) fn new_key(&mut self) -> CacheKey<'_> {
         CacheKey { cache: self }
     }
