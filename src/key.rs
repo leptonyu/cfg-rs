@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashSet, slice::Iter};
+use std::{cell::RefCell, collections::HashSet};
 
 use crate::ConfigError;
 
@@ -55,25 +55,20 @@ impl CacheString {
         }
     }
 
-    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(
-        &mut self,
-        iter: I,
-        keys: &mut Vec<PartialKey<'a>>,
-    ) {
+    #[allow(single_use_lifetimes)]
+    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) {
         let mut step = 0;
         let len = self.current.len();
         for i in iter {
             step += 1;
             i.update_string(&mut self.current);
-            keys.push(i);
         }
         self.mark.push((step, len));
     }
 
-    fn pop(&mut self, keys: &mut Vec<PartialKey<'_>>) {
+    fn pop(&mut self) {
         if let Some((s, l)) = self.mark.pop() {
             if s > 0 {
-                keys.truncate(keys.len() - s);
                 self.current.truncate(l);
             }
         }
@@ -85,10 +80,7 @@ impl CacheString {
     }
 
     pub(crate) fn new_key(&mut self) -> CacheKey<'_> {
-        CacheKey {
-            cache: self,
-            keys: Vec::with_capacity(5),
-        }
+        CacheKey { cache: self }
     }
 
     pub(crate) fn with_key<T, F: Fn(&mut Self) -> Result<T, ConfigError>>(
@@ -117,7 +109,6 @@ impl CacheString {
 #[derive(Debug)]
 pub struct CacheKey<'a> {
     cache: &'a mut CacheString,
-    keys: Vec<PartialKey<'a>>,
 }
 
 impl Drop for CacheKey<'_> {
@@ -128,15 +119,10 @@ impl Drop for CacheKey<'_> {
 
 impl<'a> CacheKey<'a> {
     pub(crate) fn push<I: Into<PartialKeyIter<'a>>>(&mut self, iter: I) {
-        self.cache.push(iter.into(), &mut self.keys);
+        self.cache.push(iter.into());
     }
     pub(crate) fn pop(&mut self) {
-        self.cache.pop(&mut self.keys);
-    }
-
-    #[allow(dead_code)]
-    fn iter(&self) -> Iter<'_, PartialKey<'_>> {
-        self.keys.iter()
+        self.cache.pop();
     }
 
     /// As string
@@ -334,27 +320,6 @@ mod test {
             "1" => "a.b[1]",
             "1" => "a.b[1][1]",
             "a.1" => "a.b[1][1].a[1]",
-        );
-    }
-
-    macro_rules! should_iter {
-        ($origin:literal: $($norm:literal),+) => {
-            let mut che = CacheString::new();
-            let mut key = che.new_key();
-            key.push($origin);
-            let mut iter = key.iter();
-            $(
-                let v: PartialKey<'_> = $norm.into();
-                assert_eq!(&v, iter.next().unwrap());
-            )+
-        };
-    }
-
-    #[test]
-    fn key_iter_test() {
-        should_iter!(
-            "a.b[1][1].a[1]":
-            "a", "b", 1, 1, "a", 1
         );
     }
 }
