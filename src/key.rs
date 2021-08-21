@@ -2,9 +2,42 @@ use std::{cell::RefCell, collections::HashSet, slice::Iter};
 
 use crate::ConfigError;
 
-///Config Values
+/// Config key, [`crate::ConfigSource`] use this key to access config properties.
+///
+/// It's designed for better querying sources.
+///
+/// Config key has a normalized string representation, it is composed by
+/// multiple partial keys, which are [`&str`] or [`usize`]. We use dot(`.`) and
+/// square bracket `[]` to separate partial keys in a config key.
+///
+/// # Partial Key
+///
+/// ## String Partial Key
+///
+/// String partial key has regex pattern `[a-z][_a-z0-9]`, usually string partial keys are separated by dot(`.`).
+/// For example: `cfg.k1`.
+///
+/// ## Index Partial Key
+///
+/// Index partial keys are [`usize`] values, which is around by a pair of square bracket.
+/// For example: `[0]`, `[1]`.
+///
+/// # Config Key
+///
+/// Config key is composed by partial keys. String partial key can be followed by index partial key for zero or more times.
+/// If the string config key is not in head, then it should after a dot(`.`).
+/// For example:
+///
+///   * `cfg.v1`
+///   * `cfg.v2[0]`
+///   * `cfg.v3[0][1]`
+///   * `cfg.v4.key`
+///   * `cfg.v5.arr[0]`
+///   * `[0]`
+///
+/// Please notice that `cfg.[0]` is invalid key.
+///
 pub type ConfigKey<'a> = CacheKey<'a>;
-// pub type ConfigKey<'a> = HashKey<'a>;
 
 #[derive(Debug)]
 pub(crate) struct CacheString {

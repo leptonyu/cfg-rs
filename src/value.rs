@@ -10,12 +10,31 @@ use std::{
 
 use crate::{err::ConfigError, ConfigContext, FromConfig};
 
-/// Config value.
+/// Config value, [`crate::ConfigSource`] use this value to store config properties.
+///
+/// # Placeholder expression
+///
+/// Placeholder expression use normalized string representation of [`crate::ConfigKey`], with extra brackets.
+/// For example: `${cfg.k1}`.
+///
+/// Placeholder expression is powerful in realworld application, it has following benifits:
+///
+/// ## Placeholder can reduce duplicated configs, use one key config to affect multiple keys.
+///
+/// * `app.name` = `cfg`
+/// * `app.version` = `1.0.0`
+/// * `app.desc` = `Application ${app.name}, version ${app.version}`
+///
+/// ## Placeholder can generate configs, we can use placeholder to generate random values.
+///
+/// * `app.id` = `${random.u64}`
+/// * `app.instance` = `${app.name}-${app.id}`
+///
 #[derive(Debug)]
 pub enum ConfigValue<'a> {
-    /// String reference.
+    /// String reference, supports placeholder expression.
     StrRef(&'a str),
-    /// String.
+    /// String, supports placeholder expression.
     Str(String),
     /// Integer.
     Int(i64),
