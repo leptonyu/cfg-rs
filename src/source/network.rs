@@ -1,7 +1,8 @@
 use crate::{ConfigError, Configuration};
 
+#[allow(unused_imports)]
+use super::file::FileConfigSource;
 use super::{
-    file::FileConfigSource,
     memory::{HashSource, MemorySource},
     SourceType,
 };
@@ -21,29 +22,30 @@ pub trait NetworkConfigReader {
 }
 
 impl dyn NetworkConfigReader {
+    #[allow(unreachable_code, unused_mut)]
     pub(crate) fn load(
         &self,
         name: &str,
         profile: Option<&str>,
         config: &Configuration,
     ) -> Result<Option<MemorySource>, ConfigError> {
-        if let Some(content) = self.read_content(name, profile, config)? {
-            let mut source = HashSource::new();
+        if let Some(_content) = self.read_content(name, profile, config)? {
+            let mut _source = HashSource::new();
             match self.source_type() {
                 #[cfg(feature = "toml")]
                 SourceType::Toml => {
-                    super::toml::Toml::load(&content)?.push_value(&mut source.prefixed())
+                    super::toml::Toml::load(&_content)?.push_value(&mut _source.prefixed())
                 }
                 #[cfg(feature = "yaml")]
                 SourceType::Yaml => {
-                    super::yaml::Yaml::load(&content)?.push_value(&mut source.prefixed())
+                    super::yaml::Yaml::load(&_content)?.push_value(&mut _source.prefixed())
                 }
                 #[cfg(feature = "json")]
                 SourceType::Json => {
-                    super::json::Json::load(&content)?.push_value(&mut source.prefixed())
+                    super::json::Json::load(&_content)?.push_value(&mut _source.prefixed())
                 }
             }
-            return Ok(Some(source.into_memory(name)));
+            return Ok(Some(_source.into_memory(name)));
         }
         Ok(None)
     }
