@@ -52,7 +52,10 @@ quickcheck = '1'
 quickcheck_macros = '1'
 
 [[example]]
+name = "test-suit"
+[[example]]
 name = "simple"
+required-features = ["full"]
 
 [[bench]]
 harness = false

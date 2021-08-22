@@ -30,6 +30,7 @@ jobs:
           cargo test --verbose --lib --no-default-features --features=rand
 
           cargo run --example simple --features="full"
+          cargo run --example test-suit
       - name: Run benches
         run: |
           #!/bin/bash

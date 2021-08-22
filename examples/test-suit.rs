@@ -4,7 +4,6 @@ use std::collections::HashMap;
 type R<V> = Result<V, ConfigError>;
 
 #[derive(Debug, FromConfig)]
-#[config(prefix = "suit")]
 struct ConfigSuit {
     #[config(name = "val")]
     int: IntSuit,
@@ -31,13 +30,26 @@ struct IntSuit {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::init()?;
+    let config = Configuration::builder()
+        .set("suit.val.v1", "1")
+        .set("suit.val.v2", "2")
+        .set("suit.val.v3", "3")
+        .set("suit.arr[0]", "a0")
+        .set("suit.arr[1]", "a1")
+        .set("suit.arr[2]", "a2")
+        .set("suit.map.b1[0]", "true")
+        .set("suit.map.b2[0]", "true")
+        .set("suit.map.b2[1]", "false")
+        .set("suit.crr[0].v1", "1.0")
+        .set("suit.crr[0].v2", "2.0")
+        .set("suit.brr[0][0]", "b00")
+        .init()?;
     let mut i = 0;
     for name in config.source_names() {
         i += 1;
         println!("{}: {}", i, name);
     }
-    let hello = config.get_predefined::<ConfigSuit>()?;
-    println!("{:?}", hello);
+    let suit = config.get::<ConfigSuit>("suit")?;
+    println!("{:?}", suit);
     Ok(())
 }
