@@ -28,7 +28,7 @@ pub struct PoolConfig {
 #[derive(FromConfig, Debug)]
 #[config(prefix = "postgresql")]
 pub struct PostgresConfig {
-    host: Vec<String>,
+    host: String,
     port: Option<u16>,
     #[config(default = "postgres")]
     user: String,
@@ -54,17 +54,21 @@ pub struct PostgresSslConfig {
 
 fn main() -> Result<(), ConfigError> {
     let config = Configuration::builder()
+        .set("postgresql.host", "10.10.0.1")
         .set("postgresql.application_name", "primary")
+        .set("postgresql.secondary.host", "10.10.0.2")
         .set("postgresql.secondary.application_name", "secondary")
         .init()?;
 
     // Equal to key "postgresql".
     let pool = config.get_predefined::<PostgresConfig>()?;
     assert_eq!(Some("primary"), pool.application_name.as_deref());
+    assert_eq!("10.10.0.1", pool.host);
     println!("{:?}", pool);
 
     let pool2 = config.get::<PostgresConfig>("postgresql.secondary")?;
     assert_eq!(Some("secondary"), pool2.application_name.as_deref());
+    assert_eq!("10.10.0.2", pool2.host);
     println!("{:?}", pool2);
     Ok(())
 }
