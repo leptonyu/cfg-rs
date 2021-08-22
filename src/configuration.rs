@@ -12,7 +12,7 @@ use crate::{
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
         environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
-        register_files, SourceOption,
+        register_files, NetworkConfigReader, SourceOption,
     },
     value::ConfigValue,
     ConfigSource, FromConfig, FromConfigWithPrefix, PartialKeyCollector,
@@ -219,6 +219,7 @@ pub struct Configuration {
 pub struct ConfigurationBuilder {
     memory: MemorySource,
     prefix: String,
+    external: Vec<Box<dyn NetworkConfigReader + 'static>>,
 }
 
 impl Configuration {
@@ -281,6 +282,7 @@ impl Configuration {
         ConfigurationBuilder {
             memory: MemorySource::new("config".to_string()),
             prefix: var("CFG_ENV_PREFIX").unwrap_or("CFG".to_owned()),
+            external: vec![],
         }
     }
 
@@ -312,6 +314,12 @@ impl ConfigurationBuilder {
     /// You can use this method to set default values.
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
         self.memory.insert(key, value);
+        self
+    }
+
+    /// Add config source from network.
+    pub fn set_network_source<S: NetworkConfigReader + 'static>(mut self, s: S) -> Self {
+        self.external.push(Box::new(s));
         self
     }
 
@@ -358,11 +366,19 @@ impl ConfigurationBuilder {
                 app.dir.as_deref(),
                 &app.name,
                 Some(&profile),
+                &self.external,
             )?;
         }
 
         // Layer 3, file.
-        config = register_files(config, &option, app.dir.as_deref(), &app.name, None)?;
+        config = register_files(
+            config,
+            &option,
+            app.dir.as_deref(),
+            &app.name,
+            None,
+            &self.external,
+        )?;
 
         Ok(config)
     }

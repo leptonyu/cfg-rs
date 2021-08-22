@@ -1,8 +1,9 @@
-//! Configuration sources module, use it when you want to extend config sources.
+//! UNSTABLE: Configuration sources module, use it when you want to extend config sources.
 use crate::*;
 
 #[allow(unused_imports)]
-use self::file::FileSource;
+use self::file::{FileConfigSource, FileSource};
+pub use self::network::NetworkConfigReader;
 
 /// Config key module.
 pub mod key {
@@ -17,6 +18,7 @@ pub mod file;
 pub mod json;
 pub mod layered;
 pub mod memory;
+mod network;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
@@ -34,6 +36,23 @@ pub mod yaml;
 pub(crate) struct EnabledOption {
     #[config(default = true)]
     pub(crate) enabled: bool,
+}
+
+/// Source types.
+#[derive(Debug, Clone, Copy)]
+pub enum SourceType {
+    /// Support toml.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    Toml,
+    #[cfg(feature = "yaml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
+    /// Support yaml.
+    Yaml,
+    #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+    /// Support json.
+    Json,
 }
 
 #[derive(Debug, FromConfig)]
@@ -56,6 +75,7 @@ pub(crate) fn register_files(
     dir: Option<&str>,
     name: &str,
     profile: Option<&str>,
+    external: &Vec<Box<dyn NetworkConfigReader + 'static>>,
 ) -> Result<Configuration, ConfigError> {
     let dir = dir.unwrap_or("");
     #[cfg(feature = "toml")]
@@ -73,5 +93,12 @@ pub(crate) fn register_files(
         let source: FileSource<json::Json> = FileSource::of(dir, name, profile)?;
         config = config.register_source(source);
     }
+    // Load external sources.
+    for r in external {
+        if let Some(source) = r.load(name, profile, &config)? {
+            config = config.register_source(source);
+        }
+    }
+
     Ok(config)
 }

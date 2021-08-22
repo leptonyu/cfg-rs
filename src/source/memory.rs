@@ -122,6 +122,10 @@ impl HashSource {
         Self(HashMap::new())
     }
 
+    pub(crate) fn into_memory(self, name: &str) -> MemorySource {
+        MemorySource(name.to_string(), self)
+    }
+
     #[inline]
     pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {
         HashSourceBuilder {
