@@ -52,7 +52,11 @@ quickcheck = '1'
 quickcheck_macros = '1'
 
 [[example]]
-name = "test-suit"
+name = "thread_pool"
+[[example]]
+name = "salak"
+[[example]]
+name = "test_suit"
 [[example]]
 name = "simple"
 required-features = ["full"]
