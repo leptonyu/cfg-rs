@@ -218,7 +218,7 @@ pub struct Configuration {
 #[allow(missing_debug_implementations)]
 pub struct ConfigurationBuilder {
     memory: MemorySource,
-    prefix: String,
+    prefix: Option<String>,
     external: Vec<Box<dyn NetworkConfigReader + 'static>>,
 }
 
@@ -281,7 +281,7 @@ impl Configuration {
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
             memory: MemorySource::new("config".to_string()),
-            prefix: var("CFG_ENV_PREFIX").unwrap_or("CFG".to_owned()),
+            prefix: None,
             external: vec![],
         }
     }
@@ -306,7 +306,7 @@ impl ConfigurationBuilder {
     ///
     /// You can change `CFG` to other prefix by this method.
     pub fn set_env_prefix<K: ToString>(&mut self, prefix: K) -> &mut Self {
-        self.prefix = prefix.to_string();
+        self.prefix = Some(prefix.to_string());
         self
     }
 
@@ -355,7 +355,12 @@ impl ConfigurationBuilder {
         }
 
         // Layer 2, environment.
-        config = config.register_source(EnvironmentPrefixedSource::new(&self.prefix));
+        let prefix = self
+            .prefix
+            .or_else(|| config.get::<Option<String>>("env.prefix").ok().flatten())
+            .or_else(|| var("CFG_ENV_PREFIX").ok())
+            .unwrap_or("CFG".to_owned());
+        config = config.register_source(EnvironmentPrefixedSource::new(&prefix));
 
         // Layer 2, profile file.
         let app = config.get_predefined::<AppConfig>()?;
