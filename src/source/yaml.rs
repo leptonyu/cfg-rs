@@ -1,11 +1,11 @@
 //! Yaml config source.
-use yaml_rust::{Yaml, YamlLoader};
+use yaml_rust::YamlLoader;
 
 use crate::ConfigError;
 
 use super::{file::FileConfigSource, memory::HashSourceBuilder};
 
-impl FileConfigSource for Yaml {
+impl FileConfigSource for yaml_rust::Yaml {
     fn load(_content: &str) -> Result<Self, ConfigError> {
         unimplemented!()
     }
@@ -16,12 +16,12 @@ impl FileConfigSource for Yaml {
 
     fn push_value(self, source: &mut HashSourceBuilder<'_>) {
         match self {
-            Yaml::Real(v) => source.insert(v),
-            Yaml::Integer(v) => source.insert(v),
-            Yaml::String(v) => source.insert(v),
-            Yaml::Boolean(v) => source.insert(v),
-            Yaml::Array(v) => source.insert_array(v),
-            Yaml::Hash(v) => source.insert_map(
+            yaml_rust::Yaml::Real(v) => source.insert(v),
+            yaml_rust::Yaml::Integer(v) => source.insert(v),
+            yaml_rust::Yaml::String(v) => source.insert(v),
+            yaml_rust::Yaml::Boolean(v) => source.insert(v),
+            yaml_rust::Yaml::Array(v) => source.insert_array(v),
+            yaml_rust::Yaml::Hash(v) => source.insert_map(
                 v.into_iter()
                     .filter_map(|(k, v)| k.as_str().map(|k| (k.to_string(), v))),
             ),
@@ -31,11 +31,11 @@ impl FileConfigSource for Yaml {
 }
 /// Yaml source.
 #[allow(missing_debug_implementations)]
-pub struct Value(Vec<Yaml>);
+pub struct Yaml(Vec<yaml_rust::Yaml>);
 
-impl FileConfigSource for Value {
+impl FileConfigSource for Yaml {
     fn load(content: &str) -> Result<Self, ConfigError> {
-        Ok(Value(YamlLoader::load_from_str(content)?))
+        Ok(Yaml(YamlLoader::load_from_str(content)?))
     }
 
     fn ext() -> &'static str {
@@ -54,7 +54,7 @@ impl FileConfigSource for Value {
 #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
 macro_rules! inline_yaml {
     ($path:literal) => {
-        crate::inline_config_source!(crate::source::yaml::Value: $path)
+        crate::inline_config_source!(crate::source::yaml::Yaml: $path)
     };
 }
 

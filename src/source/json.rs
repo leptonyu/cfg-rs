@@ -1,9 +1,10 @@
 //! Json config source.
 
-use crate::ConfigError;
-
 use super::{file::FileConfigSource, memory::HashSourceBuilder};
-pub use json::JsonValue;
+use crate::ConfigError;
+use json::JsonValue;
+
+pub type Json = JsonValue;
 
 impl FileConfigSource for JsonValue {
     fn load(content: &str) -> Result<Self, ConfigError> {
@@ -35,7 +36,7 @@ impl FileConfigSource for JsonValue {
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 macro_rules! inline_json {
     ($path:literal) => {
-        crate::inline_config_source!(crate::source::json::JsonValue: $path)
+        crate::inline_config_source!(crate::source::json::Json: $path)
     };
 }
 

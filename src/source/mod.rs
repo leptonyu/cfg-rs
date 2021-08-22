@@ -60,17 +60,17 @@ pub(crate) fn register_files(
     let dir = dir.unwrap_or("");
     #[cfg(feature = "toml")]
     if option.toml.enabled {
-        let source: FileSource<toml::Value> = FileSource::of(dir, name, profile)?;
+        let source: FileSource<toml::Toml> = FileSource::of(dir, name, profile)?;
         config = config.register_source(source);
     }
     #[cfg(feature = "yaml")]
     if option.yaml.enabled {
-        let source: FileSource<yaml::Value> = FileSource::of(dir, name, profile)?;
+        let source: FileSource<yaml::Yaml> = FileSource::of(dir, name, profile)?;
         config = config.register_source(source);
     }
     #[cfg(feature = "json")]
     if option.json.enabled {
-        let source: FileSource<json::JsonValue> = FileSource::of(dir, name, profile)?;
+        let source: FileSource<json::Json> = FileSource::of(dir, name, profile)?;
         config = config.register_source(source);
     }
     Ok(config)

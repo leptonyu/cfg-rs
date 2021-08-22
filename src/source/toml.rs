@@ -1,9 +1,10 @@
 //! Toml config source.
 
-use crate::ConfigError;
-pub use toml::Value;
-
 use super::{file::FileConfigSource, memory::HashSourceBuilder};
+use crate::ConfigError;
+use toml::Value;
+
+pub type Toml = Value;
 
 impl FileConfigSource for Value {
     fn load(content: &str) -> Result<Self, ConfigError> {
@@ -32,7 +33,7 @@ impl FileConfigSource for Value {
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
 macro_rules! inline_toml {
     ($path:literal) => {
-        crate::inline_config_source!(crate::source::toml::Value: $path)
+        crate::inline_config_source!(crate::source::toml::Toml: $path)
     };
 }
 
