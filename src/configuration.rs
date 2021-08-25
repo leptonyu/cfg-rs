@@ -49,88 +49,6 @@ impl CacheValue {
 
 impl_cache!(CacheValue);
 
-fn parse_placeholder<'a>(
-    source: &'a dyn ConfigSource,
-    current_key: &ConfigKey<'_>,
-    val: &str,
-    history: &mut HashSet<String>,
-) -> Result<(bool, Option<ConfigValue<'a>>), ConfigError> {
-    CacheValue::with_key(move |cv| {
-        cv.clear();
-        let mut value = val;
-        let pat: &[_] = &['$', '\\', '}'];
-        let mut flag = true;
-        while let Some(pos) = value.find(pat) {
-            flag = false;
-            match &value[pos..=pos] {
-                "$" => {
-                    let pos_1 = pos + 1;
-                    if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
-                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
-                    }
-                    cv.buf.push_str(&value[..pos]);
-                    cv.stack.push(cv.buf.len());
-                    value = &value[pos + 2..];
-                }
-                "\\" => {
-                    let pos_1 = pos + 1;
-                    if value.len() == pos_1 {
-                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
-                    }
-                    cv.buf.push_str(&value[..pos]);
-                    cv.buf.push_str(&value[pos_1..=pos_1]);
-                    value = &value[pos + 2..];
-                }
-                "}" => {
-                    let last = match cv.stack.pop() {
-                        Some(last) => last,
-                        _ => {
-                            return Err(ConfigError::ConfigParseError(
-                                current_key.to_string(),
-                                value.to_owned(),
-                            ))
-                        }
-                    };
-                    cv.buf.push_str(&value[..pos]);
-                    let v = &(cv.buf.as_str())[last..];
-                    let (key, def) = match v.find(':') {
-                        Some(pos) => (&v[..pos], Some(&v[pos + 1..])),
-                        _ => (&v[..], None),
-                    };
-                    if !history.insert(key.to_string()) {
-                        return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
-                    }
-                    let v = match CacheString::with_key_place(|cache| {
-                        source
-                            .new_context(cache)
-                            .do_parse_config::<String, &str>(key, None, history)
-                    }) {
-                        Err(ConfigError::ConfigNotFound(v)) => match def {
-                            Some(v) => v.to_owned(),
-                            _ => return Err(ConfigError::ConfigRecursiveNotFound(v)),
-                        },
-                        ret => ret?,
-                    };
-                    history.remove(key);
-                    cv.buf.truncate(last);
-                    cv.buf.push_str(&v);
-                    value = &value[pos + 1..];
-                }
-                _ => return Err(ConfigError::ConfigRecursiveError(current_key.to_string())),
-            }
-        }
-        if flag {
-            return Ok((true, None));
-        }
-        if cv.stack.pop().unwrap_or(0) == 0 {
-            if cv.stack.is_empty() {
-                return Ok((false, Some(cv.buf.to_string().into())));
-            }
-        }
-        Ok((false, None))
-    })
-}
-
 impl<'a> dyn ConfigSource + 'a {
     pub(crate) fn new_context(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
         ConfigContext {
@@ -141,6 +59,88 @@ impl<'a> dyn ConfigSource + 'a {
 }
 
 impl<'a> ConfigContext<'a> {
+    fn parse_placeholder(
+        source: &'a dyn ConfigSource,
+        current_key: &ConfigKey<'_>,
+        val: &str,
+        history: &mut HashSet<String>,
+    ) -> Result<(bool, Option<ConfigValue<'a>>), ConfigError> {
+        CacheValue::with_key(move |cv| {
+            cv.clear();
+            let mut value = val;
+            let pat: &[_] = &['$', '\\', '}'];
+            let mut flag = true;
+            while let Some(pos) = value.find(pat) {
+                flag = false;
+                match &value[pos..=pos] {
+                    "$" => {
+                        let pos_1 = pos + 1;
+                        if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
+                            return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                        }
+                        cv.buf.push_str(&value[..pos]);
+                        cv.stack.push(cv.buf.len());
+                        value = &value[pos + 2..];
+                    }
+                    "\\" => {
+                        let pos_1 = pos + 1;
+                        if value.len() == pos_1 {
+                            return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                        }
+                        cv.buf.push_str(&value[..pos]);
+                        cv.buf.push_str(&value[pos_1..=pos_1]);
+                        value = &value[pos + 2..];
+                    }
+                    "}" => {
+                        let last = match cv.stack.pop() {
+                            Some(last) => last,
+                            _ => {
+                                return Err(ConfigError::ConfigParseError(
+                                    current_key.to_string(),
+                                    value.to_owned(),
+                                ))
+                            }
+                        };
+                        cv.buf.push_str(&value[..pos]);
+                        let v = &(cv.buf.as_str())[last..];
+                        let (key, def) = match v.find(':') {
+                            Some(pos) => (&v[..pos], Some(&v[pos + 1..])),
+                            _ => (&v[..], None),
+                        };
+                        if !history.insert(key.to_string()) {
+                            return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
+                        }
+                        let v = match CacheString::with_key_place(|cache| {
+                            source
+                                .new_context(cache)
+                                .do_parse_config::<String, &str>(key, None, history)
+                        }) {
+                            Err(ConfigError::ConfigNotFound(v)) => match def {
+                                Some(v) => v.to_owned(),
+                                _ => return Err(ConfigError::ConfigRecursiveNotFound(v)),
+                            },
+                            ret => ret?,
+                        };
+                        history.remove(key);
+                        cv.buf.truncate(last);
+                        cv.buf.push_str(&v);
+                        value = &value[pos + 1..];
+                    }
+                    _ => return Err(ConfigError::ConfigRecursiveError(current_key.to_string())),
+                }
+            }
+            if flag {
+                return Ok((true, None));
+            }
+            if cv.stack.pop().unwrap_or(0) == 0 {
+                if cv.stack.is_empty() {
+                    return Ok((false, Some(cv.buf.to_string().into())));
+                }
+            }
+            Ok((false, None))
+        })
+    }
+
     #[inline]
     pub(crate) fn do_parse_config<T: FromConfig, K: Into<PartialKeyIter<'a>>>(
         &mut self,
@@ -151,13 +151,13 @@ impl<'a> ConfigContext<'a> {
         self.key.push(partial_key);
         let value = match self.source.get_value(&self.key).or(default_value) {
             Some(ConfigValue::Str(s)) => {
-                match parse_placeholder(self.source, &self.key, &s, history)? {
+                match Self::parse_placeholder(self.source, &self.key, &s, history)? {
                     (true, _) => Some(ConfigValue::Str(s)),
                     (_, v) => v,
                 }
             }
             Some(ConfigValue::StrRef(s)) => {
-                match parse_placeholder(self.source, &self.key, s, history)? {
+                match Self::parse_placeholder(self.source, &self.key, s, history)? {
                     (true, _) => Some(ConfigValue::StrRef(s)),
                     (false, v) => v,
                 }
