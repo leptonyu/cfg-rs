@@ -1,13 +1,32 @@
 //! Environment sources.
 use std::env::vars;
 
-use crate::{ConfigKey, ConfigSource, ConfigValue};
+use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
 
-use super::memory::MemorySource;
+use super::{
+    memory::{HashSourceBuilder, MemorySource},
+    SourceAdaptor,
+};
 
 /// Prefixed environment source.
 #[derive(Debug)]
 pub struct EnvironmentPrefixedSource(String, MemorySource);
+
+impl SourceAdaptor for EnvironmentPrefixedSource {
+    fn name(&self) -> &str {
+        &self.0
+    }
+
+    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+        let prefix = format!("{}_", self.0.to_uppercase());
+        for (k, v) in vars() {
+            if let Some(kk) = k.strip_prefix(&prefix) {
+                builder.set(&kk.to_lowercase().replace('_', "."), v);
+            }
+        }
+        Ok(())
+    }
+}
 
 impl EnvironmentPrefixedSource {
     /// Create prefixed environment source.

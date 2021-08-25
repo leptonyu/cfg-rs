@@ -3,7 +3,35 @@ use std::{marker::PhantomData, path::PathBuf};
 
 use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector};
 
-use super::memory::{HashSource, HashSourceBuilder};
+use super::{
+    memory::{HashSource, HashSourceBuilder},
+    SourceLoader,
+};
+
+/// FileLoader
+pub struct FileLoader<L: SourceLoader> {
+    name: String,
+    path: PathBuf,
+    _data: PhantomData<L>,
+}
+
+impl<L: SourceLoader> SourceLoader for FileLoader<L> {
+    type Adaptor = L::Adaptor;
+
+    fn create_loader(&self) -> Result<Self::Adaptor, ConfigError> {
+        todo!()
+    }
+}
+
+// impl<L: Loader> Loader for FileLoader<L> {
+//     fn name(&self) -> &str {
+//         &self.name
+//     }
+
+//     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+//         self
+//     }
+// }
 
 /// File configuration source.
 pub trait FileConfigSource: Send + Sync + Sized {

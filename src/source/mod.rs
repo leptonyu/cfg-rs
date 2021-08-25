@@ -3,6 +3,7 @@ use crate::*;
 
 #[allow(unused_imports)]
 use self::file::{FileConfigSource, FileSource};
+use self::memory::HashSourceBuilder;
 pub use self::network::NetworkConfigReader;
 
 /// Config key module.
@@ -101,4 +102,22 @@ pub(crate) fn register_files(
     }
 
     Ok(config)
+}
+
+/// Source loader.
+pub trait SourceAdaptor {
+    /// Source name.
+    fn name(&self) -> &str;
+
+    /// Load source.
+    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
+}
+
+/// Create source loader.
+pub trait SourceLoader {
+    /// Source Loader.
+    type Adaptor: SourceAdaptor;
+
+    /// Create loader.
+    fn create_loader(&self) -> Result<Self::Adaptor, ConfigError>;
 }

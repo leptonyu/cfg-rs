@@ -35,9 +35,7 @@ impl MemorySource {
     #[allow(single_use_lifetimes)]
     pub(crate) fn insert<K: Borrow<str>, V: Into<ConfigValue<'static>>>(&mut self, k: K, v: V) {
         let mut source = self.1.prefixed();
-        source.push(k.borrow());
-        source.insert(v);
-        source.pop();
+        source.set(k.borrow(), v);
     }
 }
 
@@ -171,6 +169,18 @@ impl HashSource {
 }
 
 impl HashSourceBuilder<'_> {
+    /// Set value.
+    #[allow(single_use_lifetimes)]
+    pub fn set<'b, K: Into<PartialKeyIter<'b>>, V: Into<ConfigValue<'static>>>(
+        &mut self,
+        k: K,
+        v: V,
+    ) {
+        self.push(k);
+        self.insert(v);
+        self.pop();
+    }
+
     /// Insert map into source.
     pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: FileConfigSource>(
         &mut self,
