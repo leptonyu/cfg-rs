@@ -145,6 +145,8 @@ impl HashSource {
                 ConfigValue::Int(v) => ConfigValue::Int(*v),
                 ConfigValue::Float(v) => ConfigValue::Float(*v),
                 ConfigValue::Bool(v) => ConfigValue::Bool(*v),
+                #[cfg(feature = "rand")]
+                ConfigValue::Rand(v) => ConfigValue::Rand(*v),
             })
     }
 

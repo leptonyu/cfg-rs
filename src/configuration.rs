@@ -25,7 +25,7 @@ use crate::{
 #[allow(missing_debug_implementations)]
 pub struct ConfigContext<'a> {
     key: ConfigKey<'a>,
-    source: &'a Configuration,
+    source: &'a dyn ConfigSource,
 }
 
 struct CacheValue {
@@ -50,7 +50,7 @@ impl CacheValue {
 impl_cache!(CacheValue);
 
 fn parse_placeholder<'a>(
-    source: &'a Configuration,
+    source: &'a dyn ConfigSource,
     current_key: &ConfigKey<'_>,
     val: &str,
     history: &mut HashSet<String>,
@@ -131,6 +131,15 @@ fn parse_placeholder<'a>(
     })
 }
 
+impl<'a> dyn ConfigSource + 'a {
+    pub(crate) fn new_context(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
+        ConfigContext {
+            key: cache.new_key(),
+            source: self,
+        }
+    }
+}
+
 impl<'a> ConfigContext<'a> {
     #[inline]
     pub(crate) fn do_parse_config<T: FromConfig, K: Into<PartialKeyIter<'a>>>(
@@ -140,7 +149,7 @@ impl<'a> ConfigContext<'a> {
         history: &mut HashSet<String>,
     ) -> Result<T, ConfigError> {
         self.key.push(partial_key);
-        let value = match self.source.internal.get_value(&self.key).or(default_value) {
+        let value = match self.source.get_value(&self.key).or(default_value) {
             Some(ConfigValue::Str(s)) => {
                 match parse_placeholder(self.source, &self.key, &s, history)? {
                     (true, _) => Some(ConfigValue::Str(s)),
@@ -153,6 +162,8 @@ impl<'a> ConfigContext<'a> {
                     (false, v) => v,
                 }
             }
+            #[cfg(feature = "rand")]
+            Some(ConfigValue::Rand(s)) => Some(ConfigValue::normalize(s)),
             v => v,
         };
 
@@ -185,6 +196,8 @@ impl<'a> ConfigContext<'a> {
             ConfigValue::Int(_) => "Integer",
             ConfigValue::Float(_) => "Float",
             ConfigValue::Bool(_) => "Bool",
+            #[cfg(feature = "rand")]
+            ConfigValue::Rand(_) => "Random",
         };
         ConfigError::ConfigTypeMismatch(self.current_key(), tp, type_name::<T>())
     }
@@ -200,7 +213,9 @@ impl<'a> ConfigContext<'a> {
     }
 
     pub(crate) fn collect_keys(&self) -> PartialKeyCollector<'a> {
-        self.source.collect_keys(&self.key)
+        let mut c = PartialKeyCollector::new();
+        self.source.collect_keys(&self.key, &mut c);
+        c
     }
 }
 
@@ -231,17 +246,17 @@ impl Configuration {
         }
     }
 
+    pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
+        ConfigContext {
+            key: cache.new_key(),
+            source: &self.internal,
+        }
+    }
+
     /// Register customized config source.
     pub fn register_source(mut self, source: impl ConfigSource + 'static) -> Self {
         self.internal.register(source);
         self
-    }
-
-    pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
-        ConfigContext {
-            key: cache.new_key(),
-            source: self,
-        }
     }
 
     /// Get config from configuration by key.
@@ -269,12 +284,6 @@ impl Configuration {
     /// Get source names, just for test.
     pub fn source_names(&self) -> Vec<&str> {
         self.internal.source_names()
-    }
-
-    fn collect_keys(&self, prefix: &ConfigKey<'_>) -> PartialKeyCollector<'_> {
-        let mut sub = PartialKeyCollector::new();
-        self.internal.collect_keys(prefix, &mut sub);
-        sub
     }
 
     /// Create a configuration builder to customize the configuration instance.
@@ -351,7 +360,7 @@ impl ConfigurationBuilder {
         // Layer 1, random
         #[cfg(feature = "rand")]
         if option.random.enabled {
-            config = config.register_source(crate::source::random::Random);
+            config = config.register_source(MemorySource::from(crate::source::random::Random));
         }
 
         // Layer 2, environment.

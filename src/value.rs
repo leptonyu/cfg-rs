@@ -42,6 +42,47 @@ pub enum ConfigValue<'a> {
     Float(f64),
     /// Bool value.
     Bool(bool),
+    #[cfg(feature = "rand")]
+    /// Random value.
+    Rand(RandValue),
+}
+
+#[doc(hidden)]
+#[cfg(feature = "rand")]
+#[derive(Debug, Clone, Copy)]
+pub enum RandValue {
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    Usize,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    Isize,
+}
+
+#[cfg(feature = "rand")]
+impl ConfigValue<'_> {
+    pub(crate) fn normalize(v: RandValue) -> Self {
+        match v {
+            RandValue::U8 => ConfigValue::Int(rand::random::<u8>() as i64),
+            RandValue::U16 => ConfigValue::Int(rand::random::<u16>() as i64),
+            RandValue::U32 => ConfigValue::Int(rand::random::<u32>() as i64),
+            RandValue::U64 => ConfigValue::Str(rand::random::<u64>().to_string()),
+            RandValue::U128 => ConfigValue::Str(rand::random::<u128>().to_string()),
+            RandValue::Usize => ConfigValue::Str(rand::random::<usize>().to_string()),
+            RandValue::I8 => ConfigValue::Int(rand::random::<i8>() as i64),
+            RandValue::I16 => ConfigValue::Int(rand::random::<i16>() as i64),
+            RandValue::I32 => ConfigValue::Int(rand::random::<i32>() as i64),
+            RandValue::I64 => ConfigValue::Int(rand::random::<i64>()),
+            RandValue::I128 => ConfigValue::Str(rand::random::<i128>().to_string()),
+            RandValue::Isize => ConfigValue::Str(rand::random::<isize>().to_string()),
+        }
+    }
 }
 
 impl<'a> Into<ConfigValue<'a>> for String {
@@ -69,6 +110,13 @@ impl<'a> Into<ConfigValue<'a>> for f64 {
 impl<'a> Into<ConfigValue<'a>> for bool {
     fn into(self) -> ConfigValue<'a> {
         ConfigValue::Bool(self)
+    }
+}
+
+#[cfg(feature = "rand")]
+impl<'a> Into<ConfigValue<'a>> for RandValue {
+    fn into(self) -> ConfigValue<'a> {
+        ConfigValue::Rand(self)
     }
 }
 
@@ -165,6 +213,8 @@ impl FromValue for String {
             ConfigValue::Int(s) => s.to_string(),
             ConfigValue::Float(s) => check_f64(context, s)?.to_string(),
             ConfigValue::Bool(s) => s.to_string(),
+            #[cfg(feature = "rand")]
+            _ => return Err(context.parse_error("ConfigValueError")),
         };
         Ok(v)
     }
