@@ -12,9 +12,7 @@ use crate::{
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        environment::PrefixEnvironment,
-        memory::{HashSource, MemorySource},
-        register_files, Loader, SourceOption,
+        environment::PrefixEnvironment, memory::HashSource, register_files, Loader, SourceOption,
     },
     value::ConfigValue,
     FromConfig, FromConfigWithPrefix, PartialKeyCollector,
@@ -235,7 +233,7 @@ pub struct Configuration {
 /// Configuration builder is used for customizing some configs by programming.
 #[allow(missing_debug_implementations)]
 pub struct ConfigurationBuilder {
-    memory: MemorySource,
+    memory: HashSource,
     prefix: Option<String>,
 }
 
@@ -296,7 +294,7 @@ impl Configuration {
     /// Create a configuration builder to customize the configuration instance.
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
-            memory: MemorySource::new("config".to_string()),
+            memory: HashSource::new(),
             prefix: None,
         }
     }
@@ -328,7 +326,7 @@ impl ConfigurationBuilder {
     /// Set config into configuration by programming.
     /// You can use this method to set default values.
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
-        self.memory.insert(key, value);
+        self.memory = self.memory.set(key, value);
         self
     }
 
@@ -403,7 +401,7 @@ struct AppConfig {
 #[cfg(test)]
 mod test {
 
-    use crate::{source::memory::MemorySource, test::TestConfigExt};
+    use crate::test::TestConfigExt;
 
     use super::*;
 
@@ -415,7 +413,7 @@ mod test {
     }
 
     fn build_config() -> Configuration {
-        MemorySource::default()
+        HashSource::new()
             .set("a", "0")
             .set("b", "${b}")
             .set("c", "${a}")

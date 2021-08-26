@@ -4,7 +4,7 @@ use std::{marker::PhantomData, path::PathBuf};
 use crate::ConfigError;
 
 use super::{
-    memory::{HashSourceBuilder, MemorySource},
+    memory::{HashSource, HashSourceBuilder},
     Loader, SourceAdaptor, SourceLoader,
 };
 
@@ -54,12 +54,12 @@ impl<L: SourceLoader> Loader for FileLoader<L> {
 #[doc(hidden)]
 #[inline]
 pub fn inline_source<S: SourceLoader>(
-    name: String,
+    _name: String,
     content: &'static str,
-) -> Result<MemorySource, ConfigError> {
+) -> Result<HashSource, ConfigError> {
     let v = S::create_loader(content)?;
-    let mut m = MemorySource::new(name);
-    v.load(&mut m.1.prefixed())?;
+    let mut m = HashSource::new();
+    v.load(&mut m.prefixed())?;
     Ok(m)
 }
 

@@ -11,43 +11,13 @@ use crate::{
     ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
 
-/// In memory source.
+/// Hash Source.
 #[derive(Debug)]
-pub struct MemorySource(String, pub(crate) HashSource);
+pub struct HashSource(HashMap<String, HashValue>);
 
-impl MemorySource {
-    /// Create source.
-    #[inline]
-    pub fn new(name: String) -> Self {
-        Self(name, HashSource::new())
-    }
-
-    /// Add config to source.
-    #[inline]
-    #[allow(single_use_lifetimes)]
-    pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, k: K, v: V) -> Self {
-        self.insert(k, v);
-        self
-    }
-
-    /// Add config to source.
-    #[inline]
-    #[allow(single_use_lifetimes)]
-    pub(crate) fn insert<K: Borrow<str>, V: Into<ConfigValue<'static>>>(&mut self, k: K, v: V) {
-        let mut source = self.1.prefixed();
-        source.set(k.borrow(), v);
-    }
-}
-
-impl Default for MemorySource {
-    fn default() -> Self {
-        MemorySource::new("default".to_string())
-    }
-}
-
-impl Loader for MemorySource {
+impl Loader for HashSource {
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
-        for (k, v) in &self.1 .0 {
+        for (k, v) in &self.0 {
             if let Some(v) = &v.value {
                 builder.set(k, v.clone_static());
             }
@@ -55,10 +25,6 @@ impl Loader for MemorySource {
         Ok(())
     }
 }
-
-/// Hash Source.
-#[derive(Debug)]
-pub(crate) struct HashSource(HashMap<String, HashValue>);
 
 /// Hash Value.
 #[derive(Debug)]
@@ -148,6 +114,11 @@ impl HashSource {
                 sub.insert_int(i);
             }
         }
+    }
+    pub(crate) fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, k: K, v: V) -> Self {
+        let mut c = self.prefixed();
+        c.set(k.borrow(), v);
+        self
     }
 }
 

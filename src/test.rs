@@ -1,8 +1,8 @@
-use crate::*;
+use crate::source::memory::HashSource;
 use crate::source::Loader;
+use crate::*;
 
 pub(crate) trait TestConfigExt: Loader + Sized + 'static {
-
     fn new_config(self) -> Configuration {
         let mut c = Configuration::new();
         c.register_loader(self).unwrap();
@@ -67,9 +67,8 @@ pub(crate) fn source_test_suit(src: impl Loader + 'static) -> Result<(), ConfigE
 
 #[test]
 fn in_memory_test() {
-    use crate::source::memory::MemorySource;
     source_test_suit(
-        MemorySource::default()
+        HashSource::new()
             .set("suit.val.v1", "1")
             .set("suit.val.v2", "2")
             .set("suit.val.v3", "3")

@@ -8,7 +8,7 @@ pub trait FromConfigWithPrefix: FromConfig {
 
 #[cfg(test)]
 mod test {
-    use crate::{source::memory::MemorySource, test::TestConfigExt, *};
+    use crate::{source::memory::HashSource, test::TestConfigExt, *};
     #[derive(FromConfig, Debug, PartialEq, Eq)]
     #[config(prefix = "app")]
     pub(crate) struct ConfigObject {
@@ -24,7 +24,7 @@ mod test {
 
     #[test]
     fn derive_test() {
-        let config = MemorySource::default()
+        let config = HashSource::new()
             .set("app.hello", "world")
             .set("app.count", "1")
             .set("app.count_rename", "2")
