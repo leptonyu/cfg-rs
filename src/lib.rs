@@ -98,18 +98,3 @@ pub trait FromConfig: Sized {
         value: Option<ConfigValue<'_>>,
     ) -> Result<Self, ConfigError>;
 }
-
-/// Configuration source.
-pub trait ConfigSource: Send + Sync {
-    /// Source name.
-    fn name(&self) -> &str;
-
-    /// Get config value by key.
-    fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>>;
-
-    /// Get all sub keys by prefix.
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>);
-
-    /// Is empty.
-    fn is_empty(&self) -> bool;
-}

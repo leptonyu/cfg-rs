@@ -8,7 +8,7 @@ use std::{
 use crate::{
     key::{PartialKey, PartialKeyIter},
     source::Loader,
-    ConfigError, ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector,
+    ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
 
 use super::SourceAdaptor;
@@ -55,26 +55,6 @@ impl Loader for MemorySource {
             }
         }
         Ok(())
-    }
-}
-
-impl ConfigSource for MemorySource {
-    #[inline]
-    fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
-        self.1.get_value(key)
-    }
-
-    #[inline]
-    fn collect_keys<'a>(&'a self, prefix: &ConfigKey<'_>, sub: &mut PartialKeyCollector<'a>) {
-        self.1.collect_keys(prefix, sub)
-    }
-
-    fn name(&self) -> &str {
-        &self.0
-    }
-
-    fn is_empty(&self) -> bool {
-        self.1.is_empty()
     }
 }
 
@@ -170,10 +150,6 @@ impl HashSource {
                 sub.insert_int(i);
             }
         }
-    }
-
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 }
 
