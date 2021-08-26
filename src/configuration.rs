@@ -242,7 +242,7 @@ impl Configuration {
     /// Try [`Configuration::init`] or [`Configuration::builder`].
     pub fn new() -> Self {
         Self {
-            source: HashSource::new(),
+            source: HashSource::new("configuration"),
             loaders: vec![],
         }
     }
@@ -294,7 +294,7 @@ impl Configuration {
     /// Create a configuration builder to customize the configuration instance.
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
-            memory: HashSource::new(),
+            memory: HashSource::new("fixed_config:byProgram/CommandLineArgs"),
             prefix: None,
         }
     }
@@ -413,7 +413,7 @@ mod test {
     }
 
     fn build_config() -> Configuration {
-        HashSource::new()
+        HashSource::new("test")
             .set("a", "0")
             .set("b", "${b}")
             .set("c", "${a}")

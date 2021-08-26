@@ -68,7 +68,7 @@ pub(crate) fn source_test_suit(src: impl Loader + 'static) -> Result<(), ConfigE
 #[test]
 fn in_memory_test() {
     source_test_suit(
-        HashSource::new()
+        HashSource::new("test")
             .set("suit.val.v1", "1")
             .set("suit.val.v2", "2")
             .set("suit.val.v3", "3")

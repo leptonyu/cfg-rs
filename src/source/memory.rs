@@ -13,9 +13,12 @@ use crate::{
 
 /// Hash Source.
 #[derive(Debug)]
-pub struct HashSource(HashMap<String, HashValue>);
+pub struct HashSource(HashMap<String, HashValue>, String);
 
 impl Loader for HashSource {
+    fn name(&self) -> &str {
+        &self.1
+    }
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         for (k, v) in &self.0 {
             if let Some(v) = &v.value {
@@ -73,8 +76,8 @@ impl HashValue {
 }
 
 impl HashSource {
-    pub(crate) fn new() -> Self {
-        Self(HashMap::new())
+    pub(crate) fn new<K: Into<String>>(name: K) -> Self {
+        Self(HashMap::new(), name.into())
     }
 
     #[inline]

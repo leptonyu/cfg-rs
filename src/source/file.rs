@@ -33,6 +33,10 @@ impl<L: SourceLoader> FileLoader<L> {
 }
 
 impl<L: SourceLoader> Loader for FileLoader<L> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         let mut flag = self.required;
         for ext in L::file_extensions() {
@@ -54,11 +58,11 @@ impl<L: SourceLoader> Loader for FileLoader<L> {
 #[doc(hidden)]
 #[inline]
 pub fn inline_source<S: SourceLoader>(
-    _name: String,
+    name: String,
     content: &'static str,
 ) -> Result<HashSource, ConfigError> {
     let v = S::create_loader(content)?;
-    let mut m = HashSource::new();
+    let mut m = HashSource::new(name);
     v.read_source(&mut m.prefixed())?;
     Ok(m)
 }

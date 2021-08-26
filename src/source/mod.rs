@@ -108,6 +108,8 @@ pub trait SourceLoader {
 
 /// Loader.
 pub trait Loader {
+    /// Loader name.
+    fn name(&self) -> &str;
     /// Load source.
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
 }

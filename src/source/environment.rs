@@ -7,9 +7,12 @@ use super::{memory::HashSourceBuilder, Loader};
 
 /// Prefixed environment source.
 #[derive(Debug)]
-pub struct PrefixEnvironment(String);
+pub struct PrefixEnvironment(String, String);
 
 impl Loader for PrefixEnvironment {
+    fn name(&self) -> &str {
+        &self.1
+    }
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         for (k, v) in vars() {
             if let Some(kk) = k.strip_prefix(&self.0) {
@@ -23,7 +26,9 @@ impl Loader for PrefixEnvironment {
 impl PrefixEnvironment {
     /// Create new prefix env.
     pub fn new(prefix: &str) -> Self {
-        Self(format!("{}_", prefix.to_uppercase()))
+        let n = format!("{}_", prefix.to_uppercase());
+        let nm = format!("prefix_env:{}", n);
+        Self(n, nm)
     }
 }
 

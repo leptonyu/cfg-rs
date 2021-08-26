@@ -24,7 +24,7 @@ mod test {
 
     #[test]
     fn derive_test() {
-        let config = HashSource::new()
+        let config = HashSource::new("test")
             .set("app.hello", "world")
             .set("app.count", "1")
             .set("app.count_rename", "2")

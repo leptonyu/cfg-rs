@@ -7,6 +7,10 @@ use crate::{value::RandValue, ConfigError};
 pub struct Random;
 
 impl Loader for Random {
+    fn name(&self) -> &str {
+        "random_generator"
+    }
+
     fn load(&self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         source.set("random.u8", RandValue::U8);
         source.set("random.u16", RandValue::U16);
