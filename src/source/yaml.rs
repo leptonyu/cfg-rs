@@ -1,7 +1,7 @@
 //! Yaml config source.
 use yaml_rust::YamlLoader;
 
-use super::{file::FileSourceLoader, memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
 use crate::ConfigError;
 
 impl SourceAdaptor for yaml_rust::Yaml {
@@ -36,8 +36,7 @@ impl SourceLoader for Yaml {
     fn create_loader(content: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(Yaml(YamlLoader::load_from_str(content)?))
     }
-}
-impl FileSourceLoader for Yaml {
+
     fn file_extensions() -> Vec<&'static str> {
         vec!["yaml", "yml"]
     }

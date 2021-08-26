@@ -2,7 +2,7 @@
 use crate::*;
 
 #[allow(unused_imports)]
-use self::file::{FileConfigSource, FileLoader};
+use self::file::FileLoader;
 use self::memory::HashSourceBuilder;
 use std::path::PathBuf;
 
@@ -101,6 +101,9 @@ pub trait SourceLoader {
 
     /// Create loader.
     fn create_loader(_: &str) -> Result<Self::Adaptor, ConfigError>;
+
+    /// File extenstions.
+    fn file_extensions() -> Vec<&'static str>;
 }
 
 /// Loader.

@@ -1,6 +1,6 @@
 //! Json config source.
 
-use super::{file::FileSourceLoader, memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
 use crate::ConfigError;
 use json::JsonValue;
 
@@ -29,9 +29,7 @@ impl SourceLoader for Json {
     fn create_loader(content: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(json::parse(content)?)
     }
-}
 
-impl FileSourceLoader for Json {
     fn file_extensions() -> Vec<&'static str> {
         vec!["json"]
     }

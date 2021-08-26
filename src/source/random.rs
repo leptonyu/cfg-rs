@@ -1,9 +1,9 @@
 //! Random source.
-use super::{memory::HashSourceBuilder, Loader};
-use crate::value::RandValue;
-use crate::ConfigError;
-
-use super::memory::MemorySource;
+use super::{
+    memory::{HashSourceBuilder, MemorySource},
+    Loader,
+};
+use crate::{value::RandValue, ConfigError};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]

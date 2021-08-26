@@ -8,22 +8,16 @@ use super::{
     Loader, SourceAdaptor, SourceLoader,
 };
 
-/// File source loader, specify extenstions.
-pub trait FileSourceLoader: SourceLoader {
-    /// File extenstions.
-    fn file_extensions() -> Vec<&'static str>;
-}
-
 /// FileLoader
 #[derive(Debug)]
-pub struct FileLoader<L: FileSourceLoader> {
+pub struct FileLoader<L: SourceLoader> {
     name: String,
     path: PathBuf,
     required: bool,
     _data: PhantomData<L>,
 }
 
-impl<L: FileSourceLoader> FileLoader<L> {
+impl<L: SourceLoader> FileLoader<L> {
     pub(crate) fn new(path: PathBuf, required: bool) -> Self {
         Self {
             name: format!(
@@ -37,7 +31,7 @@ impl<L: FileSourceLoader> FileLoader<L> {
     }
 }
 
-impl<L: FileSourceLoader> Loader for FileLoader<L> {
+impl<L: SourceLoader> Loader for FileLoader<L> {
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         let mut flag = self.required;
         for ext in L::file_extensions() {
@@ -54,18 +48,6 @@ impl<L: FileSourceLoader> Loader for FileLoader<L> {
         }
         Ok(())
     }
-}
-
-/// File configuration source.
-pub trait FileConfigSource: Send + Sync + Sized {
-    /// Load source from string.
-    fn load(content: &str) -> Result<Self, ConfigError>;
-
-    /// Push value
-    fn push_value(self, source: &mut HashSourceBuilder<'_>);
-
-    /// Configuration file extension.
-    fn ext() -> &'static str;
 }
 
 #[doc(hidden)]

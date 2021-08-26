@@ -7,11 +7,9 @@ use std::{
 
 use crate::{
     key::{PartialKey, PartialKeyIter},
-    source::Loader,
+    source::{Loader, SourceAdaptor},
     ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
-
-use super::SourceAdaptor;
 
 /// In memory source.
 #[derive(Debug)]

@@ -1,6 +1,6 @@
 //! Toml config source.
 
-use super::{file::FileSourceLoader, memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
 use crate::ConfigError;
 use toml::Value;
 
@@ -26,9 +26,7 @@ impl SourceLoader for Toml {
     fn create_loader(c: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(toml::from_str::<Value>(c)?)
     }
-}
 
-impl FileSourceLoader for Toml {
     fn file_extensions() -> Vec<&'static str> {
         vec!["toml"]
     }
