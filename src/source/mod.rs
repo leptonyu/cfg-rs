@@ -2,9 +2,9 @@
 use crate::*;
 
 #[allow(unused_imports)]
-use self::file::{FileConfigSource, FileSource};
+use self::file::{FileConfigSource, FileLoader, FileSource};
 use self::memory::HashSourceBuilder;
-pub use self::network::NetworkConfigReader;
+use std::path::PathBuf;
 
 /// Config key module.
 pub mod key {
@@ -19,7 +19,6 @@ pub mod file;
 pub mod json;
 pub mod layered;
 pub mod memory;
-mod network;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
@@ -71,46 +70,30 @@ pub(crate) struct SourceOption {
 
 #[allow(unused_mut, unused_variables)]
 pub(crate) fn register_files(
-    mut config: Configuration,
+    config: &mut Configuration,
     option: &SourceOption,
-    dir: Option<&str>,
-    name: &str,
-    profile: Option<&str>,
-    external: &Vec<Box<dyn NetworkConfigReader + 'static>>,
-) -> Result<Configuration, ConfigError> {
-    let dir = dir.unwrap_or("");
+    path: PathBuf,
+) -> Result<(), ConfigError> {
     #[cfg(feature = "toml")]
     if option.toml.enabled {
-        let source: FileSource<toml::Toml> = FileSource::of(dir, name, profile)?;
-        config = config.register_source(source);
+        config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), false))?;
     }
     #[cfg(feature = "yaml")]
     if option.yaml.enabled {
-        let source: FileSource<yaml::Yaml> = FileSource::of(dir, name, profile)?;
-        config = config.register_source(source);
+        config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), false))?;
     }
     #[cfg(feature = "json")]
     if option.json.enabled {
-        let source: FileSource<json::Json> = FileSource::of(dir, name, profile)?;
-        config = config.register_source(source);
-    }
-    // Load external sources.
-    for r in external {
-        if let Some(source) = r.load(name, profile, &config)? {
-            config = config.register_source(source);
-        }
+        config.register_loader(<FileLoader<json::Json>>::new(path.clone(), false))?;
     }
 
-    Ok(config)
+    Ok(())
 }
 
 /// Source loader.
 pub trait SourceAdaptor {
-    /// Source name.
-    fn name(&self) -> &str;
-
     /// Load source.
-    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
+    fn load(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
 }
 
 /// Create source loader.
@@ -119,5 +102,11 @@ pub trait SourceLoader {
     type Adaptor: SourceAdaptor;
 
     /// Create loader.
-    fn create_loader(&self) -> Result<Self::Adaptor, ConfigError>;
+    fn create_loader(_: &str) -> Result<Self::Adaptor, ConfigError>;
+}
+
+/// Loader.
+pub trait Loader {
+    /// Load source.
+    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
 }

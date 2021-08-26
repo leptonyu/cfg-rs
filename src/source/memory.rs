@@ -8,7 +8,8 @@ use std::{
 use crate::{
     key::{PartialKey, PartialKeyIter},
     source::file::FileConfigSource,
-    ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector,
+    source::Loader,
+    ConfigError, ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector,
 };
 
 /// In memory source.
@@ -42,6 +43,17 @@ impl MemorySource {
 impl Default for MemorySource {
     fn default() -> Self {
         MemorySource::new("default".to_string())
+    }
+}
+
+impl Loader for MemorySource {
+    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+        for (k, v) in &self.1 .0 {
+            if let Some(v) = &v.value {
+                builder.set(k, v.clone_static());
+            }
+        }
+        Ok(())
     }
 }
 
@@ -120,9 +132,6 @@ impl HashSource {
         Self(HashMap::new())
     }
 
-    pub(crate) fn into_memory(self, name: &str) -> MemorySource {
-        MemorySource(name.to_string(), self)
-    }
 
     #[inline]
     pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {

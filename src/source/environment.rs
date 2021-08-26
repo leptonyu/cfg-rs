@@ -5,18 +5,14 @@ use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
 
 use super::{
     memory::{HashSourceBuilder, MemorySource},
-    SourceAdaptor,
+    Loader,
 };
 
 /// Prefixed environment source.
 #[derive(Debug)]
-pub struct EnvironmentPrefixedSource(String, MemorySource);
+pub struct PrefixEnvironment(String);
 
-impl SourceAdaptor for EnvironmentPrefixedSource {
-    fn name(&self) -> &str {
-        &self.0
-    }
-
+impl Loader for PrefixEnvironment {
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         let prefix = format!("{}_", self.0.to_uppercase());
         for (k, v) in vars() {
@@ -28,44 +24,13 @@ impl SourceAdaptor for EnvironmentPrefixedSource {
     }
 }
 
-impl EnvironmentPrefixedSource {
-    /// Create prefixed environment source.
+impl PrefixEnvironment {
+    /// Create new prefix env.
     pub fn new(prefix: &str) -> Self {
-        let prefix = format!("{}_", prefix.to_uppercase());
-        let mut body = MemorySource::new(format!("env:{}*", prefix));
-        for (k, v) in vars() {
-            if let Some(kk) = k.strip_prefix(&prefix) {
-                body = body.set(kk.to_lowercase().replace('_', "."), v);
-            }
-        }
-        Self(prefix, body)
+        Self(format!("{}_", prefix.to_uppercase()))
     }
 }
 
-impl ConfigSource for EnvironmentPrefixedSource {
-    #[inline]
-    fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
-        self.1.get_value(key)
-    }
-
-    #[inline]
-    fn collect_keys<'a>(
-        &'a self,
-        prefix: &ConfigKey<'_>,
-        sub: &mut crate::PartialKeyCollector<'a>,
-    ) {
-        self.1.collect_keys(prefix, sub)
-    }
-
-    #[inline]
-    fn name(&self) -> &str {
-        self.1.name()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.1.is_empty()
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -73,13 +38,13 @@ mod test {
 
     use crate::test::TestConfigExt;
 
-    use super::EnvironmentPrefixedSource;
+    use super::*;
 
     #[test]
     fn env_key_test() {
         set_var("HELLO_WORLD", "hello");
 
-        let config = EnvironmentPrefixedSource::new("hello").new_config();
+        let config = PrefixEnvironment::new("hello").new_config();
 
         let value = config.get::<String>("world");
         assert_eq!("hello", value.unwrap());
@@ -94,7 +59,7 @@ mod test {
         set_var("HELLO_ARR_1", "h1");
         set_var("HELLO_BRR_1", "b0");
         set_var("HELLO_CRR_0_0", "c0");
-        let config = EnvironmentPrefixedSource::new("hello").new_config();
+        let config = PrefixEnvironment::new("hello").new_config();
 
         let value = config.get::<Vec<String>>("arr");
         assert_eq!(vec!["h0", "h1"], value.unwrap());
@@ -124,7 +89,7 @@ mod test {
         set_var("HELLO_MAP_0", "h0");
         set_var("HELLO_MAP_K1", "v1");
         set_var("HELLO_MAP_K2", "v2");
-        let config = EnvironmentPrefixedSource::new("hello").new_config();
+        let config = PrefixEnvironment::new("hello").new_config();
         let value = config.get::<HashMap<String, String>>("map");
         let mut map: HashMap<String, String> = HashMap::new();
         map.insert("k1".into(), "v1".into());

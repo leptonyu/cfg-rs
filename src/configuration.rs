@@ -4,6 +4,7 @@ use std::{
     cell::RefCell,
     collections::HashSet,
     env::var,
+    path::PathBuf,
 };
 
 use crate::{
@@ -11,8 +12,10 @@ use crate::{
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        environment::EnvironmentPrefixedSource, layered::LayeredSource, memory::MemorySource,
-        register_files, NetworkConfigReader, SourceOption,
+        environment::PrefixEnvironment,
+        layered::LayeredSource,
+        memory::{HashSource, MemorySource},
+        register_files, Loader, SourceOption,
     },
     value::ConfigValue,
     ConfigSource, FromConfig, FromConfigWithPrefix, PartialKeyCollector,
@@ -225,6 +228,8 @@ impl<'a> ConfigContext<'a> {
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
     internal: LayeredSource,
+    source: HashSource,
+    loaders: Vec<Box<dyn Loader + 'static>>,
 }
 
 /// Configuration Builder.
@@ -234,7 +239,6 @@ pub struct Configuration {
 pub struct ConfigurationBuilder {
     memory: MemorySource,
     prefix: Option<String>,
-    external: Vec<Box<dyn NetworkConfigReader + 'static>>,
 }
 
 impl Configuration {
@@ -243,6 +247,8 @@ impl Configuration {
     pub fn new() -> Self {
         Self {
             internal: LayeredSource::new(),
+            source: HashSource::new(),
+            loaders: vec![],
         }
     }
 
@@ -253,6 +259,15 @@ impl Configuration {
         }
     }
 
+    /// Register source loader.
+    pub fn register_loader<L: Loader + 'static>(
+        &mut self,
+        loader: L,
+    ) -> Result<&mut Self, ConfigError> {
+        loader.load(&mut self.source.prefixed())?;
+        self.loaders.push(Box::new(loader));
+        Ok(self)
+    }
     /// Register customized config source.
     pub fn register_source(mut self, source: impl ConfigSource + 'static) -> Self {
         self.internal.register(source);
@@ -291,7 +306,6 @@ impl Configuration {
         ConfigurationBuilder {
             memory: MemorySource::new("config".to_string()),
             prefix: None,
-            external: vec![],
         }
     }
 
@@ -326,11 +340,6 @@ impl ConfigurationBuilder {
         self
     }
 
-    /// Add config source from network.
-    pub fn set_network_source<S: NetworkConfigReader + 'static>(mut self, s: S) -> Self {
-        self.external.push(Box::new(s));
-        self
-    }
 
     /// Initialize configuration by multiple predefined sources.
     ///
@@ -353,14 +362,14 @@ impl ConfigurationBuilder {
         let mut config = Configuration::new();
 
         // Layer 0, commandlines.
-        config = config.register_source(self.memory);
+        config.register_loader(self.memory)?;
 
         let option: SourceOption = config.get_predefined()?;
 
         // Layer 1, random
         #[cfg(feature = "rand")]
         if option.random.enabled {
-            config = config.register_source(MemorySource::from(crate::source::random::Random));
+            config.register_loader(crate::source::random::Random)?;
         }
 
         // Layer 2, environment.
@@ -369,30 +378,23 @@ impl ConfigurationBuilder {
             .or_else(|| config.get::<Option<String>>("env.prefix").ok().flatten())
             .or_else(|| var("CFG_ENV_PREFIX").ok())
             .unwrap_or("CFG".to_owned());
-        config = config.register_source(EnvironmentPrefixedSource::new(&prefix));
+        config.register_loader(PrefixEnvironment::new(&prefix))?;
 
         // Layer 2, profile file.
         let app = config.get_predefined::<AppConfig>()?;
+        let mut path = PathBuf::new();
+        if let Some(d) = app.dir {
+            path.push(d);
+        };
         if let Some(profile) = &app.profile {
-            config = register_files(
-                config,
-                &option,
-                app.dir.as_deref(),
-                &app.name,
-                Some(&profile),
-                &self.external,
-            )?;
+            let mut path = path.clone();
+            path.push(format!("{}-{}", app.name, profile));
+            register_files(&mut config, &option, path)?;
         }
 
         // Layer 3, file.
-        config = register_files(
-            config,
-            &option,
-            app.dir.as_deref(),
-            &app.name,
-            None,
-            &self.external,
-        )?;
+        path.push(app.name);
+        register_files(&mut config, &option, path)?;
 
         Ok(config)
     }

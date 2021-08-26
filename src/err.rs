@@ -13,6 +13,8 @@ pub enum ConfigError {
     ConfigParseError(String, String),
     /// Config recursively parsed.
     ConfigRecursiveError(String),
+    /// Config file not exists.
+    ConfigFileNotExists(String),
     /// Config parse error with other error.
     ConfigCause(Box<dyn Error + 'static>),
 }
