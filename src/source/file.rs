@@ -22,8 +22,9 @@ impl<L: SourceLoader> FileLoader<L> {
     pub(crate) fn new(path: PathBuf, required: bool) -> Self {
         Self {
             name: format!(
-                "file:{}",
-                path.as_path().as_os_str().to_str().expect("Not Possible")
+                "file:{}.[{}]",
+                path.as_path().as_os_str().to_str().expect("Not Possible"),
+                L::file_extensions().join(",")
             ),
             path,
             required,

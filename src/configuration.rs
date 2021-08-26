@@ -288,13 +288,13 @@ impl Configuration {
 
     /// Get source names, just for test.
     pub fn source_names(&self) -> Vec<&str> {
-        vec![]
+        self.loaders.iter().map(|l| l.name()).collect()
     }
 
     /// Create a configuration builder to customize the configuration instance.
     pub fn builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
-            memory: HashSource::new("fixed_config:byProgram/CommandLineArgs"),
+            memory: HashSource::new("fixed:FromProgram/CommandLineArgs"),
             prefix: None,
         }
     }

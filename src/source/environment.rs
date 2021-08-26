@@ -27,7 +27,7 @@ impl PrefixEnvironment {
     /// Create new prefix env.
     pub fn new(prefix: &str) -> Self {
         let n = format!("{}_", prefix.to_uppercase());
-        let nm = format!("prefix_env:{}", n);
+        let nm = format!("prefix_env:{}**", n);
         Self(n, nm)
     }
 }
