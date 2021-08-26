@@ -65,7 +65,6 @@ pub enum RandValue {
     Isize,
 }
 
-#[cfg(feature = "rand")]
 impl ConfigValue<'_> {
     pub(crate) fn clone_static(&self) -> ConfigValue<'static> {
         match self {
@@ -78,6 +77,7 @@ impl ConfigValue<'_> {
         }
     }
 
+    #[cfg(feature = "rand")]
     pub(crate) fn normalize(v: RandValue) -> Self {
         match v {
             RandValue::U8 => ConfigValue::Int(rand::random::<u8>() as i64),
