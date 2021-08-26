@@ -1,10 +1,6 @@
 //! Toml config source.
 
-use super::{
-    file::{FileConfigSource, FileSourceLoader},
-    memory::HashSourceBuilder,
-    SourceAdaptor, SourceLoader,
-};
+use super::{file::FileSourceLoader, memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
 use crate::ConfigError;
 use toml::Value;
 
@@ -18,8 +14,8 @@ impl SourceAdaptor for Toml {
             Value::Float(v) => source.insert(v),
             Value::Boolean(v) => source.insert(v),
             Value::Datetime(v) => source.insert(v.to_string()),
-            Value::Array(v) => source.insert_array(v),
-            Value::Table(v) => source.insert_map(v),
+            Value::Array(v) => source.insert_array(v)?,
+            Value::Table(v) => source.insert_map(v)?,
         }
         Ok(())
     }
@@ -35,28 +31,6 @@ impl SourceLoader for Toml {
 impl FileSourceLoader for Toml {
     fn file_extensions() -> Vec<&'static str> {
         vec!["toml"]
-    }
-}
-
-impl FileConfigSource for Value {
-    fn load(content: &str) -> Result<Self, ConfigError> {
-        Ok(toml::from_str::<Value>(content)?)
-    }
-
-    fn push_value(self, source: &mut HashSourceBuilder<'_>) {
-        match self {
-            Value::String(v) => source.insert(v),
-            Value::Integer(v) => source.insert(v),
-            Value::Float(v) => source.insert(v),
-            Value::Boolean(v) => source.insert(v),
-            Value::Datetime(v) => source.insert(v.to_string()),
-            Value::Array(v) => source.insert_array(v),
-            Value::Table(v) => source.insert_map(v),
-        }
-    }
-
-    fn ext() -> &'static str {
-        "toml"
     }
 }
 

@@ -7,14 +7,15 @@ use std::{
 
 use crate::{
     key::{PartialKey, PartialKeyIter},
-    source::file::FileConfigSource,
     source::Loader,
     ConfigError, ConfigKey, ConfigSource, ConfigValue, PartialKeyCollector,
 };
 
+use super::SourceAdaptor;
+
 /// In memory source.
 #[derive(Debug)]
-pub struct MemorySource(String, HashSource);
+pub struct MemorySource(String, pub(crate) HashSource);
 
 impl MemorySource {
     /// Create source.
@@ -132,7 +133,6 @@ impl HashSource {
         Self(HashMap::new())
     }
 
-
     #[inline]
     pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {
         HashSourceBuilder {
@@ -191,26 +191,33 @@ impl HashSourceBuilder<'_> {
     }
 
     /// Insert map into source.
-    pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: FileConfigSource>(
+    pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: SourceAdaptor>(
         &mut self,
         iter: I,
-    ) {
+    ) -> Result<(), ConfigError> {
         for (k, v) in iter {
             self.push(k.borrow());
-            v.push_value(self);
+            let x = v.load(self);
             self.pop();
+            x?;
         }
+        Ok(())
     }
 
     /// Insert array into source.
-    pub fn insert_array<I: IntoIterator<Item = S>, S: FileConfigSource>(&mut self, iter: I) {
+    pub fn insert_array<I: IntoIterator<Item = S>, S: SourceAdaptor>(
+        &mut self,
+        iter: I,
+    ) -> Result<(), ConfigError> {
         let mut i = 0;
         for s in iter {
             self.push(i);
             i += 1;
-            s.push_value(self);
+            let x = s.load(self);
             self.pop();
+            x?;
         }
+        Ok(())
     }
 
     #[inline]

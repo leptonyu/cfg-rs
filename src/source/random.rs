@@ -48,13 +48,13 @@ impl From<Random> for MemorySource {
 #[cfg(test)]
 mod test {
 
-    use crate::{source::memory::MemorySource, Configuration};
+    use crate::{source::memory::MemorySource, test::TestConfigExt};
 
     use super::Random;
 
     #[test]
     fn env_test() {
-        let config = Configuration::new().register_source(MemorySource::from(Random));
+        let config = MemorySource::from(Random).new_config();
         let a = config.get::<u128>("random.u128").unwrap();
         let b = config.get::<u128>("random.u128").unwrap();
         assert_ne!(a, b);

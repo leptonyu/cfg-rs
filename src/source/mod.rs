@@ -2,7 +2,7 @@
 use crate::*;
 
 #[allow(unused_imports)]
-use self::file::{FileConfigSource, FileLoader, FileSource};
+use self::file::{FileConfigSource, FileLoader};
 use self::memory::HashSourceBuilder;
 use std::path::PathBuf;
 
@@ -17,7 +17,6 @@ pub mod file;
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
-pub mod layered;
 pub mod memory;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
@@ -86,7 +85,6 @@ pub(crate) fn register_files(
     if option.json.enabled {
         config.register_loader(<FileLoader<json::Json>>::new(path.clone(), false))?;
     }
-
     Ok(())
 }
 

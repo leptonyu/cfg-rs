@@ -1,12 +1,9 @@
 //! Environment sources.
 use std::env::vars;
 
-use crate::{ConfigError, ConfigKey, ConfigSource, ConfigValue};
+use crate::ConfigError;
 
-use super::{
-    memory::{HashSourceBuilder, MemorySource},
-    Loader,
-};
+use super::{memory::HashSourceBuilder, Loader};
 
 /// Prefixed environment source.
 #[derive(Debug)]
@@ -14,9 +11,8 @@ pub struct PrefixEnvironment(String);
 
 impl Loader for PrefixEnvironment {
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
-        let prefix = format!("{}_", self.0.to_uppercase());
         for (k, v) in vars() {
-            if let Some(kk) = k.strip_prefix(&prefix) {
+            if let Some(kk) = k.strip_prefix(&self.0) {
                 builder.set(&kk.to_lowercase().replace('_', "."), v);
             }
         }
@@ -30,7 +26,6 @@ impl PrefixEnvironment {
         Self(format!("{}_", prefix.to_uppercase()))
     }
 }
-
 
 #[cfg(test)]
 mod test {

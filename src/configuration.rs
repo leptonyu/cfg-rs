@@ -13,12 +13,11 @@ use crate::{
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
         environment::PrefixEnvironment,
-        layered::LayeredSource,
         memory::{HashSource, MemorySource},
         register_files, Loader, SourceOption,
     },
     value::ConfigValue,
-    ConfigSource, FromConfig, FromConfigWithPrefix, PartialKeyCollector,
+    FromConfig, FromConfigWithPrefix, PartialKeyCollector,
 };
 
 /// Configuration Context.
@@ -28,7 +27,7 @@ use crate::{
 #[allow(missing_debug_implementations)]
 pub struct ConfigContext<'a> {
     key: ConfigKey<'a>,
-    source: &'a dyn ConfigSource,
+    source: &'a HashSource,
 }
 
 struct CacheValue {
@@ -52,8 +51,8 @@ impl CacheValue {
 
 impl_cache!(CacheValue);
 
-impl<'a> dyn ConfigSource + 'a {
-    pub(crate) fn new_context(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
+impl HashSource {
+    fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
         ConfigContext {
             key: cache.new_key(),
             source: self,
@@ -63,7 +62,7 @@ impl<'a> dyn ConfigSource + 'a {
 
 impl<'a> ConfigContext<'a> {
     fn parse_placeholder(
-        source: &'a dyn ConfigSource,
+        source: &'a HashSource,
         current_key: &ConfigKey<'_>,
         val: &str,
         history: &mut HashSet<String>,
@@ -227,7 +226,6 @@ impl<'a> ConfigContext<'a> {
 /// Configuration instance simply contains a multi layered [`ConfigSource`].
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
-    internal: LayeredSource,
     source: HashSource,
     loaders: Vec<Box<dyn Loader + 'static>>,
 }
@@ -246,7 +244,6 @@ impl Configuration {
     /// Try [`Configuration::init`] or [`Configuration::builder`].
     pub fn new() -> Self {
         Self {
-            internal: LayeredSource::new(),
             source: HashSource::new(),
             loaders: vec![],
         }
@@ -255,7 +252,7 @@ impl Configuration {
     pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
         ConfigContext {
             key: cache.new_key(),
-            source: &self.internal,
+            source: &self.source,
         }
     }
 
@@ -267,11 +264,6 @@ impl Configuration {
         loader.load(&mut self.source.prefixed())?;
         self.loaders.push(Box::new(loader));
         Ok(self)
-    }
-    /// Register customized config source.
-    pub fn register_source(mut self, source: impl ConfigSource + 'static) -> Self {
-        self.internal.register(source);
-        self
     }
 
     /// Get config from configuration by key.
@@ -298,7 +290,7 @@ impl Configuration {
 
     /// Get source names, just for test.
     pub fn source_names(&self) -> Vec<&str> {
-        self.internal.source_names()
+        vec![]
     }
 
     /// Create a configuration builder to customize the configuration instance.
@@ -339,7 +331,6 @@ impl ConfigurationBuilder {
         self.memory.insert(key, value);
         self
     }
-
 
     /// Initialize configuration by multiple predefined sources.
     ///
@@ -412,7 +403,7 @@ struct AppConfig {
 #[cfg(test)]
 mod test {
 
-    use crate::source::memory::MemorySource;
+    use crate::{source::memory::MemorySource, test::TestConfigExt};
 
     use super::*;
 
@@ -424,22 +415,21 @@ mod test {
     }
 
     fn build_config() -> Configuration {
-        Configuration::new().register_source(
-            MemorySource::default()
-                .set("a", "0")
-                .set("b", "${b}")
-                .set("c", "${a}")
-                .set("d", "${z}")
-                .set("e", "${z:}")
-                .set("f", "${z:${a}}")
-                .set("g", "a")
-                .set("h", "${${g}}")
-                .set("i", "\\$\\{a\\}")
-                .set("j", "${${g}:a}")
-                .set("k", "${a} ${a}")
-                .set("l", "${c}")
-                .set("m", "${no_found:${no_found_2:hello}}"),
-        )
+        MemorySource::default()
+            .set("a", "0")
+            .set("b", "${b}")
+            .set("c", "${a}")
+            .set("d", "${z}")
+            .set("e", "${z:}")
+            .set("f", "${z:${a}}")
+            .set("g", "a")
+            .set("h", "${${g}}")
+            .set("i", "\\$\\{a\\}")
+            .set("j", "${${g}:a}")
+            .set("k", "${a} ${a}")
+            .set("l", "${c}")
+            .set("m", "${no_found:${no_found_2:hello}}")
+            .new_config()
     }
 
     #[test]
