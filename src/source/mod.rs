@@ -88,13 +88,13 @@ pub(crate) fn register_files(
     Ok(())
 }
 
-/// Source loader.
+/// Source adaptor, usually convert intermediate representation config.
 pub trait SourceAdaptor {
-    /// Load source.
-    fn load(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
+    /// Read source.
+    fn read_source(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
 }
 
-/// Create source loader.
+/// Parse source intermediate representation from string.
 pub trait SourceLoader {
     /// Source Loader.
     type Adaptor: SourceAdaptor;

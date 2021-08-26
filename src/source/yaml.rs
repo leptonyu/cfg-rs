@@ -5,7 +5,7 @@ use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
 use crate::ConfigError;
 
 impl SourceAdaptor for yaml_rust::Yaml {
-    fn load(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             yaml_rust::Yaml::Real(v) => source.insert(v),
             yaml_rust::Yaml::Integer(v) => source.insert(v),
@@ -23,9 +23,9 @@ impl SourceAdaptor for yaml_rust::Yaml {
 }
 
 impl SourceAdaptor for Yaml {
-    fn load(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn read_source(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         for y in self.0 {
-            y.load(builder)?;
+            y.read_source(builder)?;
         }
         Ok(())
     }

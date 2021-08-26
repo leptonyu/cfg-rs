@@ -142,7 +142,7 @@ impl HashSourceBuilder<'_> {
     ) -> Result<(), ConfigError> {
         for (k, v) in iter {
             self.push(k.borrow());
-            let x = v.load(self);
+            let x = v.read_source(self);
             self.pop();
             x?;
         }
@@ -158,7 +158,7 @@ impl HashSourceBuilder<'_> {
         for s in iter {
             self.push(i);
             i += 1;
-            let x = s.load(self);
+            let x = s.read_source(self);
             self.pop();
             x?;
         }

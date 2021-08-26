@@ -7,7 +7,7 @@ use json::JsonValue;
 pub type Json = JsonValue;
 
 impl SourceAdaptor for Json {
-    fn load(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             JsonValue::String(v) => source.insert(v),
             JsonValue::Short(v) => source.insert(v.as_str().to_string()),

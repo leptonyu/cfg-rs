@@ -7,7 +7,7 @@ use toml::Value;
 pub type Toml = Value;
 
 impl SourceAdaptor for Toml {
-    fn load(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             Value::String(v) => source.insert(v),
             Value::Integer(v) => source.insert(v),

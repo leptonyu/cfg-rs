@@ -41,7 +41,7 @@ impl<L: SourceLoader> Loader for FileLoader<L> {
             if path.exists() {
                 flag = false;
                 let c = std::fs::read_to_string(path)?;
-                L::create_loader(&c)?.load(builder)?
+                L::create_loader(&c)?.read_source(builder)?
             }
         }
         if flag {
@@ -59,7 +59,7 @@ pub fn inline_source<S: SourceLoader>(
 ) -> Result<HashSource, ConfigError> {
     let v = S::create_loader(content)?;
     let mut m = HashSource::new();
-    v.load(&mut m.prefixed())?;
+    v.read_source(&mut m.prefixed())?;
     Ok(m)
 }
 
