@@ -18,6 +18,7 @@ pub struct FileLoader<L: SourceLoader> {
 }
 
 impl<L: SourceLoader> FileLoader<L> {
+    #[allow(dead_code)]
     pub(crate) fn new(path: PathBuf, required: bool) -> Self {
         Self {
             name: format!(
