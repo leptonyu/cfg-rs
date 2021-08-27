@@ -38,23 +38,6 @@ pub(crate) struct EnabledOption {
     pub(crate) enabled: bool,
 }
 
-/// Source types.
-#[derive(Debug, Clone, Copy)]
-pub enum SourceType {
-    /// Support toml.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    Toml,
-    #[cfg(feature = "yaml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
-    /// Support yaml.
-    Yaml,
-    #[cfg(feature = "json")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    /// Support json.
-    Json,
-}
-
 #[derive(Debug, FromConfig)]
 #[config(prefix = "app.sources")]
 pub(crate) struct SourceOption {
