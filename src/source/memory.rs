@@ -8,19 +8,24 @@ use std::{
 use crate::{
     key::{PartialKey, PartialKeyIter},
     source::{Loader, SourceAdaptor},
+    value_ref::Refresher,
     ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
 
 /// Hash Source.
-#[derive(Debug)]
-pub struct HashSource(HashMap<String, HashValue>, String);
+#[allow(missing_debug_implementations)]
+pub struct HashSource {
+    pub(crate) value: HashMap<String, HashValue>,
+    name: String,
+    pub(crate) refs: Refresher,
+}
 
 impl Loader for HashSource {
     fn name(&self) -> &str {
-        &self.1
+        &self.name
     }
     fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
-        for (k, v) in &self.0 {
+        for (k, v) in &self.value {
             if let Some(v) = &v.value {
                 builder.set(k, v.clone_static());
             }
@@ -77,20 +82,24 @@ impl HashValue {
 
 impl HashSource {
     pub(crate) fn new<K: Into<String>>(name: K) -> Self {
-        Self(HashMap::new(), name.into())
+        Self {
+            value: HashMap::new(),
+            name: name.into(),
+            refs: Refresher::new(),
+        }
     }
 
     #[inline]
     pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {
         HashSourceBuilder {
             key: vec![],
-            map: &mut self.0,
+            map: &mut self.value,
         }
     }
 
     pub(crate) fn get_value(&self, key: &ConfigKey<'_>) -> Option<ConfigValue<'_>> {
         let key = key.as_str();
-        self.0
+        self.value
             .get(key)
             .and_then(|f| f.value.as_ref())
             .map(|v| match v {
@@ -109,7 +118,7 @@ impl HashSource {
         prefix: &ConfigKey<'_>,
         sub: &mut PartialKeyCollector<'a>,
     ) {
-        if let Some(v) = self.0.get(prefix.as_str()) {
+        if let Some(v) = self.value.get(prefix.as_str()) {
             for k in v.sub_str.iter() {
                 sub.str_key.insert(k.as_str());
             }

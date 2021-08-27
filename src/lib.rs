@@ -31,6 +31,7 @@ pub mod source;
 #[cfg(test)]
 mod test;
 mod value;
+mod value_ref;
 
 use key::PartialKeyCollector;
 
@@ -86,6 +87,7 @@ pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub use key::ConfigKey;
 pub use value::ConfigValue;
+pub use value_ref::RefValue;
 
 /// Generate config instance from configuration.
 ///

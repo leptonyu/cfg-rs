@@ -16,6 +16,7 @@ use crate::{
         Loader, SourceOption,
     },
     value::ConfigValue,
+    value_ref::Refresher,
     FromConfig, FromConfigWithPrefix, PartialKeyCollector,
 };
 
@@ -60,6 +61,10 @@ impl HashSource {
 }
 
 impl<'a> ConfigContext<'a> {
+    pub(crate) fn as_refresher(&self) -> &Refresher {
+        &self.source.refs
+    }
+
     fn parse_placeholder(
         source: &'a HashSource,
         current_key: &ConfigKey<'_>,
@@ -285,6 +290,29 @@ impl Configuration {
         loader.load(&mut self.source.prefixed())?;
         self.loaders.push(Box::new(loader));
         Ok(self)
+    }
+
+    fn reload(&self) -> Result<Configuration, ConfigError> {
+        let mut s = Configuration::new();
+        let c = &mut s.source.prefixed();
+        for l in self.loaders.iter() {
+            l.load(c)?;
+        }
+        self.source.refs.refresh(&s)?;
+        Ok(s)
+    }
+
+    /// Refresh all ref values.
+    pub fn refresh_ref(&self) -> Result<(), ConfigError> {
+        let _ = self.reload()?;
+        Ok(())
+    }
+
+    /// Refresh cofiguration.
+    pub fn refresh(&mut self) -> Result<(), ConfigError> {
+        let c = self.reload()?;
+        self.source.value = c.source.value;
+        Ok(())
     }
 
     /// Get config from configuration by key.
