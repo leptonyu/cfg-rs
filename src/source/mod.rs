@@ -21,7 +21,7 @@ pub mod memory;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-pub mod random;
+pub(crate) mod random;
 #[doc(hidden)]
 #[cfg(feature = "toml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]

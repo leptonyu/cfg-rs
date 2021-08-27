@@ -4,7 +4,7 @@ use crate::{value::RandValue, ConfigError};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct Random;
+pub(crate) struct Random;
 
 impl Loader for Random {
     fn name(&self) -> &str {

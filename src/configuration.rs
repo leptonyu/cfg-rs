@@ -270,6 +270,13 @@ impl Configuration {
         Ok(self)
     }
 
+    /// Register random source, which can get random values.
+    #[cfg(feature = "rand")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+    pub fn register_random(&mut self) -> Result<&mut Self, ConfigError> {
+        self.register_loader(crate::source::random::Random)
+    }
+
     /// Register source loader.
     pub fn register_loader<L: Loader + 'static>(
         &mut self,
