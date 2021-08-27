@@ -67,23 +67,51 @@ pub(crate) struct SourceOption {
     json: EnabledOption,
 }
 
+pub(crate) fn register_by_ext(
+    config: &mut Configuration,
+    path: PathBuf,
+    required: bool,
+) -> Result<(), ConfigError> {
+    let ext = path
+        .extension()
+        .and_then(|x| x.to_str())
+        .ok_or_else(|| ConfigError::ConfigFileNotSupported(path.clone()))?;
+    match ext {
+        #[cfg(feature = "toml")]
+        "toml" => {
+            config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), required, true))?;
+        }
+        #[cfg(feature = "yaml")]
+        "yaml" | "yml" => {
+            config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), required, true))?;
+        }
+        #[cfg(feature = "json")]
+        "json" => {
+            config.register_loader(<FileLoader<json::Json>>::new(path.clone(), required, true))?;
+        }
+        _ => return Err(ConfigError::ConfigFileNotSupported(path)),
+    }
+    Ok(())
+}
+
 #[allow(unused_mut, unused_variables)]
 pub(crate) fn register_files(
     config: &mut Configuration,
     option: &SourceOption,
     path: PathBuf,
+    has_ext: bool,
 ) -> Result<(), ConfigError> {
     #[cfg(feature = "toml")]
     if option.toml.enabled {
-        config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), false))?;
+        config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), false, has_ext))?;
     }
     #[cfg(feature = "yaml")]
     if option.yaml.enabled {
-        config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), false))?;
+        config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), false, has_ext))?;
     }
     #[cfg(feature = "json")]
     if option.json.enabled {
-        config.register_loader(<FileLoader<json::Json>>::new(path.clone(), false))?;
+        config.register_loader(<FileLoader<json::Json>>::new(path.clone(), false, has_ext))?;
     }
     Ok(())
 }

@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::path::PathBuf;
 
 /// Configuration Error.
 #[derive(Debug)]
@@ -14,7 +15,9 @@ pub enum ConfigError {
     /// Config recursively parsed.
     ConfigRecursiveError(String),
     /// Config file not exists.
-    ConfigFileNotExists(String),
+    ConfigFileNotExists(PathBuf),
+    /// Config file not supported.
+    ConfigFileNotSupported(PathBuf),
     /// Config parse error with other error.
     ConfigCause(Box<dyn Error + 'static>),
 }

@@ -12,7 +12,8 @@ use crate::{
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        environment::PrefixEnvironment, memory::HashSource, register_files, Loader, SourceOption,
+        environment::PrefixEnvironment, memory::HashSource, register_by_ext, register_files,
+        Loader, SourceOption,
     },
     value::ConfigValue,
     FromConfig, FromConfigWithPrefix, PartialKeyCollector,
@@ -254,6 +255,16 @@ impl Configuration {
         }
     }
 
+    /// register file source.
+    pub fn register_file(
+        &mut self,
+        path: PathBuf,
+        required: bool,
+    ) -> Result<&mut Self, ConfigError> {
+        register_by_ext(self, path, required)?;
+        Ok(self)
+    }
+
     /// Register source loader.
     pub fn register_loader<L: Loader + 'static>(
         &mut self,
@@ -378,12 +389,12 @@ impl ConfigurationBuilder {
         if let Some(profile) = &app.profile {
             let mut path = path.clone();
             path.push(format!("{}-{}", app.name, profile));
-            register_files(&mut config, &option, path)?;
+            register_files(&mut config, &option, path, false)?;
         }
 
         // Layer 3, file.
         path.push(app.name);
-        register_files(&mut config, &option, path)?;
+        register_files(&mut config, &option, path, false)?;
 
         Ok(config)
     }
