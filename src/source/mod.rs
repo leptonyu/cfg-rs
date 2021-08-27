@@ -3,7 +3,6 @@ use crate::*;
 
 #[allow(unused_imports)]
 use self::file::FileLoader;
-use self::memory::HashSourceBuilder;
 use std::path::PathBuf;
 
 /// Config key module.
@@ -11,6 +10,7 @@ pub mod key {
     pub use crate::key::{CacheKey, PartialKey, PartialKeyCollector};
 }
 pub use file::inline_source;
+pub use memory::ConfigSourceBuilder;
 
 pub(crate) mod environment;
 pub(crate) mod file;
@@ -81,15 +81,15 @@ pub(crate) fn register_by_ext(
     match ext {
         #[cfg(feature = "toml")]
         "toml" => {
-            config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), required, true))?;
+            config.register_source(<FileLoader<toml::Toml>>::new(path.clone(), required, true))?;
         }
         #[cfg(feature = "yaml")]
         "yaml" | "yml" => {
-            config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), required, true))?;
+            config.register_source(<FileLoader<yaml::Yaml>>::new(path.clone(), required, true))?;
         }
         #[cfg(feature = "json")]
         "json" => {
-            config.register_loader(<FileLoader<json::Json>>::new(path.clone(), required, true))?;
+            config.register_source(<FileLoader<json::Json>>::new(path.clone(), required, true))?;
         }
         _ => return Err(ConfigError::ConfigFileNotSupported(path)),
     }
@@ -105,41 +105,42 @@ pub(crate) fn register_files(
 ) -> Result<(), ConfigError> {
     #[cfg(feature = "toml")]
     if option.toml.enabled {
-        config.register_loader(<FileLoader<toml::Toml>>::new(path.clone(), false, has_ext))?;
+        config.register_source(<FileLoader<toml::Toml>>::new(path.clone(), false, has_ext))?;
     }
     #[cfg(feature = "yaml")]
     if option.yaml.enabled {
-        config.register_loader(<FileLoader<yaml::Yaml>>::new(path.clone(), false, has_ext))?;
+        config.register_source(<FileLoader<yaml::Yaml>>::new(path.clone(), false, has_ext))?;
     }
     #[cfg(feature = "json")]
     if option.json.enabled {
-        config.register_loader(<FileLoader<json::Json>>::new(path.clone(), false, has_ext))?;
+        config.register_source(<FileLoader<json::Json>>::new(path.clone(), false, has_ext))?;
     }
     Ok(())
 }
 
 /// Source adaptor, usually convert intermediate representation config.
-pub trait SourceAdaptor {
+pub trait ConfigSourceAdaptor {
     /// Read source.
-    fn read_source(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
+    fn convert_source(self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
 }
 
 /// Parse source intermediate representation from string.
-pub trait SourceLoader {
+pub trait ConfigSourceParser {
     /// Source Loader.
-    type Adaptor: SourceAdaptor;
+    type Adaptor: ConfigSourceAdaptor;
 
     /// Create loader.
-    fn create_loader(_: &str) -> Result<Self::Adaptor, ConfigError>;
+    fn parse_source(_: &str) -> Result<Self::Adaptor, ConfigError>;
 
     /// File extenstions.
     fn file_extensions() -> Vec<&'static str>;
 }
 
-/// Loader.
-pub trait Loader {
-    /// Loader name.
+/// Config source.
+pub trait ConfigSource {
+    /// Config source name.
     fn name(&self) -> &str;
-    /// Load source.
-    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError>;
+
+    /// Load config source.
+    fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
 }

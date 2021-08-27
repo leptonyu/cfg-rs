@@ -1,13 +1,13 @@
 //! Json config source.
 
-use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::ConfigSourceBuilder, ConfigSourceAdaptor, ConfigSourceParser};
 use crate::ConfigError;
 use json::JsonValue;
 
 pub type Json = JsonValue;
 
-impl SourceAdaptor for Json {
-    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+impl ConfigSourceAdaptor for Json {
+    fn convert_source(self, source: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             JsonValue::String(v) => source.insert(v),
             JsonValue::Short(v) => source.insert(v.as_str().to_string()),
@@ -24,9 +24,9 @@ impl SourceAdaptor for Json {
     }
 }
 
-impl SourceLoader for Json {
+impl ConfigSourceParser for Json {
     type Adaptor = Json;
-    fn create_loader(content: &str) -> Result<Self::Adaptor, ConfigError> {
+    fn parse_source(content: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(json::parse(content)?)
     }
 

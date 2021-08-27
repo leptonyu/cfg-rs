@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     key::{PartialKey, PartialKeyIter},
-    source::{Loader, SourceAdaptor},
+    source::{ConfigSource, ConfigSourceAdaptor},
     value_ref::Refresher,
     ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
@@ -20,11 +20,11 @@ pub(crate) struct HashSource {
     pub(crate) refs: Refresher,
 }
 
-impl Loader for HashSource {
+impl ConfigSource for HashSource {
     fn name(&self) -> &str {
         &self.name
     }
-    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         for (k, v) in &self.value {
             if let Some(v) = &v.value {
                 builder.set(k, v.clone_static());
@@ -42,9 +42,9 @@ pub(crate) struct HashValue {
     value: Option<ConfigValue<'static>>,
 }
 
-/// Prefixed hash source.
+/// Config source builder.
 #[derive(Debug)]
-pub struct HashSourceBuilder<'a> {
+pub struct ConfigSourceBuilder<'a> {
     key: Vec<String>,
     map: &'a mut HashMap<String, HashValue>,
 }
@@ -90,8 +90,8 @@ impl HashSource {
     }
 
     #[inline]
-    pub(crate) fn prefixed(&mut self) -> HashSourceBuilder<'_> {
-        HashSourceBuilder {
+    pub(crate) fn prefixed(&mut self) -> ConfigSourceBuilder<'_> {
+        ConfigSourceBuilder {
             key: vec![],
             map: &mut self.value,
         }
@@ -134,7 +134,7 @@ impl HashSource {
     }
 }
 
-impl HashSourceBuilder<'_> {
+impl ConfigSourceBuilder<'_> {
     /// Set value.
     #[allow(single_use_lifetimes)]
     pub fn set<'b, K: Into<PartialKeyIter<'b>>, V: Into<ConfigValue<'static>>>(
@@ -148,13 +148,13 @@ impl HashSourceBuilder<'_> {
     }
 
     /// Insert map into source.
-    pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: SourceAdaptor>(
+    pub fn insert_map<I: IntoIterator<Item = (K, V)>, K: Borrow<str>, V: ConfigSourceAdaptor>(
         &mut self,
         iter: I,
     ) -> Result<(), ConfigError> {
         for (k, v) in iter {
             self.push(k.borrow());
-            let x = v.read_source(self);
+            let x = v.convert_source(self);
             self.pop();
             x?;
         }
@@ -162,7 +162,7 @@ impl HashSourceBuilder<'_> {
     }
 
     /// Insert array into source.
-    pub fn insert_array<I: IntoIterator<Item = S>, S: SourceAdaptor>(
+    pub fn insert_array<I: IntoIterator<Item = S>, S: ConfigSourceAdaptor>(
         &mut self,
         iter: I,
     ) -> Result<(), ConfigError> {
@@ -170,7 +170,7 @@ impl HashSourceBuilder<'_> {
         for s in iter {
             self.push(i);
             i += 1;
-            let x = s.read_source(self);
+            let x = s.convert_source(self);
             self.pop();
             x?;
         }

@@ -1,13 +1,13 @@
 //! Toml config source.
 
-use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::ConfigSourceBuilder, ConfigSourceAdaptor, ConfigSourceParser};
 use crate::ConfigError;
 use toml::Value;
 
 pub type Toml = Value;
 
-impl SourceAdaptor for Toml {
-    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+impl ConfigSourceAdaptor for Toml {
+    fn convert_source(self, source: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             Value::String(v) => source.insert(v),
             Value::Integer(v) => source.insert(v),
@@ -21,9 +21,9 @@ impl SourceAdaptor for Toml {
     }
 }
 
-impl SourceLoader for Toml {
+impl ConfigSourceParser for Toml {
     type Adaptor = Toml;
-    fn create_loader(c: &str) -> Result<Self::Adaptor, ConfigError> {
+    fn parse_source(c: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(toml::from_str::<Value>(c)?)
     }
 

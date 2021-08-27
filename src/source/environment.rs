@@ -3,17 +3,17 @@ use std::env::vars;
 
 use crate::ConfigError;
 
-use super::{memory::HashSourceBuilder, Loader};
+use super::{memory::ConfigSourceBuilder, ConfigSource};
 
 /// Prefixed environment source.
 #[derive(Debug)]
 pub(crate) struct PrefixEnvironment(String, String);
 
-impl Loader for PrefixEnvironment {
+impl ConfigSource for PrefixEnvironment {
     fn name(&self) -> &str {
         &self.1
     }
-    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         for (k, v) in vars() {
             if let Some(kk) = k.strip_prefix(&self.0) {
                 builder.set(&kk.to_lowercase().replace('_', "."), v);

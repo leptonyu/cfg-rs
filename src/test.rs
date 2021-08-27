@@ -1,16 +1,16 @@
 use crate::source::memory::HashSource;
-use crate::source::Loader;
+use crate::source::ConfigSource;
 use crate::*;
 
-pub(crate) trait TestConfigExt: Loader + Sized + 'static {
+pub(crate) trait TestConfigExt: ConfigSource + Sized + 'static {
     fn new_config(self) -> Configuration {
         let mut c = Configuration::new();
-        c.register_loader(self).unwrap();
+        c.register_source(self).unwrap();
         c
     }
 }
 
-impl<C: Loader + 'static> TestConfigExt for C {}
+impl<C: ConfigSource + 'static> TestConfigExt for C {}
 
 type R<V> = Result<V, ConfigError>;
 use std::collections::HashMap;
@@ -42,7 +42,7 @@ struct IntSuit {
 }
 
 #[allow(dead_code)]
-pub(crate) fn source_test_suit(src: impl Loader + 'static) -> Result<(), ConfigError> {
+pub(crate) fn source_test_suit(src: impl ConfigSource + 'static) -> Result<(), ConfigError> {
     let config = src.new_config();
     let v: ConfigSuit = config.get("suit")?;
     assert_eq!(vec!["a0", "a1", "a2"], v.arr);

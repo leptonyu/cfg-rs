@@ -1,11 +1,11 @@
 //! Yaml config source.
 use yaml_rust::YamlLoader;
 
-use super::{memory::HashSourceBuilder, SourceAdaptor, SourceLoader};
+use super::{memory::ConfigSourceBuilder, ConfigSourceAdaptor, ConfigSourceParser};
 use crate::ConfigError;
 
-impl SourceAdaptor for yaml_rust::Yaml {
-    fn read_source(self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+impl ConfigSourceAdaptor for yaml_rust::Yaml {
+    fn convert_source(self, source: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
             yaml_rust::Yaml::Real(v) => source.insert(v),
             yaml_rust::Yaml::Integer(v) => source.insert(v),
@@ -22,18 +22,18 @@ impl SourceAdaptor for yaml_rust::Yaml {
     }
 }
 
-impl SourceAdaptor for Yaml {
-    fn read_source(self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+impl ConfigSourceAdaptor for Yaml {
+    fn convert_source(self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         for y in self.0 {
-            y.read_source(builder)?;
+            y.convert_source(builder)?;
         }
         Ok(())
     }
 }
 
-impl SourceLoader for Yaml {
+impl ConfigSourceParser for Yaml {
     type Adaptor = Yaml;
-    fn create_loader(content: &str) -> Result<Self::Adaptor, ConfigError> {
+    fn parse_source(content: &str) -> Result<Self::Adaptor, ConfigError> {
         Ok(Yaml(YamlLoader::load_from_str(content)?))
     }
 

@@ -13,7 +13,7 @@ use crate::{
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
         environment::PrefixEnvironment, memory::HashSource, register_by_ext, register_files,
-        Loader, SourceOption,
+        ConfigSource, SourceOption,
     },
     value::ConfigValue,
     value_ref::Refresher,
@@ -226,12 +226,10 @@ impl<'a> ConfigContext<'a> {
 }
 
 /// Configuration Instance.
-///
-/// Configuration instance simply contains a multi layered [`ConfigSource`].
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
     pub(crate) source: HashSource,
-    loaders: Vec<Box<dyn Loader + 'static>>,
+    loaders: Vec<Box<dyn ConfigSource + 'static>>,
 }
 
 /// Configuration Builder.
@@ -255,7 +253,7 @@ impl Configuration {
 
     /// Register prefix env.
     pub fn register_perfix_env(&mut self, prefix: &str) -> Result<&mut Self, ConfigError> {
-        self.register_loader(PrefixEnvironment::new(prefix))
+        self.register_source(PrefixEnvironment::new(prefix))
     }
 
     /// Register file source, please enable format feature.
@@ -272,11 +270,11 @@ impl Configuration {
     #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn register_random(&mut self) -> Result<&mut Self, ConfigError> {
-        self.register_loader(crate::source::random::Random)
+        self.register_source(crate::source::random::Random)
     }
 
     /// Register source loader.
-    pub fn register_loader<L: Loader + 'static>(
+    pub fn register_source<L: ConfigSource + 'static>(
         &mut self,
         loader: L,
     ) -> Result<&mut Self, ConfigError> {
@@ -396,14 +394,14 @@ impl ConfigurationBuilder {
         let mut config = Configuration::new();
 
         // Layer 0, commandlines.
-        config.register_loader(self.memory)?;
+        config.register_source(self.memory)?;
 
         let option: SourceOption = config.get_predefined()?;
 
         // Layer 1, random
         #[cfg(feature = "rand")]
         if option.random.enabled {
-            config.register_loader(crate::source::random::Random)?;
+            config.register_source(crate::source::random::Random)?;
         }
 
         // Layer 2, environment.
@@ -412,7 +410,7 @@ impl ConfigurationBuilder {
             .or_else(|| config.get::<Option<String>>("env.prefix").ok().flatten())
             .or_else(|| var("CFG_ENV_PREFIX").ok())
             .unwrap_or("CFG".to_owned());
-        config.register_loader(PrefixEnvironment::new(&prefix))?;
+        config.register_source(PrefixEnvironment::new(&prefix))?;
 
         // Layer 2, profile file.
         let app = config.get_predefined::<AppConfig>()?;

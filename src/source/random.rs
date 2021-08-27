@@ -1,17 +1,17 @@
 //! Random source.
-use super::{memory::HashSourceBuilder, Loader};
+use super::{memory::ConfigSourceBuilder, ConfigSource};
 use crate::{value::RandValue, ConfigError};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(crate) struct Random;
 
-impl Loader for Random {
+impl ConfigSource for Random {
     fn name(&self) -> &str {
         "random_generator"
     }
 
-    fn load(&self, source: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn load(&self, source: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         source.set("random.u8", RandValue::U8);
         source.set("random.u16", RandValue::U16);
         source.set("random.u32", RandValue::U32);

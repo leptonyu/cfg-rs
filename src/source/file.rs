@@ -4,13 +4,13 @@ use std::{marker::PhantomData, path::PathBuf};
 use crate::ConfigError;
 
 use super::{
-    memory::{HashSource, HashSourceBuilder},
-    Loader, SourceAdaptor, SourceLoader,
+    memory::{ConfigSourceBuilder, HashSource},
+    ConfigSource, ConfigSourceAdaptor, ConfigSourceParser,
 };
 
 /// FileLoader
 #[derive(Debug)]
-pub(crate) struct FileLoader<L: SourceLoader> {
+pub(crate) struct FileLoader<L: ConfigSourceParser> {
     name: String,
     path: PathBuf,
     ext: bool,
@@ -18,7 +18,7 @@ pub(crate) struct FileLoader<L: SourceLoader> {
     _data: PhantomData<L>,
 }
 
-impl<L: SourceLoader> FileLoader<L> {
+impl<L: ConfigSourceParser> FileLoader<L> {
     #[allow(dead_code)]
     pub(crate) fn new(path: PathBuf, required: bool, ext: bool) -> Self {
         Self {
@@ -35,25 +35,25 @@ impl<L: SourceLoader> FileLoader<L> {
     }
 }
 
-fn load_path<L: SourceLoader>(
+fn load_path<L: ConfigSourceParser>(
     path: PathBuf,
     flag: &mut bool,
-    builder: &mut HashSourceBuilder<'_>,
+    builder: &mut ConfigSourceBuilder<'_>,
 ) -> Result<(), ConfigError> {
     if path.exists() {
         *flag = false;
         let c = std::fs::read_to_string(path)?;
-        L::create_loader(&c)?.read_source(builder)?;
+        L::parse_source(&c)?.convert_source(builder)?;
     }
     Ok(())
 }
 
-impl<L: SourceLoader> Loader for FileLoader<L> {
+impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
     fn name(&self) -> &str {
         &self.name
     }
 
-    fn load(&self, builder: &mut HashSourceBuilder<'_>) -> Result<(), ConfigError> {
+    fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         let mut flag = self.required;
         if self.ext {
             load_path::<L>(self.path.clone(), &mut flag, builder)?;
@@ -73,13 +73,13 @@ impl<L: SourceLoader> Loader for FileLoader<L> {
 
 #[doc(hidden)]
 #[inline]
-pub fn inline_source<S: SourceLoader>(
+pub fn inline_source<S: ConfigSourceParser>(
     name: String,
     content: &'static str,
-) -> Result<impl Loader, ConfigError> {
-    let v = S::create_loader(content)?;
+) -> Result<impl ConfigSource, ConfigError> {
+    let v = S::parse_source(content)?;
     let mut m = HashSource::new(name);
-    v.read_source(&mut m.prefixed())?;
+    v.convert_source(&mut m.prefixed())?;
     Ok(m)
 }
 
