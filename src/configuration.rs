@@ -52,7 +52,7 @@ impl CacheValue {
 impl_cache!(CacheValue);
 
 impl HashSource {
-    fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
+    pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
         ConfigContext {
             key: cache.new_key(),
             source: self,
@@ -230,7 +230,7 @@ impl<'a> ConfigContext<'a> {
 /// Configuration instance simply contains a multi layered [`ConfigSource`].
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
-    source: HashSource,
+    pub(crate) source: HashSource,
     loaders: Vec<Box<dyn Loader + 'static>>,
 }
 
@@ -250,13 +250,6 @@ impl Configuration {
         Self {
             source: HashSource::new("configuration"),
             loaders: vec![],
-        }
-    }
-
-    pub(crate) fn new_context<'a>(&'a self, cache: &'a mut CacheString) -> ConfigContext<'a> {
-        ConfigContext {
-            key: cache.new_key(),
-            source: &self.source,
         }
     }
 
@@ -292,6 +285,7 @@ impl Configuration {
         Ok(self)
     }
 
+    #[inline]
     fn reload(&self) -> Result<Configuration, ConfigError> {
         let mut s = Configuration::new();
         let c = &mut s.source.prefixed();
@@ -320,7 +314,7 @@ impl Configuration {
     #[inline]
     pub fn get<T: FromConfig>(&self, key: &str) -> Result<T, ConfigError> {
         CacheString::with_key(|cache| {
-            let mut context = self.new_context(cache);
+            let mut context = self.source.new_context(cache);
             context.parse_config(key, None)
         })
     }

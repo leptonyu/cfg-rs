@@ -460,7 +460,7 @@ mod test {
             &mut self,
             val: impl Into<ConfigValue<'a>>,
         ) -> Result<T, ConfigError> {
-            T::from_value(&mut self.0.new_context(&mut self.1), val.into())
+            T::from_value(&mut self.0.source.new_context(&mut self.1), val.into())
         }
     }
 
