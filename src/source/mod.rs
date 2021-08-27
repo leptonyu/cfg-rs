@@ -67,6 +67,7 @@ pub(crate) struct SourceOption {
     json: EnabledOption,
 }
 
+#[allow(unreachable_code, unused_variables)]
 pub(crate) fn register_by_ext(
     config: &mut Configuration,
     path: PathBuf,
