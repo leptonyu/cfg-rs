@@ -7,7 +7,7 @@ use super::{memory::HashSourceBuilder, Loader};
 
 /// Prefixed environment source.
 #[derive(Debug)]
-pub struct PrefixEnvironment(String, String);
+pub(crate) struct PrefixEnvironment(String, String);
 
 impl Loader for PrefixEnvironment {
     fn name(&self) -> &str {
@@ -25,7 +25,7 @@ impl Loader for PrefixEnvironment {
 
 impl PrefixEnvironment {
     /// Create new prefix env.
-    pub fn new(prefix: &str) -> Self {
+    pub(crate) fn new(prefix: &str) -> Self {
         let n = format!("{}_", prefix.to_uppercase());
         let nm = format!("prefix_env:{}**", n);
         Self(n, nm)

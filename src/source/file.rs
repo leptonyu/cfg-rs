@@ -10,7 +10,7 @@ use super::{
 
 /// FileLoader
 #[derive(Debug)]
-pub struct FileLoader<L: SourceLoader> {
+pub(crate) struct FileLoader<L: SourceLoader> {
     name: String,
     path: PathBuf,
     ext: bool,
@@ -76,7 +76,7 @@ impl<L: SourceLoader> Loader for FileLoader<L> {
 pub fn inline_source<S: SourceLoader>(
     name: String,
     content: &'static str,
-) -> Result<HashSource, ConfigError> {
+) -> Result<impl Loader, ConfigError> {
     let v = S::create_loader(content)?;
     let mut m = HashSource::new(name);
     v.read_source(&mut m.prefixed())?;
@@ -88,6 +88,6 @@ pub fn inline_source<S: SourceLoader>(
 #[macro_export]
 macro_rules! inline_config_source {
     ($ty:path: $path:literal) => {
-        crate::source::file::inline_source::<$ty>(format!("inline:{}", $path), include_str!($path))
+        crate::source::inline_source::<$ty>(format!("inline:{}", $path), include_str!($path))
     };
 }

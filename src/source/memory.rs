@@ -14,7 +14,7 @@ use crate::{
 
 /// Hash Source.
 #[allow(missing_debug_implementations)]
-pub struct HashSource {
+pub(crate) struct HashSource {
     pub(crate) value: HashMap<String, HashValue>,
     name: String,
     pub(crate) refs: Refresher,

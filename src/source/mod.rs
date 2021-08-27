@@ -10,14 +10,15 @@ use std::path::PathBuf;
 pub mod key {
     pub use crate::key::{CacheKey, PartialKey, PartialKeyCollector};
 }
+pub use file::inline_source;
 
-pub mod environment;
-pub mod file;
+pub(crate) mod environment;
+pub(crate) mod file;
 #[doc(hidden)]
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
-pub mod memory;
+pub(crate) mod memory;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
