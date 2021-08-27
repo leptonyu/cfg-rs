@@ -255,7 +255,12 @@ impl Configuration {
         }
     }
 
-    /// register file source.
+    /// Register prefix env.
+    pub fn register_perfix_env(&mut self, prefix: &str) -> Result<&mut Self, ConfigError> {
+        self.register_loader(PrefixEnvironment::new(prefix))
+    }
+
+    /// Register file source, please enable format feature.
     pub fn register_file(
         &mut self,
         path: PathBuf,
