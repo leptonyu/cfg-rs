@@ -1,4 +1,4 @@
-//! UNSTABLE: Configuration sources module, use it when you want to extend config sources.
+//! Configuration sources module, see the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for general usage information.
 use crate::*;
 
 #[allow(unused_imports)]
