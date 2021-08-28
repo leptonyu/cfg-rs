@@ -30,7 +30,7 @@ struct IntSuit {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::with_defaults_builder()
+    let config = Configuration::with_predefined_builder()
         .set("suit.val.v1", "1")
         .set("suit.val.v2", "2")
         .set("suit.val.v3", "3")

@@ -76,18 +76,9 @@ impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
 pub fn inline_source<S: ConfigSourceParser>(
     name: String,
     content: &'static str,
-) -> Result<impl ConfigSource, ConfigError> {
+) -> Result<HashSource, ConfigError> {
     let v = S::parse_source(content)?;
     let mut m = HashSource::new(name);
     v.convert_source(&mut m.prefixed())?;
     Ok(m)
-}
-
-/// Inline config source
-#[doc(hidden)]
-#[macro_export]
-macro_rules! inline_config_source {
-    ($ty:path: $path:literal) => {
-        crate::source::inline_source::<$ty>(format!("inline:{}", $path), include_str!($path))
-    };
 }

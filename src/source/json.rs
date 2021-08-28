@@ -35,23 +35,13 @@ impl ConfigSourceParser for Json {
     }
 }
 
-/// Inline json file macro function, return Result<[ConfigSource](./trait.ConfigSource.html), [`ConfigError`]>.
-#[macro_export]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-macro_rules! inline_json {
-    ($path:literal) => {
-        crate::inline_config_source!(crate::source::json::Json: $path)
-    };
-}
-
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::test::source_test_suit;
+    use crate::{source::inline_source, test::source_test_suit, ConfigError};
 
     #[test]
     #[allow(unused_qualifications)]
     fn inline_test() -> Result<(), ConfigError> {
-        source_test_suit(inline_json!("../../app.json")?)
+        source_test_suit(inline_source!("../../app.json")?)
     }
 }

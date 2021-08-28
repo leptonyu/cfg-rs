@@ -109,16 +109,35 @@ impl<'a> Into<ConfigValue<'a>> for &'a str {
     }
 }
 
-impl<'a> Into<ConfigValue<'a>> for i64 {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::Int(self)
-    }
+macro_rules! into_config_value_le {
+    ($f:ident=$t:ident: $($x:ident),*) => {$(
+        impl<'a> Into<ConfigValue<'a>> for $x {
+            #[allow(trivial_numeric_casts)]
+            fn into(self) -> ConfigValue<'a> {
+                ConfigValue::$f(self as $t)
+            }
+        })*
+    };
 }
-impl<'a> Into<ConfigValue<'a>> for f64 {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::Float(self)
-    }
+
+into_config_value_le!(Int = i64: u8, u16, u32, i8, i16, i32, i64);
+into_config_value_le!(Float = f64: f32, f64);
+
+macro_rules! into_config_value {
+    ($($x:ident),*) => {$(
+        impl<'a> Into<ConfigValue<'a>> for $x {
+            fn into(self) -> ConfigValue<'a> {
+                if self <= i64::MAX as $x {
+                    return ConfigValue::Int(self as i64);
+                }
+                ConfigValue::Str(self.to_string())
+            }
+        })*
+    };
 }
+
+into_config_value!(u64, u128, usize, i128, isize);
+
 impl<'a> Into<ConfigValue<'a>> for bool {
     fn into(self) -> ConfigValue<'a> {
         ConfigValue::Bool(self)
@@ -528,10 +547,10 @@ mod test {
         should_err!(context: "f" as bool);
         should_err!(context: "y" as bool);
         should_err!(context: "t" as bool);
-        should_err!(context: 0 as bool);
-        should_err!(context: 1 as bool);
-        should_err!(context: 0.0 as bool);
-        should_err!(context: 1.0 as bool);
+        should_err!(context: 0u64 as bool);
+        should_err!(context: 1u64 as bool);
+        should_err!(context: 0.0f64 as bool);
+        should_err!(context: 1.0f64 as bool);
     }
 
     #[quickcheck]

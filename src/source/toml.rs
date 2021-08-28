@@ -32,23 +32,14 @@ impl ConfigSourceParser for Toml {
     }
 }
 
-/// Inline toml file macro function, return Result<[ConfigSource](./trait.ConfigSource.html), [`ConfigError`]>.
-#[macro_export]
-#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-macro_rules! inline_toml {
-    ($path:literal) => {
-        crate::inline_config_source!(crate::source::toml::Toml: $path)
-    };
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test::source_test_suit;
+    use crate::{source::inline_source, test::source_test_suit};
 
     #[test]
     #[allow(unused_qualifications)]
     fn inline_test() -> Result<(), ConfigError> {
-        source_test_suit(inline_toml!("../../app.toml")?)
+        source_test_suit(inline_source!("../../app.toml")?)
     }
 }

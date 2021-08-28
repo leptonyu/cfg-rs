@@ -9,28 +9,17 @@ use std::path::PathBuf;
 pub mod key {
     pub use crate::key::{CacheKey, PartialKey, PartialKeyCollector};
 }
-pub use file::inline_source;
+pub use super::configuration::ManualSource;
 pub use memory::ConfigSourceBuilder;
 
+pub(crate) mod cargo;
 pub(crate) mod environment;
 pub(crate) mod file;
-#[doc(hidden)]
-#[cfg(feature = "json")]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-pub mod json;
 pub(crate) mod memory;
 #[doc(hidden)]
 #[cfg(feature = "rand")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 pub(crate) mod random;
-#[doc(hidden)]
-#[cfg(feature = "toml")]
-#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-pub mod toml;
-#[doc(hidden)]
-#[cfg(feature = "yaml")]
-#[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
-pub mod yaml;
 
 #[derive(Debug, FromConfig)]
 pub(crate) struct EnabledOption {
@@ -38,68 +27,98 @@ pub(crate) struct EnabledOption {
     pub(crate) enabled: bool,
 }
 
+macro_rules! file_block {
+    ($($nm:ident.$name:literal: $($k:pat)|* => $x:path,)+) => {
+$(
+#[doc(hidden)]
+#[cfg(feature = $name)]
+#[cfg_attr(docsrs, doc(cfg(feature = $name)))]
+pub mod $nm;
+)+
+
 #[derive(Debug, FromConfig)]
 #[config(prefix = "app.sources")]
 pub(crate) struct SourceOption {
     #[cfg(feature = "rand")]
     pub(crate) random: EnabledOption,
-    #[cfg(feature = "toml")]
-    toml: EnabledOption,
-    #[cfg(feature = "yaml")]
-    yaml: EnabledOption,
-    #[cfg(feature = "json")]
-    json: EnabledOption,
+    $(
+    #[cfg(feature = $name)]
+    $nm: EnabledOption,
+    )+
 }
 
+#[inline]
 #[allow(unreachable_code, unused_variables)]
 pub(crate) fn register_by_ext(
-    config: &mut Configuration,
+    mut config: Configuration,
     path: PathBuf,
     required: bool,
-) -> Result<(), ConfigError> {
+) -> Result<Configuration, ConfigError> {
     let ext = path
         .extension()
         .and_then(|x| x.to_str())
         .ok_or_else(|| ConfigError::ConfigFileNotSupported(path.clone()))?;
-    match ext {
-        #[cfg(feature = "toml")]
-        "toml" => {
-            config.register_source(<FileLoader<toml::Toml>>::new(path.clone(), required, true))?;
+        match ext {
+            $(
+                #[cfg(feature = $name)]
+                $($k)|* => {
+                    config = config.register_source(<FileLoader<$x>>::new(
+                        path.clone(),
+                        required,
+                        true,
+                    ))?;
+                }
+            )+
+            _ => return Err(ConfigError::ConfigFileNotSupported(path)),
         }
-        #[cfg(feature = "yaml")]
-        "yaml" | "yml" => {
-            config.register_source(<FileLoader<yaml::Yaml>>::new(path.clone(), required, true))?;
+    Ok(config)
+}
+
+/// Inline config source.
+#[macro_export]
+macro_rules! inline_source {
+    ($path:literal) => {
+        match $path.rsplit_once(".") {
+            Some((_, ext)) => {
+                let name = format!("inline:{}", $path);
+                let content = include_str!($path);
+                match ext {
+                    $(
+                    #[cfg(feature = $name)]
+                    $($k)|*  => crate::inline_source::<$x>(name, content),
+                    )+
+                    _ => Err(ConfigError::ConfigFileNotSupported($path.into()))
+                }
+            }
+            _ => Err(ConfigError::ConfigFileNotSupported($path.into()))
         }
-        #[cfg(feature = "json")]
-        "json" => {
-            config.register_source(<FileLoader<json::Json>>::new(path.clone(), required, true))?;
-        }
-        _ => return Err(ConfigError::ConfigFileNotSupported(path)),
-    }
-    Ok(())
+    };
 }
 
 #[allow(unused_mut, unused_variables)]
 pub(crate) fn register_files(
-    config: &mut Configuration,
+    mut config: Configuration,
     option: &SourceOption,
     path: PathBuf,
     has_ext: bool,
-) -> Result<(), ConfigError> {
-    #[cfg(feature = "toml")]
-    if option.toml.enabled {
-        config.register_source(<FileLoader<toml::Toml>>::new(path.clone(), false, has_ext))?;
+) -> Result<Configuration, ConfigError> {
+    $(
+    #[cfg(feature = $name)]
+    if option.$nm.enabled {
+        config =
+            config.register_source(<FileLoader<$x>>::new(path.clone(), false, has_ext))?;
     }
-    #[cfg(feature = "yaml")]
-    if option.yaml.enabled {
-        config.register_source(<FileLoader<yaml::Yaml>>::new(path.clone(), false, has_ext))?;
-    }
-    #[cfg(feature = "json")]
-    if option.json.enabled {
-        config.register_source(<FileLoader<json::Json>>::new(path.clone(), false, has_ext))?;
-    }
-    Ok(())
+    )+
+    Ok(config)
 }
+    };
+}
+
+file_block!(
+    toml."toml": "toml" => crate::source::toml::Toml,
+    yaml."yaml": "yaml" | "yml" => crate::source::yaml::Yaml,
+    json."json": "json" => crate::source::json::Json,
+);
 
 /// Source adaptor, usually convert intermediate representation config.
 pub trait ConfigSourceAdaptor {
@@ -108,7 +127,7 @@ pub trait ConfigSourceAdaptor {
 }
 
 /// Parse source intermediate representation from string.
-pub trait ConfigSourceParser {
+pub trait ConfigSourceParser: Send {
     /// Source Loader.
     type Adaptor: ConfigSourceAdaptor;
 
@@ -120,7 +139,7 @@ pub trait ConfigSourceParser {
 }
 
 /// Config source.
-pub trait ConfigSource {
+pub trait ConfigSource: Send {
     /// Config source name.
     fn name(&self) -> &str;
 

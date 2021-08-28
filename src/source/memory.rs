@@ -13,8 +13,9 @@ use crate::{
 };
 
 /// Hash Source.
+#[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub(crate) struct HashSource {
+pub struct HashSource {
     pub(crate) value: HashMap<String, HashValue>,
     name: String,
     pub(crate) refs: Refresher,

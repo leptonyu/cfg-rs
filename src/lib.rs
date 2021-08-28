@@ -34,6 +34,10 @@ mod value;
 mod value_ref;
 
 use key::PartialKeyCollector;
+#[doc(hidden)]
+pub use source::cargo::Cargo;
+#[doc(hidden)]
+pub use source::file::inline_source;
 
 /// Automatic derive [`FromConfig`] instance.
 ///
@@ -82,7 +86,7 @@ use key::PartialKeyCollector;
 /// }
 /// ```
 pub use cfg_derive::FromConfig;
-pub use configuration::{ConfigContext, Configuration, ConfigurationBuilder};
+pub use configuration::{ConfigContext, Configuration, PredefinedConfigurationBuilder};
 pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub(crate) use err::ConfigLock;

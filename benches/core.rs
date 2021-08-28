@@ -40,9 +40,9 @@ struct IntSuit {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("app1", |b| b.iter(|| Configuration::init()));
+    c.bench_function("app1", |b| b.iter(|| Configuration::with_predefined()));
 
-    let env = Configuration::builder()
+    let env = Configuration::with_predefined_builder()
         .set("hello", "world")
         .set("hello.a1.b2.c3.d4.e5.f6.f7", "world")
         .set("rand", "${random.u8}")

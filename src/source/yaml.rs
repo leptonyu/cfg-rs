@@ -46,23 +46,14 @@ impl ConfigSourceParser for Yaml {
 #[allow(missing_debug_implementations)]
 pub struct Yaml(Vec<yaml_rust::Yaml>);
 
-/// Inline yaml file macro function, return Result<[ConfigSource](./trait.ConfigSource.html), [`ConfigError`]>.
-#[macro_export]
-#[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
-macro_rules! inline_yaml {
-    ($path:literal) => {
-        crate::inline_config_source!(crate::source::yaml::Yaml: $path)
-    };
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test::source_test_suit;
+    use crate::{source::inline_source, test::source_test_suit};
 
     #[test]
     #[allow(unused_qualifications)]
     fn inline_test() -> Result<(), ConfigError> {
-        source_test_suit(inline_yaml!("../../app.yaml")?)
+        source_test_suit(inline_source!("../../app.yaml")?)
     }
 }

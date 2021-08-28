@@ -12,8 +12,8 @@ use crate::{
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        environment::PrefixEnvironment, memory::HashSource, register_by_ext, register_files,
-        ConfigSource, SourceOption,
+        cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
+        register_files, ConfigSource, SourceOption,
     },
     value::ConfigValue,
     value_ref::Refresher,
@@ -28,6 +28,7 @@ use crate::{
 pub struct ConfigContext<'a> {
     key: ConfigKey<'a>,
     source: &'a HashSource,
+    pub(crate) ref_value_flag: bool,
 }
 
 struct CacheValue {
@@ -56,6 +57,7 @@ impl HashSource {
         ConfigContext {
             key: cache.new_key(),
             source: self,
+            ref_value_flag: false,
         }
     }
 }
@@ -225,25 +227,19 @@ impl<'a> ConfigContext<'a> {
     }
 }
 
-/// Configuration Instance.
+/// Configuration Instance, See [Examples](https://github.com/leptonyu/cfg-rs/tree/main/examples),
+/// [How to Initialize Configuration](index.html#how-to-initialize-configuration) for details.
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
     pub(crate) source: HashSource,
-    loaders: Vec<Box<dyn ConfigSource + 'static>>,
-}
-
-/// Configuration Builder.
-///
-/// Configuration builder is used for customizing some configs by programming.
-#[allow(missing_debug_implementations)]
-pub struct ConfigurationBuilder {
-    memory: HashSource,
-    prefix: Option<String>,
+    loaders: Vec<Box<dyn ConfigSource + Send + 'static>>,
 }
 
 impl Configuration {
-    /// Create new empty configuration. Normally you don't need this.
-    /// Try [`Configuration::init`] or [`Configuration::builder`].
+    /// Create an empty [`Configuration`].
+    ///
+    /// If you want to use predefined sources, please try [`Configuration::with_predefined`] or [`Configuration::with_predefined_builder`].
+    ///
     pub fn new() -> Self {
         Self {
             source: HashSource::new("configuration"),
@@ -251,33 +247,66 @@ impl Configuration {
         }
     }
 
-    /// Register prefix env.
-    pub fn register_perfix_env(&mut self, prefix: &str) -> Result<&mut Self, ConfigError> {
+    /// Register key value manually.
+    pub fn register_kv<N: Into<String>>(self, name: N) -> ManualSource {
+        ManualSource(self, HashSource::new(name))
+    }
+
+    /// Register all env variables with prefix, default prefix is `CFG`.
+    ///
+    /// * `prefix` - Env variable prefix.
+    ///
+    /// If prefix is `CFG`, then all env variables with pattern `CFG_*` will be added into configuration.
+    ///
+    /// Examples:
+    /// 1. `CFG_APP_NAME` => `app.name`
+    /// 2. `CFG_APP_0_NAME` => `app[0].name`
+    ///
+    pub fn register_prefix_env(self, prefix: &str) -> Result<Self, ConfigError> {
         self.register_source(PrefixEnvironment::new(prefix))
     }
 
-    /// Register file source, please enable format feature.
-    pub fn register_file(
-        &mut self,
-        path: PathBuf,
+    /// Register file source, this method uses file extension[^ext] to choose how to parsing configuration.
+    ///
+    /// * `path` - Config file path.
+    /// * `required` - Whether config file must exist.
+    ///
+    /// [^ext]: `cfg-rs` does not **enable** any file format by default, please enable specific features when use this method.
+    pub fn register_file<P: Into<PathBuf>>(
+        self,
+        path: P,
         required: bool,
-    ) -> Result<&mut Self, ConfigError> {
-        register_by_ext(self, path, required)?;
-        Ok(self)
+    ) -> Result<Self, ConfigError> {
+        register_by_ext(self, path.into(), required)
     }
 
-    /// Register random source, which can get random values.
+    /// Register random value source, must enable feature **rand**.
+    ///
+    /// Supported integer types:
+    /// * random.u8
+    /// * random.u16
+    /// * random.u32
+    /// * random.u64
+    /// * random.u128
+    /// * random.usize
+    /// * random.i8
+    /// * random.i16
+    /// * random.i32
+    /// * random.i64
+    /// * random.i128
+    /// * random.isize
     #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn register_random(&mut self) -> Result<&mut Self, ConfigError> {
+    pub fn register_random(self) -> Result<Self, ConfigError> {
         self.register_source(crate::source::random::Random)
     }
 
-    /// Register source loader.
+    /// Register customized source, see [How to Initialize Configuration](index.html#how-to-initialize-configuration),
+    /// [ConfigSource](source/trait.ConfigSource.html) for details.
     pub fn register_source<L: ConfigSource + 'static>(
-        &mut self,
+        mut self,
         loader: L,
-    ) -> Result<&mut Self, ConfigError> {
+    ) -> Result<Self, ConfigError> {
         loader.load(&mut self.source.prefixed())?;
         self.loaders.push(Box::new(loader));
         Ok(self)
@@ -294,21 +323,28 @@ impl Configuration {
         Ok(s)
     }
 
-    /// Refresh all ref values.
+    /// Refresh all [RefValue](struct.RefValue.html)s without change [`Configuration`] itself.
     pub fn refresh_ref(&self) -> Result<(), ConfigError> {
         let _ = self.reload()?;
         Ok(())
     }
 
-    /// Refresh cofiguration.
+    /// Refresh all [RefValue](struct.RefValue.html)s and [`Configuration`] itself.
     pub fn refresh(&mut self) -> Result<(), ConfigError> {
         let c = self.reload()?;
         self.source.value = c.source.value;
         Ok(())
     }
 
-    /// Get config from configuration by key.
-    /// Please refer to [`ConfigKey`] for the key's pattern details.
+    /// Get config from configuration by key, see [`ConfigKey`] for the key's pattern details.
+    ///
+    /// * `key` - Config Key.
+    /// Key examples:
+    /// 1. `cfg.v1`
+    /// 2. `cfg.v2[0]`
+    /// 3. `cfg.v3[0][1]`
+    /// 4. `cfg.v4.key`
+    /// 5. `cfg.v5.arr[0]`
     #[inline]
     pub fn get<T: FromConfig>(&self, key: &str) -> Result<T, ConfigError> {
         CacheString::with_key(|cache| {
@@ -317,14 +353,17 @@ impl Configuration {
         })
     }
 
-    /// Get config from configuration by key, otherwise return default.
-    /// Please refer to [`ConfigKey`] for the key's pattern details.
+    /// Get config from configuration by key, otherwise return default. See [`ConfigKey`] for the key's pattern details.
+    ///
+    /// * `key` - Config Key.
+    /// * `def` - If config value is not found, then return def.
     #[inline]
     pub fn get_or<T: FromConfig>(&self, key: &str, def: T) -> Result<T, ConfigError> {
         Ok(self.get::<Option<T>>(key)?.unwrap_or(def))
     }
 
     /// Get config with predefined key, which is automatically derived by [FromConfig](./derive.FromConfig.html#struct-annotation-attribute).
+    #[inline]
     pub fn get_predefined<T: FromConfigWithPrefix>(&self) -> Result<T, ConfigError> {
         self.get(T::prefix())
     }
@@ -334,22 +373,30 @@ impl Configuration {
         self.loaders.iter().map(|l| l.name()).collect()
     }
 
-    /// Create a configuration builder to customize the configuration instance.
-    pub fn with_defaults_builder() -> ConfigurationBuilder {
-        ConfigurationBuilder {
+    /// Create predefined sources builder, see [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
+    pub fn with_predefined_builder() -> PredefinedConfigurationBuilder {
+        PredefinedConfigurationBuilder {
             memory: HashSource::new("fixed:FromProgram/CommandLineArgs"),
+            cargo: None,
             prefix: None,
         }
     }
 
-    /// Create configuration instance with default settings.
-    /// Please refer to [`ConfigurationBuilder::init`] for details.
-    pub fn with_defaults() -> Result<Self, ConfigError> {
-        Self::with_defaults_builder().init()
+    /// Create predefined configuration, see [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
+    pub fn with_predefined() -> Result<Self, ConfigError> {
+        Self::with_predefined_builder().init()
     }
 }
 
-impl ConfigurationBuilder {
+/// Predefined Configuration Builder. See [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
+#[allow(missing_debug_implementations)]
+pub struct PredefinedConfigurationBuilder {
+    memory: HashSource,
+    cargo: Option<Cargo>,
+    prefix: Option<String>,
+}
+
+impl PredefinedConfigurationBuilder {
     /// Set environment prefix, default value if `CFG`.
     /// By default, following environment variables will be loaded in to configuration.
     /// # Environment Variable Regex Pattern: `CFG_[0-9a-zA-Z]+`
@@ -361,15 +408,32 @@ impl ConfigurationBuilder {
     /// * `CFG_APP_PROFILE=`
     ///
     /// You can change `CFG` to other prefix by this method.
-    pub fn set_env_prefix<K: ToString>(&mut self, prefix: K) -> &mut Self {
+    pub fn set_prefix_env<K: ToString>(&mut self, prefix: K) -> &mut Self {
         self.prefix = Some(prefix.to_string());
         self
     }
 
-    /// Set config into configuration by programming.
-    /// You can use this method to set default values.
+    /// Set config into configuration by programming, or from command line arguments.
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
         self.memory = self.memory.set(key, value);
+        self
+    }
+
+    /// Set source from cargo build env. Macro [init_cargo_env](macro.init_cargo_env.html) will collect
+    /// all `CARGO_PKG_*` env variables, and `CARGO_BIN_NAME` into configuration.
+    ///
+    /// ### Usage
+    /// ```rust, no_run
+    /// use cfg_rs::*;
+    /// // Generate fn init_cargo_env().
+    /// init_cargo_env!();
+    /// let c = Configuration::with_predefined_builder()
+    ///   .set_cargo_env(init_cargo_env())
+    ///   .init()
+    ///   .unwrap();
+    /// ```
+    pub fn set_cargo_env(mut self, cargo: Cargo) -> Self {
+        self.cargo = Some(cargo);
         self
     }
 
@@ -377,12 +441,17 @@ impl ConfigurationBuilder {
     ///
     /// ## Predefined Sources.
     ///
-    /// 1. [x] Customized by Programming
-    /// 2. [ ] Random Value
-    /// 3. [x] Environment Variable with Prefix `CFG`, referto [`ConfigurationBuilder::set_env_prefix`] for details.
-    /// 4. [ ] Profiled File Source with Path, `${app.dir}/${app.name}-${app.profile}.EXT`. EXT: toml, json, yaml.
-    /// 5. [ ] File Source with Path, `${app.dir}/${app.name}.EXT`. EXT: toml, json, yaml.
-    /// 6. [ ] Customized Source Can be Registered by [`Configuration::register_source`].
+    /// 0. Cargo Package Env Variables (Must be explicitly set by [set_cargo_env](struct.PredefinedConfigurationBuilder.html#method.set_cargo_env)).
+    /// 1. Customized by Programming or Commandline Args.[^f_default]
+    /// 2. Random Value (Auto enabled with feature `rand`).
+    /// 3. Environment Variable with Prefix `CFG`, referto [set_prefix_env](struct.PredefinedConfigurationBuilder.html#method.set_prefix_env) for details.[^f_default]
+    /// 4. Profiled File Source with Path, `${app.dir}/${app.name}-${app.profile}.EXT`. EXT: toml, json, yaml.[^f_file]
+    /// 5. File Source with Path, `${app.dir}/${app.name}.EXT`. EXT: toml, json, yaml.[^f_file]
+    /// 6. Customized Source Can be Registered by [register_source](struct.Configuration.html#method.register_source).
+    ///
+    /// [^f_default]: Always be enabled.
+    ///
+    /// [^f_file]: Enabled with feature `toml`, `json` or `yaml`.
     ///
     /// ## Crate Feature
     ///
@@ -393,26 +462,31 @@ impl ConfigurationBuilder {
     pub fn init(self) -> Result<Configuration, ConfigError> {
         let mut config = Configuration::new();
 
-        // Layer 0, commandlines.
-        config.register_source(self.memory)?;
+        // Layer 0, cargo dev envs.
+        if let Some(cargo) = self.cargo {
+            config = config.register_source(cargo)?;
+        }
+
+        // Layer 1, commandlines.
+        config = config.register_source(self.memory)?;
 
         let option: SourceOption = config.get_predefined()?;
 
-        // Layer 1, random
+        // Layer 2, random
         #[cfg(feature = "rand")]
         if option.random.enabled {
-            config.register_source(crate::source::random::Random)?;
+            config = config.register_random()?;
         }
 
-        // Layer 2, environment.
+        // Layer 3, environment.
         let prefix = self
             .prefix
             .or_else(|| config.get::<Option<String>>("env.prefix").ok().flatten())
             .or_else(|| var("CFG_ENV_PREFIX").ok())
             .unwrap_or("CFG".to_owned());
-        config.register_source(PrefixEnvironment::new(&prefix))?;
+        config = config.register_prefix_env(&prefix)?;
 
-        // Layer 2, profile file.
+        // Layer 4, profile file.
         let app = config.get_predefined::<AppConfig>()?;
         let mut path = PathBuf::new();
         if let Some(d) = app.dir {
@@ -421,12 +495,12 @@ impl ConfigurationBuilder {
         if let Some(profile) = &app.profile {
             let mut path = path.clone();
             path.push(format!("{}-{}", app.name, profile));
-            register_files(&mut config, &option, path, false)?;
+            config = register_files(config, &option, path, false)?;
         }
 
-        // Layer 3, file.
+        // Layer 5, file.
         path.push(app.name);
-        register_files(&mut config, &option, path, false)?;
+        config = register_files(config, &option, path, false)?;
 
         Ok(config)
     }
@@ -439,6 +513,23 @@ struct AppConfig {
     name: String,
     dir: Option<String>,
     profile: Option<String>,
+}
+
+/// Manually register key value to [`Configuration`].
+#[allow(missing_debug_implementations)]
+pub struct ManualSource(Configuration, HashSource);
+
+impl ManualSource {
+    /// Set config into configuration by programming, or from command line arguments.
+    pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
+        self.0.source = self.0.source.set(key, value);
+        self
+    }
+
+    /// Finish customized kv.
+    pub fn finish(self) -> Result<Configuration, ConfigError> {
+        self.0.register_source(self.1)
+    }
 }
 
 #[cfg(test)]

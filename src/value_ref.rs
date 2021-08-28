@@ -1,7 +1,22 @@
 use crate::*;
 use std::sync::*;
 
-/// RefValue can be updated after refresh.
+/// [`RefValue`] means reference of value or refreshable value,
+/// it holds a value which can be updated when [`Configuration`] is refreshed.
+///
+/// It implements [`FromConfig`], user can use it in auto deriving config objects.
+///
+/// But it is not supporting **recursively** usage, following example will cause runtime error:
+/// ```rust,ignore
+/// #[derive(FromConfig)]
+/// struct A {
+///   ref_b: RefValue<B>,
+/// }
+/// #[derive(FromConfig)]
+/// struct B {
+///   ref_c: RefValue<u8>,
+/// }
+/// ```
 #[allow(missing_debug_implementations)]
 pub struct RefValue<T>(Arc<Mutex<T>>, String);
 
@@ -21,42 +36,56 @@ impl<T> RefValue<T> {
         Ok(())
     }
 
-    /// Use immutable value.
+    /// Use referenced value, be careful with lock.
     pub fn with<F: FnOnce(&T) -> R, R>(&self, f: F) -> Result<R, ConfigError> {
         let g = self.0.lock_c()?;
         Ok((f)(&*g))
     }
 }
 impl<T: Clone> RefValue<T> {
-    /// Get ref value by clone.
+    /// Get cloned value.
     pub fn get(&self) -> Result<T, ConfigError> {
         self.with(|v| v.clone())
     }
 }
 
-impl<T: FromConfig + 'static> FromConfig for RefValue<T> {
+impl<T: FromConfig + Send + 'static> FromConfig for RefValue<T> {
     fn from_config(
         context: &mut ConfigContext<'_>,
         value: Option<ConfigValue<'_>>,
     ) -> Result<Self, ConfigError> {
-        let v = RefValue::new(context.current_key(), T::from_config(context, value)?);
-        context.as_refresher().push(v.clone())?;
-        Ok(v)
+        if context.ref_value_flag {
+            return Err(ConfigError::RefValueRecursiveError);
+        }
+        context.ref_value_flag = true;
+        let v = do_from_config(context, value);
+        context.ref_value_flag = false;
+        v
     }
 }
 
-trait Ref {
+#[inline]
+fn do_from_config<T: FromConfig + Send + 'static>(
+    context: &mut ConfigContext<'_>,
+    value: Option<ConfigValue<'_>>,
+) -> Result<RefValue<T>, ConfigError> {
+    let v = RefValue::new(context.current_key(), T::from_config(context, value)?);
+    context.as_refresher().push(v.clone())?;
+    Ok(v)
+}
+
+trait Ref: Send {
     fn refresh(&self, config: &Configuration) -> Result<(), ConfigError>;
 }
 
-impl<T: FromConfig> Ref for RefValue<T> {
+impl<T: FromConfig + Send> Ref for RefValue<T> {
     fn refresh(&self, config: &Configuration) -> Result<(), ConfigError> {
         self.set(config.get(&self.1)?)
     }
 }
 
 pub(crate) struct Refresher {
-    refs: Mutex<Vec<Box<dyn Ref + 'static>>>,
+    refs: Mutex<Vec<Box<dyn Ref + Send + 'static>>>,
 }
 
 impl Refresher {
@@ -78,5 +107,91 @@ impl Refresher {
             i.refresh(c)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::sync::{Arc, Mutex};
+
+    use crate::{
+        source::{ConfigSource, ConfigSourceBuilder},
+        *,
+    };
+
+    #[derive(FromConfig)]
+    struct A {
+        _ref_b: RefValue<B>,
+    }
+    #[derive(FromConfig)]
+    struct B {
+        _ref_c: RefValue<u8>,
+    }
+    #[test]
+    fn recursive_test() {
+        let config = Configuration::new();
+        let v = config.get::<A>("hello");
+        assert_eq!(true, v.is_err());
+        match v.err().unwrap() {
+            ConfigError::RefValueRecursiveError => {}
+            e => {
+                println!("{:?}", e);
+                assert_eq!(true, false)
+            }
+        }
+    }
+
+    struct R(Arc<Mutex<u64>>);
+
+    impl ConfigSource for R {
+        fn name(&self) -> &str {
+            "r"
+        }
+
+        fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
+            builder.set("hello", *self.0.lock_c()?);
+            Ok(())
+        }
+    }
+
+    impl R {
+        fn set(&self, v: u64) {
+            *self.0.lock_c().unwrap() = v;
+        }
+    }
+
+    macro_rules! should_eq {
+        ($config:ident: $r:ident. $v:ident = $i:ident) => {
+            $r.set($i);
+            $config.refresh_ref().unwrap();
+            assert_eq!($i, $v.get().unwrap());
+            assert_eq!(0, $config.get::<u64>("hello").unwrap());
+        };
+    }
+
+    macro_rules! should_eq_mut {
+        ($config:ident: $r:ident. $v:ident = $i:ident) => {
+            $r.set($i);
+            $config.refresh().unwrap();
+            assert_eq!($i, $v.get().unwrap());
+            assert_eq!($i, $config.get::<u64>("hello").unwrap());
+        };
+    }
+
+    #[test]
+    fn refresh_test() {
+        let r = R(Arc::new(Mutex::new(0)));
+        let mut config = Configuration::new()
+            .register_source(R(r.0.clone()))
+            .unwrap();
+        let v = config.get::<RefValue<u64>>("hello").unwrap();
+
+        for i in 0..1000 {
+            should_eq!(config: r.v = i);
+        }
+
+        for i in 0..1000 {
+            should_eq_mut!(config: r.v = i);
+        }
     }
 }

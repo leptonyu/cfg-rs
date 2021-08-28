@@ -53,7 +53,7 @@ pub struct PostgresSslConfig {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::with_defaults_builder()
+    let config = Configuration::with_predefined_builder()
         .set("postgresql.host", "10.10.0.1")
         .set("postgresql.application_name", "primary")
         .set("postgresql.secondary.host", "10.10.0.2")

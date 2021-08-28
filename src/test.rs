@@ -4,9 +4,7 @@ use crate::*;
 
 pub(crate) trait TestConfigExt: ConfigSource + Sized + 'static {
     fn new_config(self) -> Configuration {
-        let mut c = Configuration::new();
-        c.register_source(self).unwrap();
-        c
+        Configuration::new().register_source(self).unwrap()
     }
 }
 
