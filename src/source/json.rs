@@ -37,7 +37,7 @@ impl ConfigSourceParser for Json {
 
 #[cfg(test)]
 mod test {
-    use crate::{source::inline_source, test::source_test_suit, ConfigError};
+    use crate::{inline_source, test::source_test_suit, ConfigError};
 
     #[test]
     #[allow(unused_qualifications)]

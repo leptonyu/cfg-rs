@@ -41,8 +41,8 @@ impl ConfigSource for Cargo {
 #[macro_export]
 macro_rules! init_cargo_env {
     () => {
-        fn init_cargo_env() -> Cargo {
-            let mut builder = Cargo::new();
+        fn init_cargo_env() -> $crate::Cargo {
+            let mut builder = $crate::Cargo::new();
 init_cargo_env!(builder: "CARGO_PKG_NAME");
 init_cargo_env!(builder: "CARGO_PKG_VERSION");
 init_cargo_env!(builder: "CARGO_PKG_VERSION_MAJOR");

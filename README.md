@@ -51,20 +51,29 @@ See [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
 ```rust,no_run
 use cfg_rs::*;
 init_cargo_env!();
-let configuration = Configuration::new()
+let mut configuration = Configuration::new()
     // Layer 0: Register cargo env config source.
     .register_source(init_cargo_env()).unwrap()
     // Layer 1: Register customized config.
     .register_kv("customized_config")
         .set("hello", "world")
         .finish()
-        .unwrap()
+        .unwrap();
     // Layer 2: Register random value config.
-    .register_random().unwrap()
+#[cfg(feature = "rand")]
+{
+configuration = configuration.register_random().unwrap();
+}
     // Layer 3: Register all env variables `CFG_*`.
-    .register_prefix_env("CFG").unwrap()
+configuration = configuration.register_prefix_env("CFG").unwrap()
     // Layer 4: Register yaml file(Need feature yaml).
     .register_file("/conf/app.yaml", true).unwrap();
+
+#[cfg(feature = "toml")]
+{
+    let toml = inline_source!("../app.toml").unwrap();
+    configuration = configuration.register_source(toml).unwrap();
+}
 
 // use configuration.
 ```

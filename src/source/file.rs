@@ -72,8 +72,7 @@ impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
 }
 
 #[doc(hidden)]
-#[inline]
-pub fn inline_source<S: ConfigSourceParser>(
+pub fn inline_source_config<S: ConfigSourceParser>(
     name: String,
     content: &'static str,
 ) -> Result<HashSource, ConfigError> {

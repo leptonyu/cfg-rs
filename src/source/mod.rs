@@ -48,7 +48,7 @@ pub(crate) struct SourceOption {
 }
 
 #[inline]
-#[allow(unreachable_code, unused_variables)]
+#[allow(unreachable_code, unused_variables, unused_mut)]
 pub(crate) fn register_by_ext(
     mut config: Configuration,
     path: PathBuf,
@@ -72,27 +72,6 @@ pub(crate) fn register_by_ext(
             _ => return Err(ConfigError::ConfigFileNotSupported(path)),
         }
     Ok(config)
-}
-
-/// Inline config source.
-#[macro_export]
-macro_rules! inline_source {
-    ($path:literal) => {
-        match $path.rsplit_once(".") {
-            Some((_, ext)) => {
-                let name = format!("inline:{}", $path);
-                let content = include_str!($path);
-                match ext {
-                    $(
-                    #[cfg(feature = $name)]
-                    $($k)|*  => crate::inline_source::<$x>(name, content),
-                    )+
-                    _ => Err(ConfigError::ConfigFileNotSupported($path.into()))
-                }
-            }
-            _ => Err(ConfigError::ConfigFileNotSupported($path.into()))
-        }
-    };
 }
 
 #[allow(unused_mut, unused_variables)]
@@ -119,6 +98,40 @@ file_block!(
     yaml."yaml": "yaml" | "yml" => crate::source::yaml::Yaml,
     json."json": "json" => crate::source::json::Json,
 );
+
+/// Inline config source.
+#[macro_export]
+macro_rules! inline_source {
+    ($path:literal) => {
+        $crate::inline_source_internal!(
+        $path:
+        toml."toml": "toml" => $crate::source::toml::Toml,
+        yaml."yaml": "yaml" | "yml" => $crate::source::yaml::Yaml,
+        json."json": "json" => $crate::source::json::Json,
+        )
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! inline_source_internal {
+    ($path:literal: $($nm:ident.$name:literal: $($k:pat)|* => $x:path,)+) => {
+        match $path.rsplit_once(".") {
+            Some((_, ext)) => {
+                let name = format!("inline:{}", $path);
+                let content = include_str!($path);
+                match ext {
+                    $(
+                    #[cfg(feature = $name)]
+                    $($k)|*  => $crate::inline_source_config::<$x>(name, content),
+                    )+
+                    _ => Err($crate::ConfigError::ConfigFileNotSupported($path.into()))
+                }
+            }
+            _ => Err($crate::ConfigError::ConfigFileNotSupported($path.into()))
+        }
+    };
+}
 
 /// Source adaptor, usually convert intermediate representation config.
 pub trait ConfigSourceAdaptor {

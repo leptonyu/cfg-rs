@@ -18,6 +18,8 @@
 )]
 
 #[cfg(test)]
+mod test;
+#[cfg(test)]
 #[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
@@ -28,16 +30,10 @@ mod err;
 mod key;
 
 pub mod source;
-#[cfg(test)]
-mod test;
 mod value;
 mod value_ref;
 
 use key::PartialKeyCollector;
-#[doc(hidden)]
-pub use source::cargo::Cargo;
-#[doc(hidden)]
-pub use source::file::inline_source;
 
 /// Automatic derive [`FromConfig`] instance.
 ///
@@ -93,6 +89,11 @@ pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
 pub use value::ConfigValue;
 pub use value_ref::RefValue;
+
+#[doc(hidden)]
+pub use source::cargo::Cargo;
+#[doc(hidden)]
+pub use source::file::inline_source_config;
 
 /// Generate config instance from configuration.
 ///
