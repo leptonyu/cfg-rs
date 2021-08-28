@@ -28,7 +28,7 @@ impl ConfigSourceParser for Toml {
     }
 
     fn file_extensions() -> Vec<&'static str> {
-        vec!["toml"]
+        vec!["toml", "tml"]
     }
 }
 

@@ -271,6 +271,8 @@ impl Configuration {
     /// * `path` - Config file path.
     /// * `required` - Whether config file must exist.
     ///
+    /// See [Supported File Formats](index.html#supported-file-format) for details.
+    ///
     /// [^ext]: `cfg-rs` does not **enable** any file format by default, please enable specific features when use this method.
     pub fn register_file<P: Into<PathBuf>>(
         self,
@@ -451,7 +453,7 @@ impl PredefinedConfigurationBuilder {
     ///
     /// [^f_default]: Always be enabled.
     ///
-    /// [^f_file]: Enabled with feature `toml`, `json` or `yaml`.
+    /// [^f_file]: See [Supported File Formats](index.html#supported-file-format) for details.
     ///
     /// ## Crate Feature
     ///

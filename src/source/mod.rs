@@ -28,7 +28,7 @@ pub(crate) struct EnabledOption {
 }
 
 macro_rules! file_block {
-    ($($nm:ident.$name:literal: $($k:pat)|* => $x:path,)+) => {
+    ($($nm:ident.$name:literal.$file:literal: $($k:pat)|* => $x:path,)+) => {
 $(
 #[doc(hidden)]
 #[cfg(feature = $name)]
@@ -90,22 +90,37 @@ pub(crate) fn register_files(
     )+
     Ok(config)
 }
+
+
+#[cfg(test)]
+mod test {
+    $(
+    #[test]
+    #[cfg(not(feature = $name))]
+    fn $nm() {
+        use super::memory::HashSource;
+        use crate::*;
+
+        let _v: Result<HashSource, ConfigError> = inline_source!($file);
+    }
+    )+
+}
     };
 }
 
 file_block!(
-    toml."toml": "toml" => crate::source::toml::Toml,
-    yaml."yaml": "yaml" | "yml" => crate::source::yaml::Yaml,
-    json."json": "json" => crate::source::json::Json,
+    toml."toml"."../../app.toml" : "toml" | "tml" => crate::source::toml::Toml,
+    yaml."yaml"."../../app.toml" : "yaml" | "yml" => crate::source::yaml::Yaml,
+    json."json"."../../app.toml" : "json" => crate::source::json::Json,
 );
 
-/// Inline config source.
+/// Inline config file in repo, see [Supported File Formats](index.html#supported-file-format).
 #[macro_export]
 macro_rules! inline_source {
     ($path:literal) => {
         $crate::inline_source_internal!(
         $path:
-        toml."toml": "toml" => $crate::source::toml::Toml,
+        toml."toml": "toml" | "tml" => $crate::source::toml::Toml,
         yaml."yaml": "yaml" | "yml" => $crate::source::yaml::Yaml,
         json."json": "json" => $crate::source::json::Json,
         )
@@ -118,12 +133,12 @@ macro_rules! inline_source_internal {
     ($path:literal: $($nm:ident.$name:literal: $($k:pat)|* => $x:path,)+) => {
         match $path.rsplit_once(".") {
             Some((_, ext)) => {
-                let name = format!("inline:{}", $path);
-                let content = include_str!($path);
+                let _name = format!("inline:{}", $path);
+                let _content = include_str!($path);
                 match ext {
                     $(
                     #[cfg(feature = $name)]
-                    $($k)|*  => $crate::inline_source_config::<$x>(name, content),
+                    $($k)|*  => $crate::inline_source_config::<$x>(_name, _content),
                     )+
                     _ => Err($crate::ConfigError::ConfigFileNotSupported($path.into()))
                 }

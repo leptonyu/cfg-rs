@@ -22,6 +22,12 @@ See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for ge
 
 [^priority]: Config order is determined by the order of registering sources, register earlier have higher priority.
 
+#### Supported File Format
+
+* Toml: toml, tml
+* Yaml: yaml, yml
+* Json: json
+
 ## How to Initialize Configuration
 
 * Use Predefined Source Configuration in One Line
