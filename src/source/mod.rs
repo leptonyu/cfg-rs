@@ -148,18 +148,25 @@ macro_rules! inline_source_internal {
     };
 }
 
-/// Source adaptor, usually convert intermediate representation config.
+/// Config source adaptor is an intermediate representation of config source.
+/// It can convert to [`ConfigSource`]. We have toml, yaml and json values implement this trait.
+///
+/// Config source adaptor examples:
+/// * Toml format.
+/// * Yaml format.
+/// * Json format.
+/// * ...
 pub trait ConfigSourceAdaptor {
-    /// Read source.
+    /// Convert adaptor to standard config source.
     fn convert_source(self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
 }
 
-/// Parse source intermediate representation from string.
+/// Parse config source from string.
 pub trait ConfigSourceParser: Send {
-    /// Source Loader.
+    /// Config source adaptor.
     type Adaptor: ConfigSourceAdaptor;
 
-    /// Create loader.
+    /// Parse config source.
     fn parse_source(_: &str) -> Result<Self::Adaptor, ConfigError>;
 
     /// File extenstions.
@@ -167,6 +174,13 @@ pub trait ConfigSourceParser: Send {
 }
 
 /// Config source.
+///
+/// Config source examples:
+/// * Load from programming.
+/// * Load from environment.
+/// * Load from file.
+/// * Load from network.
+/// * ...
 pub trait ConfigSource: Send {
     /// Config source name.
     fn name(&self) -> &str;
