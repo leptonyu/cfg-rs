@@ -19,7 +19,7 @@ pub enum ConfigError {
     ConfigFileNotExists(PathBuf),
     /// Config file not supported.
     ConfigFileNotSupported(PathBuf),
-    /// Config recursive lock,
+    /// Ref value cannot define recursively.
     RefValueRecursiveError,
     /// Config parse error with other error.
     ConfigCause(Box<dyn Error + 'static>),

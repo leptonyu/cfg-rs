@@ -32,7 +32,7 @@ struct IntSuit {
 
 fn main() -> Result<(), ConfigError> {
     // This example need feature full to enable toml/yaml/json source, and load them from app.toml/yaml/json.
-    let config = Configuration::init()?;
+    let config = Configuration::with_defaults()?;
     let mut i = 0;
     for name in config.source_names() {
         i += 1;

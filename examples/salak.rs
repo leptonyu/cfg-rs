@@ -17,7 +17,7 @@ struct Config {
 }
 
 fn main() -> Result<(), ConfigError> {
-    let env = Configuration::init()?;
+    let env = Configuration::with_defaults()?;
     for _i in 0..1000 {
         let c = env.get_predefined::<Config>()?;
         if _i % 100 == 0 {

@@ -335,7 +335,7 @@ impl Configuration {
     }
 
     /// Create a configuration builder to customize the configuration instance.
-    pub fn builder() -> ConfigurationBuilder {
+    pub fn with_defaults_builder() -> ConfigurationBuilder {
         ConfigurationBuilder {
             memory: HashSource::new("fixed:FromProgram/CommandLineArgs"),
             prefix: None,
@@ -344,8 +344,8 @@ impl Configuration {
 
     /// Create configuration instance with default settings.
     /// Please refer to [`ConfigurationBuilder::init`] for details.
-    pub fn init() -> Result<Self, ConfigError> {
-        Self::builder().init()
+    pub fn with_defaults() -> Result<Self, ConfigError> {
+        Self::with_defaults_builder().init()
     }
 }
 

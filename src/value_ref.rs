@@ -1,6 +1,5 @@
 use crate::*;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::*;
 
 /// RefValue can be updated after refresh.
 #[allow(missing_debug_implementations)]
@@ -22,14 +21,16 @@ impl<T> RefValue<T> {
         Ok(())
     }
 
-    /// Use mutable value.
-    pub fn with_mut<F: FnMut(&mut T) -> R, R>(&self, mut f: F) -> Result<R, ConfigError> {
-        let mut g = self.0.lock_c()?;
-        Ok((f)(&mut *g))
-    }
     /// Use immutable value.
-    pub fn with<F: FnMut(&T) -> R, R>(&self, mut f: F) -> Result<R, ConfigError> {
-        self.with_mut(|x| (f)(x))
+    pub fn with<F: FnOnce(&T) -> R, R>(&self, f: F) -> Result<R, ConfigError> {
+        let g = self.0.lock_c()?;
+        Ok((f)(&*g))
+    }
+}
+impl<T: Clone> RefValue<T> {
+    /// Get ref value by clone.
+    pub fn get(&self) -> Result<T, ConfigError> {
+        self.with(|v| v.clone())
     }
 }
 

@@ -7,7 +7,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/leptonyu/cfg-rs/blob/master/LICENSE-MIT)
 [![Actions Status](https://github.com/leptonyu/cfg-rs/workflows/Rust/badge.svg)](https://github.com/leptonyu/cfg-rs/actions)
 
-## Features
+## Use Default Configuration in One Line
+
+
 
 * One line to create configuration by [`Configuration::init`].
 * Customizing creating configuration by [`Configuration::builder`].
