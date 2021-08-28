@@ -85,6 +85,7 @@ pub use cfg_derive::FromConfig;
 pub use configuration::{ConfigContext, Configuration, ConfigurationBuilder};
 pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
+pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
 pub use value::ConfigValue;
 pub use value_ref::RefValue;

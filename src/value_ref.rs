@@ -17,17 +17,18 @@ impl<T> RefValue<T> {
         Self(Arc::new(Mutex::new(v)), k)
     }
 
-    fn set(&self, v: T) {
-        *self.0.lock().unwrap() = v;
+    fn set(&self, v: T) -> Result<(), ConfigError> {
+        *self.0.lock_c()? = v;
+        Ok(())
     }
 
     /// Use mutable value.
-    pub fn with_mut<F: FnMut(&mut T) -> R, R>(&self, mut f: F) -> R {
-        let mut g = self.0.lock().unwrap();
-        (f)(&mut *g)
+    pub fn with_mut<F: FnMut(&mut T) -> R, R>(&self, mut f: F) -> Result<R, ConfigError> {
+        let mut g = self.0.lock_c()?;
+        Ok((f)(&mut *g))
     }
     /// Use immutable value.
-    pub fn with<F: FnMut(&T) -> R, R>(&self, mut f: F) -> R {
+    pub fn with<F: FnMut(&T) -> R, R>(&self, mut f: F) -> Result<R, ConfigError> {
         self.with_mut(|x| (f)(x))
     }
 }
@@ -38,7 +39,7 @@ impl<T: FromConfig + 'static> FromConfig for RefValue<T> {
         value: Option<ConfigValue<'_>>,
     ) -> Result<Self, ConfigError> {
         let v = RefValue::new(context.current_key(), T::from_config(context, value)?);
-        context.as_refresher().push(v.clone());
+        context.as_refresher().push(v.clone())?;
         Ok(v)
     }
 }
@@ -49,7 +50,7 @@ trait Ref {
 
 impl<T: FromConfig> Ref for RefValue<T> {
     fn refresh(&self, config: &Configuration) -> Result<(), ConfigError> {
-        Ok(self.set(config.get(&self.1)?))
+        self.set(config.get(&self.1)?)
     }
 }
 
@@ -64,13 +65,14 @@ impl Refresher {
         }
     }
 
-    fn push(&self, r: impl Ref + 'static) {
-        let mut g = self.refs.lock().unwrap();
+    fn push(&self, r: impl Ref + 'static) -> Result<(), ConfigError> {
+        let mut g = self.refs.try_lock_c()?;
         g.push(Box::new(r));
+        Ok(())
     }
 
     pub(crate) fn refresh(&self, c: &Configuration) -> Result<(), ConfigError> {
-        let g = self.refs.lock().unwrap();
+        let g = self.refs.lock_c()?;
         for i in g.iter() {
             i.refresh(c)?;
         }
