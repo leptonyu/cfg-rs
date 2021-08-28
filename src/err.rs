@@ -20,7 +20,7 @@ pub enum ConfigError {
     /// Config file not supported.
     ConfigFileNotSupported(PathBuf),
     /// Config recursive lock,
-    ConfigRecursiveLockError,
+    RefValueRecursiveError,
     /// Config parse error with other error.
     ConfigCause(Box<dyn Error + 'static>),
 }
@@ -34,7 +34,7 @@ impl<E: Error + 'static> From<E> for ConfigError {
 impl ConfigError {
     pub(crate) fn try_lock_err<T>(v: TryLockError<T>) -> Self {
         match v {
-            TryLockError::WouldBlock => Self::ConfigRecursiveLockError,
+            TryLockError::WouldBlock => Self::RefValueRecursiveError,
             TryLockError::Poisoned(e) => Self::lock_err(e),
         }
     }
