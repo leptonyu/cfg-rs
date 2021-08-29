@@ -102,6 +102,10 @@ mod test {
         use crate::*;
 
         let _v: Result<HashSource, ConfigError> = inline_source!($file);
+        match _v {
+          Err(ConfigError::ConfigFileNotSupported(_)) =>{}
+          _ => assert_eq!(true, false),
+        }
     }
     )+
 }
@@ -110,8 +114,8 @@ mod test {
 
 file_block!(
     toml."toml"."../../app.toml" : "toml" | "tml" => crate::source::toml::Toml,
-    yaml."yaml"."../../app.toml" : "yaml" | "yml" => crate::source::yaml::Yaml,
-    json."json"."../../app.toml" : "json" => crate::source::json::Json,
+    yaml."yaml"."../../app.yaml" : "yaml" | "yml" => crate::source::yaml::Yaml,
+    json."json"."../../app.json" : "json" => crate::source::json::Json,
 );
 
 /// Inline config file in repo, see [Supported File Formats](index.html#supported-file-format).
