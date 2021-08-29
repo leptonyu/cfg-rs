@@ -223,11 +223,12 @@ impl<'a> PartialKeyCollector<'a> {
     }
 }
 
-impl<'a> Into<PartialKey<'a>> for &'a str {
-    fn into(self) -> PartialKey<'a> {
-        PartialKey::Str(self)
-    }
-}
+// impl<'a> Into<PartialKey<'a>> for &'a str {
+//     fn into(self) -> PartialKey<'a> {
+//         PartialKey::Str(self)
+//     }
+// }
+
 impl<'a> Into<PartialKeyIter<'a>> for &'a str {
     fn into(self) -> PartialKeyIter<'a> {
         PartialKeyIter::Str(self.split(&['.', '[', ']'][..]))

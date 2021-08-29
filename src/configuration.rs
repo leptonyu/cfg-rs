@@ -700,5 +700,14 @@ mod test {
             .set_cargo_env(init_cargo_env())
             .init()
             .unwrap();
+
+        match _config.register_file("/conf/no_extension", false) {
+            Err(ConfigError::ConfigFileNotSupported(_)) => {}
+            _ => assert_eq!(true, false),
+        }
+        match _conf2.register_file("/conf/app.not_exist", false) {
+            Err(ConfigError::ConfigFileNotSupported(_)) => {}
+            _ => assert_eq!(true, false),
+        }
     }
 }
