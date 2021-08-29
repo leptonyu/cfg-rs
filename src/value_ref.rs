@@ -127,18 +127,29 @@ mod test {
     struct B {
         _ref_c: RefValue<u8>,
     }
-    #[test]
-    fn recursive_test() {
-        let config = Configuration::new();
-        let v = config.get::<A>("hello");
-        assert_eq!(true, v.is_err());
-        match v.err().unwrap() {
+
+    macro_rules! should_err {
+      ($v:ident) => {
+        assert_eq!(true, $v.is_err());
+        match $v.err().unwrap() {
             ConfigError::RefValueRecursiveError => {}
             e => {
                 println!("{:?}", e);
                 assert_eq!(true, false)
             }
         }
+      }
+    }
+
+    #[test]
+    fn recursive_test() {
+        let config = Configuration::new();
+        let v = config.get::<A>("hello");
+        should_err!(v);
+        let v = config.get::<RefValue<B>>("hello");
+        should_err!(v);
+        let v = config.get::<RefValue<RefValue<u8>>>("hello");
+        should_err!(v);
     }
 
     struct R(Arc<Mutex<u64>>);
@@ -181,6 +192,7 @@ mod test {
     #[test]
     fn refresh_test() {
         let r = R(Arc::new(Mutex::new(0)));
+        assert_eq!("r", r.name());
         let mut config = Configuration::new()
             .register_source(R(r.0.clone()))
             .unwrap();
