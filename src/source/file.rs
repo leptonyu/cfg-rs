@@ -1,7 +1,7 @@
 //! File config source.
-use std::{marker::PhantomData, path::PathBuf};
+use std::{marker::PhantomData, path::PathBuf, sync::Mutex, time::SystemTime};
 
-use crate::ConfigError;
+use crate::{err::ConfigLock, ConfigError};
 
 use super::{
     memory::{ConfigSourceBuilder, HashSource},
@@ -15,7 +15,12 @@ pub(crate) struct FileLoader<L: ConfigSourceParser> {
     path: PathBuf,
     ext: bool,
     required: bool,
+    modified: Mutex<Option<SystemTime>>,
     _data: PhantomData<L>,
+}
+
+fn modified_time(path: &PathBuf) -> Option<SystemTime> {
+    path.metadata().and_then(|a| a.modified()).ok()
 }
 
 impl<L: ConfigSourceParser> FileLoader<L> {
@@ -27,6 +32,7 @@ impl<L: ConfigSourceParser> FileLoader<L> {
                 path.display(),
                 L::file_extensions().join(",")
             ),
+            modified: Mutex::new(modified_time(&path)),
             path,
             ext,
             required,
@@ -69,6 +75,14 @@ impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
         }
         Ok(())
     }
+
+    fn refreshable(&self) -> Result<bool, ConfigError> {
+        let time = modified_time(&self.path);
+        let mut g = self.modified.lock_c()?;
+        let flag = time == *g;
+        *g = time;
+        Ok(!flag)
+    }
 }
 
 #[doc(hidden)]
@@ -80,4 +94,63 @@ pub fn inline_source_config<S: ConfigSourceParser>(
     let mut m = HashSource::new(name);
     v.convert_source(&mut m.prefixed())?;
     Ok(m)
+}
+
+#[cfg(test)]
+mod test {
+    use std::{fs::File, path::PathBuf};
+
+    use crate::{
+        source::{ConfigSource, ConfigSourceAdaptor, ConfigSourceBuilder, ConfigSourceParser},
+        ConfigError, Configuration,
+    };
+
+    use super::FileLoader;
+
+    struct Temp;
+
+    impl ConfigSourceAdaptor for Temp {
+        fn convert_source(self, _: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
+            Ok(())
+        }
+    }
+    impl ConfigSourceParser for Temp {
+        type Adaptor = Temp;
+
+        fn parse_source(_: &str) -> Result<Self::Adaptor, ConfigError> {
+            Ok(Temp)
+        }
+
+        fn file_extensions() -> Vec<&'static str> {
+            vec!["tmp"]
+        }
+    }
+
+    #[test]
+    fn refresh_file_test() -> Result<(), ConfigError> {
+        let path: PathBuf = "target/file_2.tmp".into();
+        File::create(&path)?;
+        let config = <FileLoader<Temp>>::new(path.clone(), false, true);
+        assert_eq!(false, config.refreshable()?);
+        std::fs::write(&path, "hello")?;
+        assert_eq!(true, config.refreshable()?);
+        std::fs::remove_file(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn refresh_test() -> Result<(), ConfigError> {
+        let path: PathBuf = "target/file.tmp".into();
+        File::create(&path)?;
+        let mut config = Configuration::new().register_source(<FileLoader<Temp>>::new(
+            path.clone(),
+            false,
+            true,
+        ))?;
+        assert_eq!(false, config.refresh()?);
+        std::fs::write(&path, "hello")?;
+        assert_eq!(true, config.refresh()?);
+        std::fs::remove_file(path)?;
+        Ok(())
+    }
 }

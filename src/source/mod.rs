@@ -12,7 +12,6 @@ pub mod key {
 pub use super::configuration::ManualSource;
 pub use memory::ConfigSourceBuilder;
 
-pub(crate) mod cache;
 pub(crate) mod cargo;
 pub(crate) mod environment;
 pub(crate) mod file;
@@ -194,6 +193,8 @@ pub trait ConfigSource: Send {
     fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
 
     /// Check if config source is refreshable.
+    ///
+    /// Implementor should notice that everytime this method is called, the refreshable state **must** be reset to **false**.
     fn refreshable(&self) -> Result<bool, ConfigError> {
         Ok(false)
     }

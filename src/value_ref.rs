@@ -181,7 +181,8 @@ mod test {
     macro_rules! should_eq {
         ($config:ident: $r:ident. $v:ident = $i:ident) => {
             $r.set($i);
-            $config.refresh_ref().unwrap();
+            assert_eq!(true, $config.refresh_ref().unwrap());
+            assert_eq!(false, $config.refresh_ref().unwrap());
             assert_eq!($i, $v.get().unwrap());
             assert_eq!(0, $config.get::<u64>("hello").unwrap());
         };
@@ -190,7 +191,8 @@ mod test {
     macro_rules! should_eq_mut {
         ($config:ident: $r:ident. $v:ident = $i:ident) => {
             $r.set($i);
-            $config.refresh().unwrap();
+            assert_eq!(true, $config.refresh().unwrap());
+            assert_eq!(false, $config.refresh().unwrap());
             assert_eq!($i, $v.get().unwrap());
             assert_eq!($i, $config.get::<u64>("hello").unwrap());
         };

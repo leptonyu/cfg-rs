@@ -8,12 +8,13 @@ use std::{
 };
 
 use crate::{
+    cache::CacheConfigSource,
     err::ConfigError,
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        cache::CacheConfigSource, cargo::Cargo, environment::PrefixEnvironment, memory::HashSource,
-        register_by_ext, register_files, ConfigSource, SourceOption,
+        cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
+        register_files, ConfigSource, SourceOption,
     },
     value::ConfigValue,
     value_ref::Refresher,
@@ -331,16 +332,26 @@ impl Configuration {
     }
 
     /// Refresh all [RefValue](struct.RefValue.html)s without change [`Configuration`] itself.
-    pub fn refresh_ref(&self) -> Result<(), ConfigError> {
-        let _ = self.reload()?;
-        Ok(())
+    pub fn refresh_ref(&self) -> Result<bool, ConfigError> {
+        for i in self.loaders.iter() {
+            if i.refreshable()? {
+                let _ = self.reload()?;
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     /// Refresh all [RefValue](struct.RefValue.html)s and [`Configuration`] itself.
-    pub fn refresh(&mut self) -> Result<(), ConfigError> {
-        let c = self.reload()?;
-        self.source.value = c.source.value;
-        Ok(())
+    pub fn refresh(&mut self) -> Result<bool, ConfigError> {
+        for i in self.loaders.iter() {
+            if i.refreshable()? {
+                let c = self.reload()?;
+                self.source.value = c.source.value;
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     /// Get config from configuration by key, see [`ConfigKey`] for the key's pattern details.
