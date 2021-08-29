@@ -12,8 +12,8 @@ use crate::{
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     source::{
-        cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
-        register_files, ConfigSource, SourceOption,
+        cache::CacheConfigSource, cargo::Cargo, environment::PrefixEnvironment, memory::HashSource,
+        register_by_ext, register_files, ConfigSource, SourceOption,
     },
     value::ConfigValue,
     value_ref::Refresher,
@@ -313,6 +313,7 @@ impl Configuration {
         mut self,
         loader: L,
     ) -> Result<Self, ConfigError> {
+        let loader = CacheConfigSource::new(loader);
         loader.load(&mut self.source.prefixed())?;
         self.loaders.push(Box::new(loader));
         Ok(self)

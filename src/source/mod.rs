@@ -12,6 +12,7 @@ pub mod key {
 pub use super::configuration::ManualSource;
 pub use memory::ConfigSourceBuilder;
 
+pub(crate) mod cache;
 pub(crate) mod cargo;
 pub(crate) mod environment;
 pub(crate) mod file;
@@ -191,4 +192,9 @@ pub trait ConfigSource: Send {
 
     /// Load config source.
     fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
+
+    /// Check if config source is refreshable.
+    fn refreshable(&self) -> Result<bool, ConfigError> {
+        Ok(false)
+    }
 }
