@@ -419,6 +419,21 @@ impl PredefinedConfigurationBuilder {
         self
     }
 
+    /// Set config file directory.
+    pub fn set_dir<V: Into<PathBuf>>(self, path: V) -> Self {
+        self.set("app.dir", path.into().display().to_string())
+    }
+
+    /// Set config file name.
+    pub fn set_name<V: Into<String>>(self, name: V) -> Self {
+        self.set("app.name", name.into())
+    }
+
+    /// Set config file profile.
+    pub fn set_profile<V: Into<String>>(self, profile: V) -> Self {
+        self.set("app.profile", profile.into())
+    }
+
     /// Set config into configuration by programming, or from command line arguments.
     pub fn set<K: Borrow<str>, V: Into<ConfigValue<'static>>>(mut self, key: K, value: V) -> Self {
         self.memory = self.memory.set(key, value);
@@ -671,6 +686,16 @@ mod test {
 
         init_cargo_env!();
         let _conf3 = Configuration::with_predefined_builder()
+            .set("key", "value")
+            .set_prefix_env("XXX")
+            .set_cargo_env(init_cargo_env())
+            .init()
+            .unwrap();
+
+        let _conf3 = Configuration::with_predefined_builder()
+            .set_dir("")
+            .set_name("app")
+            .set_profile("dev")
             .set_prefix_env("XXX")
             .set_cargo_env(init_cargo_env())
             .init()
