@@ -15,8 +15,6 @@ pub enum ConfigError {
     ConfigParseError(String, String),
     /// Config recursively parsed.
     ConfigRecursiveError(String),
-    /// Placeholder expression invalid.
-    ConfigPlaceholderInvalid(String),
     /// Config file not exists.
     ConfigFileNotExists(PathBuf),
     /// Config file not supported.

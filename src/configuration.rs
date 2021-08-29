@@ -84,7 +84,10 @@ impl<'a> ConfigContext<'a> {
                     "$" => {
                         let pos_1 = pos + 1;
                         if value.len() == pos_1 || &value[pos_1..=pos_1] != "{" {
-                            return Err(ConfigError::ConfigPlaceholderInvalid(current_key.to_string()));
+                            return Err(ConfigError::ConfigParseError(
+                                current_key.to_string(),
+                                val.to_owned(),
+                            ));
                         }
                         cv.buf.push_str(&value[..pos]);
                         cv.stack.push(cv.buf.len());
@@ -93,7 +96,10 @@ impl<'a> ConfigContext<'a> {
                     "\\" => {
                         let pos_1 = pos + 1;
                         if value.len() == pos_1 {
-                            return Err(ConfigError::ConfigPlaceholderInvalid(current_key.to_string()));
+                            return Err(ConfigError::ConfigParseError(
+                                current_key.to_string(),
+                                val.to_owned(),
+                            ));
                         }
                         cv.buf.push_str(&value[..pos]);
                         cv.buf.push_str(&value[pos_1..=pos_1]);
@@ -105,7 +111,7 @@ impl<'a> ConfigContext<'a> {
                             _ => {
                                 return Err(ConfigError::ConfigParseError(
                                     current_key.to_string(),
-                                    value.to_owned(),
+                                    val.to_owned(),
                                 ))
                             }
                         };
@@ -585,8 +591,8 @@ mod test {
         should_eq!(config: "k" as String = "Ok(\"0 0\")");
         should_eq!(config: "l" as String = "Ok(\"0\")");
         should_eq!(config: "m" as String = "Ok(\"hello\")");
-        should_eq!(config: "n" as String = "Err(ConfigPlaceholderInvalid(\"n\"))");
-        should_eq!(config: "o" as String = "Err(ConfigPlaceholderInvalid(\"o\"))");
+        should_eq!(config: "n" as String = "Err(ConfigParseError(\"n\", \"$\"))");
+        should_eq!(config: "o" as String = "Err(ConfigParseError(\"o\", \"\\\\\"))");
         should_eq!(config: "p" as String = "Err(ConfigParseError(\"p\", \"}\"))");
     }
 
@@ -606,8 +612,9 @@ mod test {
         should_eq!(config: "k" as bool = "Err(ConfigParseError(\"k\", \"0 0\"))");
         should_eq!(config: "l" as bool = "Err(ConfigParseError(\"l\", \"0\"))");
         should_eq!(config: "m" as bool = "Err(ConfigParseError(\"m\", \"hello\"))");
-        should_eq!(config: "n" as bool = "Err(ConfigPlaceholderInvalid(\"n\"))");
-        should_eq!(config: "o" as bool = "Err(ConfigPlaceholderInvalid(\"o\"))");
+        should_eq!(config: "n" as bool = "Err(ConfigParseError(\"n\", \"$\"))");
+        should_eq!(config: "o" as bool = "Err(ConfigParseError(\"o\", \"\\\\\"))");
+        should_eq!(config: "p" as bool = "Err(ConfigParseError(\"p\", \"}\"))");
     }
 
     #[test]
@@ -626,7 +633,8 @@ mod test {
         should_eq!(config: "k" as u8 = "Err(ConfigCause(ParseIntError { kind: InvalidDigit }))");
         should_eq!(config: "l" as u8 = "Ok(0)");
         should_eq!(config: "m" as u8 = "Err(ConfigCause(ParseIntError { kind: InvalidDigit }))");
-        should_eq!(config: "n" as u8 = "Err(ConfigPlaceholderInvalid(\"n\"))");
-        should_eq!(config: "o" as u8 = "Err(ConfigPlaceholderInvalid(\"o\"))");
+        should_eq!(config: "n" as u8 = "Err(ConfigParseError(\"n\", \"$\"))");
+        should_eq!(config: "o" as u8 = "Err(ConfigParseError(\"o\", \"\\\\\"))");
+        should_eq!(config: "p" as u8 = "Err(ConfigParseError(\"p\", \"}\"))");
     }
 }
