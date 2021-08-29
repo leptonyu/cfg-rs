@@ -129,16 +129,16 @@ mod test {
     }
 
     macro_rules! should_err {
-      ($v:ident) => {
-        assert_eq!(true, $v.is_err());
-        match $v.err().unwrap() {
-            ConfigError::RefValueRecursiveError => {}
-            e => {
-                println!("{:?}", e);
-                assert_eq!(true, false)
+        ($v:ident) => {
+            assert_eq!(true, $v.is_err());
+            match $v.err().unwrap() {
+                ConfigError::RefValueRecursiveError => {}
+                e => {
+                    println!("{:?}", e);
+                    assert_eq!(true, false)
+                }
             }
-        }
-      }
+        };
     }
 
     #[test]
@@ -152,7 +152,7 @@ mod test {
         should_err!(v);
     }
 
-    struct R(Arc<Mutex<u64>>);
+    struct R(Arc<Mutex<(u64, bool)>>);
 
     impl ConfigSource for R {
         fn name(&self) -> &str {
@@ -160,14 +160,21 @@ mod test {
         }
 
         fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
-            builder.set("hello", *self.0.lock_c()?);
+            builder.set("hello", self.0.lock_c()?.0);
             Ok(())
+        }
+
+        fn refreshable(&self) -> Result<bool, ConfigError> {
+            let mut g = self.0.lock_c()?;
+            let flag = g.1;
+            g.1 = false;
+            Ok(flag)
         }
     }
 
     impl R {
         fn set(&self, v: u64) {
-            *self.0.lock_c().unwrap() = v;
+            *self.0.lock_c().unwrap() = (v, true);
         }
     }
 
@@ -191,7 +198,7 @@ mod test {
 
     #[test]
     fn refresh_test() {
-        let r = R(Arc::new(Mutex::new(0)));
+        let r = R(Arc::new(Mutex::new((0, true))));
         assert_eq!("r", r.name());
         let mut config = Configuration::new()
             .register_source(R(r.0.clone()))
