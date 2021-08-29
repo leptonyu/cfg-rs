@@ -106,15 +106,10 @@ impl<'a> ConfigContext<'a> {
                         value = &value[pos + 2..];
                     }
                     "}" => {
-                        let last = match cv.stack.pop() {
-                            Some(last) => last,
-                            _ => {
-                                return Err(ConfigError::ConfigParseError(
-                                    current_key.to_string(),
-                                    val.to_owned(),
-                                ))
-                            }
-                        };
+                        let last = cv.stack.pop().ok_or_else(|| {
+                            ConfigError::ConfigParseError(current_key.to_string(), val.to_owned())
+                        })?;
+
                         cv.buf.push_str(&value[..pos]);
                         let v = &(cv.buf.as_str())[last..];
                         let (key, def) = match v.find(':') {
@@ -146,12 +141,15 @@ impl<'a> ConfigContext<'a> {
             if flag {
                 return Ok((true, None));
             }
-            if cv.stack.pop().unwrap_or(0) == 0 {
-                if cv.stack.is_empty() {
-                    return Ok((false, Some(cv.buf.to_string().into())));
-                }
+
+            if cv.stack.is_empty() {
+                return Ok((false, Some(cv.buf.to_string().into())));
             }
-            Ok((false, None))
+
+            Err(ConfigError::ConfigParseError(
+                current_key.to_string(),
+                val.to_owned(),
+            ))
         })
     }
 
@@ -572,6 +570,7 @@ mod test {
             .set("n", "$")
             .set("o", "\\")
             .set("p", "}")
+            .set("q", "${")
             .new_config()
     }
 
@@ -594,6 +593,7 @@ mod test {
         should_eq!(config: "n" as String = "Err(ConfigParseError(\"n\", \"$\"))");
         should_eq!(config: "o" as String = "Err(ConfigParseError(\"o\", \"\\\\\"))");
         should_eq!(config: "p" as String = "Err(ConfigParseError(\"p\", \"}\"))");
+        should_eq!(config: "q" as String = "Err(ConfigParseError(\"q\", \"${\"))");
     }
 
     #[test]
@@ -615,6 +615,7 @@ mod test {
         should_eq!(config: "n" as bool = "Err(ConfigParseError(\"n\", \"$\"))");
         should_eq!(config: "o" as bool = "Err(ConfigParseError(\"o\", \"\\\\\"))");
         should_eq!(config: "p" as bool = "Err(ConfigParseError(\"p\", \"}\"))");
+        should_eq!(config: "q" as bool = "Err(ConfigParseError(\"q\", \"${\"))");
     }
 
     #[test]
@@ -636,5 +637,6 @@ mod test {
         should_eq!(config: "n" as u8 = "Err(ConfigParseError(\"n\", \"$\"))");
         should_eq!(config: "o" as u8 = "Err(ConfigParseError(\"o\", \"\\\\\"))");
         should_eq!(config: "p" as u8 = "Err(ConfigParseError(\"p\", \"}\"))");
+        should_eq!(config: "q" as u8 = "Err(ConfigParseError(\"q\", \"${\"))");
     }
 }
