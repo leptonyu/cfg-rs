@@ -162,16 +162,16 @@ impl<'a> ConfigContext<'a> {
     ) -> Result<T, ConfigError> {
         self.key.push(partial_key);
         let value = match self.source.get_value(&self.key).or(default_value) {
-            Some(ConfigValue::Str(s)) => {
-                match Self::parse_placeholder(self.source, &self.key, &s, history)? {
-                    (true, _) => Some(ConfigValue::Str(s)),
-                    (_, v) => v,
-                }
-            }
             Some(ConfigValue::StrRef(s)) => {
                 match Self::parse_placeholder(self.source, &self.key, s, history)? {
                     (true, _) => Some(ConfigValue::StrRef(s)),
                     (false, v) => v,
+                }
+            }
+            Some(ConfigValue::Str(s)) => {
+                match Self::parse_placeholder(self.source, &self.key, &s, history)? {
+                    (true, _) => Some(ConfigValue::Str(s)),
+                    (_, v) => v,
                 }
             }
             #[cfg(feature = "rand")]
@@ -572,11 +572,20 @@ mod test {
             .set("p", "}")
             .set("q", "${")
             .new_config()
+            .register_kv("test")
+            .set("a0", "0")
+            .set("a", "1")
+            .set("b", "1")
+            .set("c", "1")
+            .finish()
+            .unwrap()
     }
 
     #[test]
     fn parse_string_test() {
         let config = build_config();
+        should_eq!(config: "a0" as String = "Ok(\"0\")");
+
         should_eq!(config: "a" as String = "Ok(\"0\")");
         should_eq!(config: "b" as String = "Err(ConfigRecursiveError(\"b\"))");
         should_eq!(config: "c" as String = "Ok(\"0\")");
@@ -599,6 +608,8 @@ mod test {
     #[test]
     fn parse_bool_test() {
         let config = build_config();
+        should_eq!(config: "a0" as bool = "Err(ConfigParseError(\"a0\", \"0\"))");
+
         should_eq!(config: "a" as bool = "Err(ConfigParseError(\"a\", \"0\"))");
         should_eq!(config: "b" as bool = "Err(ConfigRecursiveError(\"b\"))");
         should_eq!(config: "c" as bool = "Err(ConfigParseError(\"c\", \"0\"))");
@@ -621,6 +632,8 @@ mod test {
     #[test]
     fn parse_u8_test() {
         let config = build_config();
+        should_eq!(config: "a0" as u8 = "Ok(0)");
+
         should_eq!(config: "a" as u8 = "Ok(0)");
         should_eq!(config: "b" as u8 = "Err(ConfigRecursiveError(\"b\"))");
         should_eq!(config: "c" as u8 = "Ok(0)");

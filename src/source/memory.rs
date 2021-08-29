@@ -62,7 +62,9 @@ impl HashValue {
 
     #[inline]
     fn push_val<V: Into<ConfigValue<'static>>>(&mut self, val: V) {
-        self.value = Some(val.into());
+        if self.value.is_none() {
+            self.value = Some(val.into());
+        }
     }
 
     #[inline]
