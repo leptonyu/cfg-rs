@@ -414,7 +414,7 @@ impl PredefinedConfigurationBuilder {
     /// * `CFG_APP_PROFILE=`
     ///
     /// You can change `CFG` to other prefix by this method.
-    pub fn set_prefix_env<K: ToString>(&mut self, prefix: K) -> &mut Self {
+    pub fn set_prefix_env<K: ToString>(mut self, prefix: K) -> Self {
         self.prefix = Some(prefix.to_string());
         self
     }
@@ -541,7 +541,7 @@ impl ManualSource {
 #[cfg(test)]
 mod test {
 
-    use crate::test::TestConfigExt;
+    use crate::{init_cargo_env, test::TestConfigExt};
 
     use super::*;
 
@@ -654,6 +654,12 @@ mod test {
     }
 
     #[test]
+    fn get_test() {
+        let config = build_config();
+        assert_eq!(1, config.get_or("a1", 1).unwrap());
+    }
+
+    #[test]
     fn predefined_test() {
         let _config = Configuration::with_predefined().unwrap();
         let _conf2 = Configuration::with_predefined_builder().init().unwrap();
@@ -662,5 +668,12 @@ mod test {
             println!("{}", v);
         }
         assert_eq!(_conf2.source.value.len(), _config.source.value.len());
+
+        init_cargo_env!();
+        let _conf3 = Configuration::with_predefined_builder()
+            .set_prefix_env("XXX")
+            .set_cargo_env(init_cargo_env())
+            .init()
+            .unwrap();
     }
 }
