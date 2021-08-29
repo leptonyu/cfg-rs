@@ -652,4 +652,15 @@ mod test {
         should_eq!(config: "p" as u8 = "Err(ConfigParseError(\"p\", \"}\"))");
         should_eq!(config: "q" as u8 = "Err(ConfigParseError(\"q\", \"${\"))");
     }
+
+    #[test]
+    fn predefined_test() {
+        let _config = Configuration::with_predefined().unwrap();
+        let _conf2 = Configuration::with_predefined_builder().init().unwrap();
+        println!("Total count = {}", _conf2.source.value.len());
+        for v in _config.source_names() {
+            println!("{}", v);
+        }
+        assert_eq!(_conf2.source.value.len(), _config.source.value.len());
+    }
 }
