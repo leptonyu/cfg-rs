@@ -273,6 +273,7 @@ mod test {
     fn key_test() {
         should_eq!("" => "");
         should_eq!("." => "");
+        should_eq!(".." => "");
         should_eq!("[" => "");
         should_eq!("[1]" => "[1]");
         should_eq!("1" => "[1]");
