@@ -193,6 +193,7 @@ pub struct PartialKeyCollector<'a> {
     pub(crate) int_key: Option<usize>,
 }
 
+#[allow(single_use_lifetimes)]
 impl<'a> PartialKeyCollector<'a> {
     pub(crate) fn new() -> Self {
         Self {
@@ -201,17 +202,16 @@ impl<'a> PartialKeyCollector<'a> {
         }
     }
 
-    #[allow(dead_code)]
-    /// Add string key.
-    pub(crate) fn insert_str(&mut self, key: &'a str) {
-        if let Ok(i) = key.parse() {
-            self.insert_int(i);
-        } else {
-            self.str_key.insert(key);
-        }
-    }
+    // #[allow(dead_code)]
+    // /// Add string key.
+    // pub(crate) fn insert_str(&mut self, key: &'a str) {
+    //     if let Ok(i) = key.parse() {
+    //         self.insert_int(i);
+    //     } else {
+    //         self.str_key.insert(key);
+    //     }
+    // }
 
-    #[allow(dead_code)]
     /// Add index of array.
     pub(crate) fn insert_int(&mut self, key: usize) {
         if let Some(u) = self.int_key {
