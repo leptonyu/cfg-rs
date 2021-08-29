@@ -670,8 +670,28 @@ mod test {
 
     #[test]
     fn get_test() {
-        let config = build_config();
+        let config = build_config()
+            .register_kv("k1")
+            .set("key[0]", "xx")
+            .finish()
+            .unwrap()
+            .register_kv("k2")
+            .set("key[5]", "xx")
+            .finish()
+            .unwrap();
         assert_eq!(1, config.get_or("a1", 1).unwrap());
+        let v = config.get::<Vec<Option<String>>>("key").unwrap();
+        assert_eq!(
+            vec![
+                Some("xx".to_string()),
+                None,
+                None,
+                None,
+                None,
+                Some("xx".to_string())
+            ],
+            v
+        );
     }
 
     #[test]
