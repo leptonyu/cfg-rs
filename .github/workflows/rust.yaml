@@ -29,10 +29,14 @@ jobs:
           cargo test --verbose --lib --no-default-features --features=yaml
           cargo test --verbose --lib --no-default-features --features=rand
 
+      - name: Run examples
+        run: |
           cargo run --example simple --features="full"
           cargo run --example test_suit
           cargo run --example salak
           cargo run --example thread_pool
+          cargo run --example logger
+
       - name: Run benches
         run: |
           #!/bin/bash
