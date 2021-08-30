@@ -78,6 +78,7 @@ impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
 
     fn refreshable(&self) -> Result<bool, ConfigError> {
         let time = modified_time(&self.path);
+        //println!("{}---> {:?}",self.path.display(),time);
         let mut g = self.modified.lock_c()?;
         let flag = time == *g;
         *g = time;
@@ -125,30 +126,44 @@ mod test {
             vec!["tmp"]
         }
     }
+    use std::io::Write;
 
     #[test]
     fn refresh_file_test() -> Result<(), ConfigError> {
         let path: PathBuf = "target/file_2.tmp".into();
-        File::create(&path)?;
+        let mut f = File::create(&path)?;
         let config = <FileLoader<Temp>>::new(path.clone(), false, true);
         assert_eq!(false, config.refreshable()?);
-        std::fs::write(&path, "hello")?;
+        update_file(&mut f)?;
         assert_eq!(true, config.refreshable()?);
         std::fs::remove_file(path)?;
+        Ok(())
+    }
+
+    fn update_file(f: &mut File) -> Result<(), ConfigError> {
+        let last = f.metadata()?.modified()?;
+        let mut i = 0;
+        while last == f.metadata()?.modified()? {
+            i+= 1;
+            println!("Round: {}", i);
+            f.write_all(b"hello")?;
+            f.flush()?;
+            std::thread::sleep(std::time::Duration::new(0, 1000000));
+        }
         Ok(())
     }
 
     #[test]
     fn refresh_test() -> Result<(), ConfigError> {
         let path: PathBuf = "target/file.tmp".into();
-        File::create(&path)?;
+        let mut f = File::create(&path)?;
         let mut config = Configuration::new().register_source(<FileLoader<Temp>>::new(
             path.clone(),
             false,
             true,
         ))?;
         assert_eq!(false, config.refresh()?);
-        std::fs::write(&path, "hello")?;
+        update_file(&mut f)?;
         assert_eq!(true, config.refresh()?);
         std::fs::remove_file(path)?;
         Ok(())
