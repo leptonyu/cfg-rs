@@ -164,6 +164,10 @@ mod test {
             Ok(())
         }
 
+        fn allow_refresh(&self) -> bool {
+            true
+        }
+
         fn refreshable(&self) -> Result<bool, ConfigError> {
             let mut g = self.0.lock_c()?;
             let flag = g.1;
@@ -175,6 +179,10 @@ mod test {
     impl R {
         fn set(&self, v: u64) {
             *self.0.lock_c().unwrap() = (v, true);
+        }
+
+        fn get(&self) -> u64 {
+            self.0.lock_c().unwrap().0
         }
     }
 
@@ -188,6 +196,20 @@ mod test {
         };
     }
 
+    #[test]
+    fn refresh_test() {
+        let r = R(Arc::new(Mutex::new((0, true))));
+        assert_eq!("r", r.name());
+        let config = Configuration::new()
+            .register_source(R(r.0.clone()))
+            .unwrap();
+        let v = config.get::<RefValue<u64>>("hello").unwrap();
+
+        for i in 0..1000 {
+            should_eq!(config: r.v = i);
+        }
+    }
+
     macro_rules! should_eq_mut {
         ($config:ident: $r:ident. $v:ident = $i:ident) => {
             $r.set($i);
@@ -197,9 +219,8 @@ mod test {
             assert_eq!($i, $config.get::<u64>("hello").unwrap());
         };
     }
-
     #[test]
-    fn refresh_test() {
+    fn refresh_mut_test() {
         let r = R(Arc::new(Mutex::new((0, true))));
         assert_eq!("r", r.name());
         let mut config = Configuration::new()
@@ -208,11 +229,40 @@ mod test {
         let v = config.get::<RefValue<u64>>("hello").unwrap();
 
         for i in 0..1000 {
-            should_eq!(config: r.v = i);
-        }
-
-        for i in 0..1000 {
             should_eq_mut!(config: r.v = i);
+        }
+    }
+
+    macro_rules! should_eq_2 {
+        ($config:ident: $r:ident.$s:ident. $v:ident = $i:ident) => {
+            $s.set($i);
+            assert_eq!(true, $config.refresh().unwrap());
+            assert_eq!(false, $config.refresh().unwrap());
+            assert_eq!($r.get(), $v.get().unwrap());
+            $r.set($i);
+            assert_eq!($i, $r.get());
+            assert_ne!($r.get(), $v.get().unwrap());
+            assert_eq!(true, $config.refresh().unwrap());
+            assert_eq!(false, $config.refresh().unwrap());
+            assert_eq!($i, $v.get().unwrap());
+            assert_eq!($i, $config.get::<u64>("hello").unwrap());
+        };
+    }
+
+    #[test]
+    fn multiple_source_refresh_test() {
+        let r = R(Arc::new(Mutex::new((0, true))));
+        let s = R(Arc::new(Mutex::new((0, true))));
+        assert_eq!("r", r.name());
+        let mut config = Configuration::new()
+            .register_source(R(r.0.clone()))
+            .unwrap()
+            .register_source(R(s.0.clone()))
+            .unwrap();
+        let v = config.get::<RefValue<u64>>("hello").unwrap();
+
+        for i in 1..1000 {
+            should_eq_2!(config: r.s.v = i);
         }
     }
 }

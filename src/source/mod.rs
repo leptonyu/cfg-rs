@@ -192,6 +192,11 @@ pub trait ConfigSource: Send {
     /// Load config source.
     fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError>;
 
+    /// If this config source can be refreshed.
+    fn allow_refresh(&self) -> bool {
+        false
+    }
+
     /// Check if config source is refreshable.
     ///
     /// Implementor should notice that everytime this method is called, the refreshable state **must** be reset to **false**.

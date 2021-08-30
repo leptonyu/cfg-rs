@@ -76,7 +76,14 @@ impl<L: ConfigSource> ConfigSource for CacheConfigSource<L> {
         g.0.as_ref().expect("NP").load(builder)
     }
 
+    fn allow_refresh(&self) -> bool {
+        self.origin.allow_refresh()
+    }
+
     fn refreshable(&self) -> Result<bool, ConfigError> {
+        if !self.allow_refresh() {
+            return Ok(false);
+        }
         let flag = self.origin.refreshable()?;
         self.cache.lock_c()?.1 = flag;
         Ok(flag)

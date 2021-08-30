@@ -76,9 +76,12 @@ impl<L: ConfigSourceParser> ConfigSource for FileLoader<L> {
         Ok(())
     }
 
+    fn allow_refresh(&self) -> bool {
+        true
+    }
+
     fn refreshable(&self) -> Result<bool, ConfigError> {
         let time = modified_time(&self.path);
-        //println!("{}---> {:?}",self.path.display(),time);
         let mut g = self.modified.lock_c()?;
         let flag = time == *g;
         *g = time;
@@ -99,7 +102,7 @@ pub fn inline_source_config<S: ConfigSourceParser>(
 
 #[cfg(test)]
 mod test {
-    use std::{fs::File, path::PathBuf};
+    use std::{fs::File, io::Write, path::PathBuf};
 
     use crate::{
         source::{ConfigSource, ConfigSourceAdaptor, ConfigSourceBuilder, ConfigSourceParser},
@@ -126,7 +129,6 @@ mod test {
             vec!["tmp"]
         }
     }
-    use std::io::Write;
 
     #[test]
     fn refresh_file_test() -> Result<(), ConfigError> {
@@ -144,7 +146,7 @@ mod test {
         let last = f.metadata()?.modified()?;
         let mut i = 0;
         while last == f.metadata()?.modified()? {
-            i+= 1;
+            i += 1;
             println!("Round: {}", i);
             f.write_all(b"hello")?;
             f.flush()?;

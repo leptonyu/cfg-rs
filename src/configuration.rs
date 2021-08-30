@@ -321,37 +321,36 @@ impl Configuration {
     }
 
     #[inline]
-    fn reload(&self) -> Result<Configuration, ConfigError> {
+    fn reload(&self) -> Result<(bool, Configuration), ConfigError> {
         let mut s = Configuration::new();
-        let c = &mut s.source.prefixed();
-        for l in self.loaders.iter() {
-            l.load(c)?;
+        let mut refreshed = false;
+        for i in self.loaders.iter() {
+            if i.refreshable()? {
+                refreshed = true;
+            }
         }
-        self.source.refs.refresh(&s)?;
-        Ok(s)
+        if refreshed {
+            let c = &mut s.source.prefixed();
+            for i in self.loaders.iter() {
+                i.load(c)?;
+            }
+            self.source.refs.refresh(&s)?;
+        }
+        Ok((refreshed, s))
     }
 
     /// Refresh all [RefValue](struct.RefValue.html)s without change [`Configuration`] itself.
     pub fn refresh_ref(&self) -> Result<bool, ConfigError> {
-        for i in self.loaders.iter() {
-            if i.refreshable()? {
-                let _ = self.reload()?;
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        Ok(self.reload()?.0)
     }
 
     /// Refresh all [RefValue](struct.RefValue.html)s and [`Configuration`] itself.
     pub fn refresh(&mut self) -> Result<bool, ConfigError> {
-        for i in self.loaders.iter() {
-            if i.refreshable()? {
-                let c = self.reload()?;
-                self.source.value = c.source.value;
-                return Ok(true);
-            }
+        let (x, c) = self.reload()?;
+        if x {
+            self.source.value = c.source.value;
         }
-        Ok(false)
+        Ok(x)
     }
 
     /// Get config from configuration by key, see [`ConfigKey`] for the key's pattern details.
