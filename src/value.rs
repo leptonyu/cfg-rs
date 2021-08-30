@@ -490,11 +490,14 @@ mod test {
         }
 
         #[allow(single_use_lifetimes)]
-        fn read<'a, T: FromValue>(
+        fn read<'a, T: FromConfig>(
             &mut self,
             val: impl Into<ConfigValue<'a>>,
         ) -> Result<T, ConfigError> {
-            T::from_value(&mut self.0.source.new_context(&mut self.1), val.into())
+            T::from_config(
+                &mut self.0.source.new_context(&mut self.1),
+                Some(val.into()),
+            )
         }
     }
 
@@ -699,7 +702,7 @@ mod test {
     #[allow(unused_qualifications)]
     fn option_test() {
         let mut context = TestContext::new();
-        let x: Result<Ordering, ConfigError> = context.read("val");
+        let x: Result<Option<Ordering>, ConfigError> = context.read("val");
         assert_eq!(true, x.is_err());
         match x.unwrap_err() {
             ConfigError::ConfigParseError(_, _) => {}
