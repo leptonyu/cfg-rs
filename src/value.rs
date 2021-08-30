@@ -694,4 +694,16 @@ mod test {
         buf.push("/var");
         should_eq!(context: "/var" as PathBuf => buf);
     }
+
+    #[test]
+    #[allow(unused_qualifications)]
+    fn option_test() {
+        let mut context = TestContext::new();
+        let x: Result<Ordering, ConfigError> = context.read("val");
+        assert_eq!(true, x.is_err());
+        match x.unwrap_err() {
+            ConfigError::ConfigParseError(_, _) => {}
+            _ => assert_eq!(true, false),
+        }
+    }
 }
