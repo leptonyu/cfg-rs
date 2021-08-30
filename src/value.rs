@@ -123,7 +123,7 @@ macro_rules! into_config_value_le {
 into_config_value_le!(Int = i64: u8, u16, u32, i8, i16, i32, i64);
 into_config_value_le!(Float = f64: f32, f64);
 
-macro_rules! into_config_value {
+macro_rules! into_config_value_u {
     ($($x:ident),*) => {$(
         impl<'a> Into<ConfigValue<'a>> for $x {
             fn into(self) -> ConfigValue<'a> {
@@ -136,7 +136,22 @@ macro_rules! into_config_value {
     };
 }
 
-into_config_value!(u64, u128, usize, i128, isize);
+into_config_value_u!(u64, u128, usize);
+
+macro_rules! into_config_value {
+    ($($x:ident),*) => {$(
+        impl<'a> Into<ConfigValue<'a>> for $x {
+            fn into(self) -> ConfigValue<'a> {
+                if self <= i64::MAX as $x && self>= i64::MIN as $x {
+                    return ConfigValue::Int(self as i64);
+                }
+                ConfigValue::Str(self.to_string())
+            }
+        })*
+    };
+}
+
+into_config_value!(i128, isize);
 
 impl<'a> Into<ConfigValue<'a>> for bool {
     fn into(self) -> ConfigValue<'a> {
@@ -560,6 +575,67 @@ mod test {
         should_eq!(context: y as i64 => i);
         should_eq!(context: i as i64 => i);
     }
+
+    macro_rules! num_into_test {
+        ($($fun:ident. $t:ty,)+) => {
+            $(
+            #[quickcheck]
+            fn $fun(i: $t) {
+                let v: ConfigValue<'static> = i.into();
+                match v {
+                    ConfigValue::Int(_) => {}
+                    _ => assert_eq!(true, false),
+                }
+            }
+            )+
+        };
+    }
+
+    num_into_test!(
+        u8_test.u8,
+        u16_test.u16,
+        u32_test.u32,
+        i8_test.i8,
+        i16_test.i16,
+        i32_test.i32,
+        i64_test.i64,
+    );
+
+    macro_rules! num_into_test_u {
+        ($($fun:ident. $t:ty),+) => {
+            $(
+            #[quickcheck]
+            fn $fun(i: $t) {
+                let v: ConfigValue<'static> = i.into();
+                match v {
+                    ConfigValue::Int(_) => assert_eq!(true,  i <= i64::MAX as $t),
+                    ConfigValue::Str(_) => assert_eq!(true, i > i64::MAX as $t),
+                    _ => assert_eq!(true, false),
+                }
+            }
+            )+
+        };
+    }
+
+    num_into_test_u!(u64_test.u64, u128_test.u128, usize_test.usize);
+
+    macro_rules! num_into_test_i {
+        ($($fun:ident. $t:ty),+) => {
+            $(
+            #[quickcheck]
+            fn $fun(i: $t) {
+                let v: ConfigValue<'static> = i.into();
+                match v {
+                    ConfigValue::Int(_) => assert_eq!(true,  i <= i64::MAX as $t && i>= i64::MIN as $t),
+                    ConfigValue::Str(_) => assert_eq!(true, i > i64::MAX as $t || i< i64::MIN as $t),
+                    _ => assert_eq!(true, false),
+                }
+            }
+            )+
+        };
+    }
+
+    num_into_test_i!(i128_test.i128, isize_test.isize);
 
     #[quickcheck]
     fn i64_tests(i: i64) {
