@@ -42,4 +42,21 @@ mod test {
         let b = config.get::<u128>("random.u128").unwrap();
         assert_ne!(a, b);
     }
+
+    #[test]
+    fn value_test() {
+        let config = Random.new_config();
+        assert_eq!(true, config.get::<u8>("random.u8").is_ok());
+        assert_eq!(true, config.get::<u16>("random.u16").is_ok());
+        assert_eq!(true, config.get::<u32>("random.u32").is_ok());
+        assert_eq!(true, config.get::<u64>("random.u64").is_ok());
+        assert_eq!(true, config.get::<u128>("random.u128").is_ok());
+        assert_eq!(true, config.get::<usize>("random.usize").is_ok());
+        assert_eq!(true, config.get::<i8>("random.i8").is_ok());
+        assert_eq!(true, config.get::<i16>("random.i16").is_ok());
+        assert_eq!(true, config.get::<i32>("random.i32").is_ok());
+        assert_eq!(true, config.get::<i64>("random.i64").is_ok());
+        assert_eq!(true, config.get::<i128>("random.i128").is_ok());
+        assert_eq!(true, config.get::<isize>("random.isize").is_ok());
+    }
 }

@@ -115,7 +115,7 @@ mod test {
     use std::sync::{Arc, Mutex};
 
     use crate::{
-        source::{ConfigSource, ConfigSourceBuilder},
+        source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
         *,
     };
 
@@ -251,10 +251,13 @@ mod test {
 
     #[test]
     fn multiple_source_refresh_test() {
+        let a = HashSource::new("name");
         let r = R(Arc::new(Mutex::new((0, true))));
         let s = R(Arc::new(Mutex::new((0, true))));
         assert_eq!("r", r.name());
         let mut config = Configuration::new()
+            .register_source(a)
+            .unwrap()
             .register_source(R(r.0.clone()))
             .unwrap()
             .register_source(R(s.0.clone()))
