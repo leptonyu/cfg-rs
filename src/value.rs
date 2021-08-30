@@ -709,4 +709,16 @@ mod test {
             _ => assert_eq!(true, false),
         }
     }
+
+    #[test]
+    #[allow(unused_qualifications)]
+    fn into_string_test() {
+        let mut context = TestContext::new();
+        let v: String = context.read(1.1f64).unwrap();
+        assert_eq!("1.1", v);
+        let v: String = context.read(1u8).unwrap();
+        assert_eq!("1", v);
+        let v: String = context.read(true).unwrap();
+        assert_eq!("true", v);
+    }
 }
