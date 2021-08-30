@@ -271,6 +271,8 @@ impl FromValue for String {
     }
 }
 
+/// Get from string.
+#[doc(hidden)]
 pub trait FromStringValue: Sized + Any {
     fn from_str_value(context: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError>;
 }
@@ -452,8 +454,8 @@ impl FromValue for Duration {
 #[macro_export]
 macro_rules! impl_enum {
     ($x:path {$($($k:pat)|* => $v:expr)+ }) => {
-        impl $crate::value::FromStringValue for $x {
-            fn from_str_value(context: &mut $crate::configuration::ConfigContext<'_>, value: &str) -> Result<Self, $crate::err::ConfigError> {
+        impl $crate::FromStringValue for $x {
+            fn from_str_value(context: &mut $crate::ConfigContext<'_>, value: &str) -> Result<Self, $crate::ConfigError> {
                 match &value.to_lowercase()[..] {
                     $($($k)|* => Ok($v),)+
                     _ => Err(context.parse_error(value)),

@@ -16,7 +16,7 @@ license = 'MIT'
 name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-version = "0.2.1"
+version = "0.2.2"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -48,6 +48,8 @@ yaml-rust = {version = "^0.4.5", optional = true}
 
 [dev-dependencies]
 criterion = '0.3'
+env_logger = '0.9'
+log = '0.4'
 quickcheck = '1'
 quickcheck_macros = '1'
 
@@ -58,9 +60,10 @@ name = "salak"
 [[example]]
 name = "test_suit"
 [[example]]
+name = "logger"
+[[example]]
 name = "simple"
 required-features = ["full"]
-
 [[bench]]
 harness = false
 name = "core"

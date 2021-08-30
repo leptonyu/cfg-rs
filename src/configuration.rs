@@ -220,8 +220,9 @@ impl<'a> ConfigContext<'a> {
         ConfigError::ConfigNotFound(self.current_key())
     }
 
+    /// Parse config value error.
     #[inline]
-    pub(crate) fn parse_error(&self, value: &str) -> ConfigError {
+    pub fn parse_error(&self, value: &str) -> ConfigError {
         ConfigError::ConfigParseError(self.current_key(), value.to_owned())
     }
 
