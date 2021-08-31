@@ -1,9 +1,7 @@
-use std::sync::Mutex;
-
 use crate::{
     err::ConfigLock,
     source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
-    ConfigError,
+    ConfigError, Mutex,
 };
 
 #[macro_export]

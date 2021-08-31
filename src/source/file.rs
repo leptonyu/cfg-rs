@@ -1,7 +1,7 @@
 //! File config source.
-use std::{marker::PhantomData, path::PathBuf, sync::Mutex, time::SystemTime};
+use std::{marker::PhantomData, path::PathBuf, time::SystemTime};
 
-use crate::{err::ConfigLock, ConfigError};
+use crate::{err::ConfigLock, ConfigError, Mutex};
 
 use super::{
     memory::{ConfigSourceBuilder, HashSource},

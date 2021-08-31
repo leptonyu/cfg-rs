@@ -318,7 +318,7 @@ impl Configuration {
         loader: L,
     ) -> Result<Self, ConfigError> {
         if self.max <= self.loaders.len() {
-          return Err(ConfigError::TooManyInstances(self.max));
+            return Err(ConfigError::TooManyInstances(self.max));
         }
         let loader = CacheConfigSource::new(loader);
         loader.load(&mut self.source.prefixed())?;

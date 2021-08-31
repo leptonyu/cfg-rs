@@ -97,6 +97,8 @@ pub use source::file::inline_source_config;
 #[doc(hidden)]
 pub use value::FromStringValue;
 
+use std::sync::*;
+
 /// Generate config instance from configuration.
 ///
 /// The most power of this crate is automatically deriving this trait.

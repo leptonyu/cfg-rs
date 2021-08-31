@@ -1,5 +1,5 @@
 use crate::*;
-use std::sync::*;
+use std::sync::Arc;
 
 /// [`RefValue`] means reference of value or refreshable value,
 /// it holds a value which can be updated when [`Configuration`] is refreshed.
@@ -100,7 +100,7 @@ impl Refresher {
     fn push(&self, r: impl Ref + 'static) -> Result<(), ConfigError> {
         let mut g = self.refs.try_lock_c()?;
         if g.len() >= self.max {
-          return Err(ConfigError::TooManyInstances(self.max))
+            return Err(ConfigError::TooManyInstances(self.max));
         }
         g.push(Box::new(r));
         Ok(())
@@ -117,11 +117,11 @@ impl Refresher {
 
 #[cfg(test)]
 mod test {
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     use crate::{
         source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
-        *,
+        Mutex, *,
     };
 
     #[derive(FromConfig)]
