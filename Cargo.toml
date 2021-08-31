@@ -67,6 +67,9 @@ name = "refresh"
 name = "watch"
 required-features = ["yaml"]
 [[example]]
+name = "profile"
+required-features = ["toml"]
+[[example]]
 name = "simple"
 required-features = ["full"]
 [[bench]]
