@@ -74,6 +74,11 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("hello2", |b| {
         b.iter(|| env.get::<Option<String>>(black_box("hello")))
     });
+    let rv = env.get::<RefValue<String>>(black_box("hello")).unwrap();
+
+    c.bench_function("ref1", |b| {
+        b.iter(|| rv.get());
+    });
 
     c.bench_function("long1", |b| {
         b.iter(|| env.get::<String>(black_box("hello.a1.b2.c3.d4.e5.f6.f7")))

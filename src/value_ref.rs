@@ -85,18 +85,23 @@ impl<T: FromConfig + Send> Ref for RefValue<T> {
 }
 
 pub(crate) struct Refresher {
+    max: usize,
     refs: Mutex<Vec<Box<dyn Ref + Send + 'static>>>,
 }
 
 impl Refresher {
     pub(crate) fn new() -> Self {
         Self {
+            max: 1024,
             refs: Mutex::new(vec![]),
         }
     }
 
     fn push(&self, r: impl Ref + 'static) -> Result<(), ConfigError> {
         let mut g = self.refs.try_lock_c()?;
+        if g.len() >= self.max {
+          return Err(ConfigError::TooManyInstances(self.max))
+        }
         g.push(Box::new(r));
         Ok(())
     }

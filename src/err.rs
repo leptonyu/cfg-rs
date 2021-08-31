@@ -21,6 +21,8 @@ pub enum ConfigError {
     ConfigFileNotSupported(PathBuf),
     /// Ref value cannot define recursively.
     RefValueRecursiveError,
+    /// Too many instances.
+    TooManyInstances(usize),
     /// Config parse error with other error.
     ConfigCause(Box<dyn Error + 'static>),
 }

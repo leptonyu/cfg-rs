@@ -238,6 +238,7 @@ impl<'a> ConfigContext<'a> {
 #[allow(missing_debug_implementations)]
 pub struct Configuration {
     pub(crate) source: HashSource,
+    max: usize,
     loaders: Vec<Box<dyn ConfigSource + Send + 'static>>,
 }
 
@@ -249,6 +250,7 @@ impl Configuration {
     pub fn new() -> Self {
         Self {
             source: HashSource::new("configuration"),
+            max: 64,
             loaders: vec![],
         }
     }
@@ -315,6 +317,9 @@ impl Configuration {
         mut self,
         loader: L,
     ) -> Result<Self, ConfigError> {
+        if self.max <= self.loaders.len() {
+          return Err(ConfigError::TooManyInstances(self.max));
+        }
         let loader = CacheConfigSource::new(loader);
         loader.load(&mut self.source.prefixed())?;
         self.loaders.push(Box::new(loader));
