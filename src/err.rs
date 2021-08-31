@@ -61,4 +61,3 @@ impl<'a, T> ConfigLock<'a, T> for Mutex<T> {
         self.try_lock().map_err(ConfigError::try_lock_err)
     }
 }
-

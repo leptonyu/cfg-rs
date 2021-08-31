@@ -62,6 +62,8 @@ name = "test_suit"
 [[example]]
 name = "logger"
 [[example]]
+name = "refresh"
+[[example]]
 name = "simple"
 required-features = ["full"]
 [[bench]]
