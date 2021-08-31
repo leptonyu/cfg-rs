@@ -64,6 +64,9 @@ name = "logger"
 [[example]]
 name = "refresh"
 [[example]]
+name = "watch"
+required-features = ["yaml"]
+[[example]]
 name = "simple"
 required-features = ["full"]
 [[bench]]
