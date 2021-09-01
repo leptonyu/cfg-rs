@@ -1,6 +1,13 @@
 //! Random source.
+use std::cell::RefCell;
+
+use rand_chacha::{
+    rand_core::{OsRng, RngCore, SeedableRng},
+    ChaCha12Rng,
+};
+
 use super::{memory::ConfigSourceBuilder, ConfigSource};
-use crate::{value::RandValue, ConfigError};
+use crate::{value::RandValue, ConfigError, ConfigValue};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -25,6 +32,49 @@ impl ConfigSource for Random {
         source.set("random.i128", RandValue::I128);
         source.set("random.isize", RandValue::Isize);
         Ok(())
+    }
+}
+
+thread_local! {
+    static RND: RefCell<ChaCha12Rng> = RefCell::new( ChaCha12Rng::from_rng(OsRng).unwrap());
+}
+
+#[inline]
+fn get_rand<R, F: Fn(&mut ChaCha12Rng) -> R>(f: F) -> R {
+    RND.with(move |x| (f)(&mut x.borrow_mut()))
+}
+
+macro_rules! get_val {
+    ($($f:ident.$n:literal),+) => {$(
+        #[inline]
+        fn $f<R, F: Fn(&[u8; $n]) -> R>(f: F) -> R {
+            get_rand(|c| {
+                let mut x = [0; $n];
+                c.fill_bytes(&mut x);
+                (f)(&x)
+            })
+        }
+        )+};
+}
+
+get_val!(get_1.1, get_2.2, get_4.4, get_8.8, get_16.16);
+
+impl RandValue {
+    pub(crate) fn normalize(self) -> ConfigValue<'static> {
+        match self {
+            RandValue::U8 => get_rand(|f| f.next_u32() as u8).into(),
+            RandValue::U16 => get_rand(|f| f.next_u32() as u16).into(),
+            RandValue::U32 => get_rand(|f| f.next_u32()).into(),
+            RandValue::U64 => get_rand(|f| f.next_u64()).into(),
+            RandValue::U128 => get_16(|f| u128::from_le_bytes(*f)).into(),
+            RandValue::Usize => get_8(|f| usize::from_le_bytes(*f)).into(),
+            RandValue::I8 => get_1(|f| i8::from_le_bytes(*f)).into(),
+            RandValue::I16 => get_2(|f| i16::from_le_bytes(*f)).into(),
+            RandValue::I32 => get_4(|f| i32::from_le_bytes(*f)).into(),
+            RandValue::I64 => get_8(|f| i64::from_le_bytes(*f)).into(),
+            RandValue::I128 => get_16(|f| i128::from_le_bytes(*f)).into(),
+            RandValue::Isize => get_8(|f| isize::from_le_bytes(*f)).into(),
+        }
     }
 }
 

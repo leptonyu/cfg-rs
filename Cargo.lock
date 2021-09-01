@@ -92,7 +92,7 @@ dependencies = [
  "log",
  "quickcheck",
  "quickcheck_macros",
- "rand",
+ "rand_chacha",
  "rust-ini",
  "toml",
  "yaml-rust",

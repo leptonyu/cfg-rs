@@ -77,24 +77,6 @@ impl ConfigValue<'_> {
             ConfigValue::Rand(v) => ConfigValue::Rand(*v),
         }
     }
-
-    #[cfg(feature = "rand")]
-    pub(crate) fn normalize(v: RandValue) -> Self {
-        match v {
-            RandValue::U8 => ConfigValue::Int(rand::random::<u8>() as i64),
-            RandValue::U16 => ConfigValue::Int(rand::random::<u16>() as i64),
-            RandValue::U32 => ConfigValue::Int(rand::random::<u32>() as i64),
-            RandValue::U64 => ConfigValue::Str(rand::random::<u64>().to_string()),
-            RandValue::U128 => ConfigValue::Str(rand::random::<u128>().to_string()),
-            RandValue::Usize => ConfigValue::Str(rand::random::<usize>().to_string()),
-            RandValue::I8 => ConfigValue::Int(rand::random::<i8>() as i64),
-            RandValue::I16 => ConfigValue::Int(rand::random::<i16>() as i64),
-            RandValue::I32 => ConfigValue::Int(rand::random::<i32>() as i64),
-            RandValue::I64 => ConfigValue::Int(rand::random::<i64>()),
-            RandValue::I128 => ConfigValue::Str(rand::random::<i128>().to_string()),
-            RandValue::Isize => ConfigValue::Str(rand::random::<isize>().to_string()),
-        }
-    }
 }
 
 impl<'a> Into<ConfigValue<'a>> for String {

@@ -176,7 +176,7 @@ impl<'a> ConfigContext<'a> {
                 }
             }
             #[cfg(feature = "rand")]
-            Some(ConfigValue::Rand(s)) => Some(ConfigValue::normalize(s)),
+            Some(ConfigValue::Rand(s)) => Some(s.normalize()),
             v => v,
         };
 
