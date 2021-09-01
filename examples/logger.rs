@@ -8,7 +8,7 @@ struct LogEnv {
     #[config(default = "out")]
     target: LogTarget,
     #[config(default = "info")]
-    level: LLevel,
+    level: LevelFilter,
 }
 
 struct LogTarget(Target);
@@ -18,31 +18,25 @@ impl_enum!( LogTarget {
     "stderr" | "err" => LogTarget(Target::Stderr)
 });
 
-struct LLevel(LevelFilter);
-
-impl_enum!(LLevel {
-    "off" => LLevel(LevelFilter::Off)
-    "trace" => LLevel(LevelFilter::Trace)
-    "debug" => LLevel(LevelFilter::Debug)
-    "info" => LLevel(LevelFilter::Info)
-    "warn" => LLevel(LevelFilter::Warn)
-    "error" => LLevel(LevelFilter::Error)
-});
-
 impl From<LogEnv> for Logger {
     fn from(le: LogEnv) -> Self {
         Builder::new()
             .target(le.target.0)
-            .filter_level(le.level.0)
+            .filter_level(le.level)
             .build()
     }
 }
 
 fn main() -> Result<(), ConfigError> {
-    let config = Configuration::new();
+    let config = Configuration::with_predefined()?;
     let env = config.get_predefined::<LogEnv>()?;
-    log::set_max_level(env.level.0);
+    log::set_max_level(env.level);
     log::set_boxed_logger(Box::new(Logger::from(env)))?;
-    log::info!("hello");
+    let mut i = 0;
+    for name in config.source_names() {
+        i += 1;
+        log::info!("{}: {}", i, name);
+    }
+    log::info!("hello {}", config.get::<String>("hello.toml").unwrap());
     Ok(())
 }

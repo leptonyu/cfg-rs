@@ -12,6 +12,7 @@ use crate::{
     err::ConfigError,
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
+    macros::log_cfg,
     source::{
         cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
         register_files, ConfigSource, SourceOption,
@@ -322,6 +323,7 @@ impl Configuration {
         }
         let loader = CacheConfigSource::new(loader);
         loader.load(&mut self.source.prefixed())?;
+        log_cfg!("Config source {} loaded.", loader.name());
         self.loaders.push(Box::new(loader));
         Ok(self)
     }

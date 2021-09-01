@@ -36,7 +36,7 @@ members = [
 
 [features]
 default = []
-full = ["toml", "yaml", "json", "rand"]
+full = ["toml", "yaml", "json", "rand", "ini", "log"]
 ini = ["rust-ini"]
 rand = ["rand_chacha"]
 yaml = ["yaml-rust"]
@@ -44,6 +44,7 @@ yaml = ["yaml-rust"]
 [dependencies]
 cfg-derive = {path = './cfg-derive', version = '^0.1'}
 json = {version = "^0.12", optional = true}
+log = {version = "^0.4", optional = true}
 rand_chacha = {version = "^0.3", optional = true}
 rust-ini = {version = "^0.17", optional = true}
 toml = {version = "^0.5", optional = true}
@@ -64,6 +65,7 @@ name = "salak"
 name = "test_suit"
 [[example]]
 name = "logger"
+required-features = ["full"]
 [[example]]
 name = "refresh"
 [[example]]

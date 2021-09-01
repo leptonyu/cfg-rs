@@ -31,11 +31,11 @@ jobs:
 
       - name: Run examples
         run: |
-          cargo run --example simple --features="full"
+          cargo run --example simple --features full
           cargo run --example test_suit
           cargo run --example salak
           cargo run --example thread_pool
-          cargo run --example logger
+          cargo run --example logger --features full
           cargo run --example refresh
           cargo run --example watch --features yaml
           cargo run --example profile --features toml

@@ -99,6 +99,19 @@ pub use value::FromStringValue;
 
 use std::sync::*;
 
+pub(crate) mod macros {
+    macro_rules! log_cfg {
+    ($($arg:tt)+) => {
+        #[cfg(feature = "log")]
+        {
+            log::info!($($arg)+);
+        }
+    };
+    }
+
+    pub(crate) use log_cfg;
+}
+
 /// Generate config instance from configuration.
 ///
 /// The most power of this crate is automatically deriving this trait.

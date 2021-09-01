@@ -459,6 +459,29 @@ impl_enum!(Ordering{
     "gt" | "greater" => Ordering::Greater
 });
 
+#[cfg(feature = "log")]
+mod log {
+
+    use log::*;
+
+    impl_enum!(LevelFilter {
+        "off" => LevelFilter::Off
+        "trace" => LevelFilter::Trace
+        "debug" => LevelFilter::Debug
+        "info" => LevelFilter::Info
+        "warn" => LevelFilter::Warn
+        "error" => LevelFilter::Error
+    });
+
+    impl_enum!(Level {
+        "trace" => Level::Trace
+        "debug" => Level::Debug
+        "info" => Level::Info
+        "warn" => Level::Warn
+        "error" => Level::Error
+    });
+}
+
 #[cfg(test)]
 mod test {
 
