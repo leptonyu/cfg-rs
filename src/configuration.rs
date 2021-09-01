@@ -322,8 +322,12 @@ impl Configuration {
             return Err(ConfigError::TooManyInstances(self.max));
         }
         let loader = CacheConfigSource::new(loader);
-        loader.load(&mut self.source.prefixed())?;
-        log_cfg!("Config source {} loaded.", loader.name());
+        let builder = &mut self.source.prefixed();
+        let base = builder.count();
+        loader.load(builder)?;
+        if builder.count() > base {
+            log_cfg!("Config source {} loaded.", loader.name());
+        }
         self.loaders.push(Box::new(loader));
         Ok(self)
     }

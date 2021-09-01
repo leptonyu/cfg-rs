@@ -48,6 +48,7 @@ pub(crate) struct HashValue {
 pub struct ConfigSourceBuilder<'a> {
     key: Vec<String>,
     map: &'a mut HashMap<String, HashValue>,
+    count: usize,
 }
 
 impl HashValue {
@@ -97,6 +98,7 @@ impl HashSource {
         ConfigSourceBuilder {
             key: vec![],
             map: &mut self.value,
+            count: 0,
         }
     }
 
@@ -214,9 +216,14 @@ impl ConfigSourceBuilder<'_> {
     /// Insert value into source.
     #[inline]
     pub fn insert<V: Into<ConfigValue<'static>>>(&mut self, value: V) {
+        self.count += 1;
         self.map
             .entry(self.curr())
             .or_insert_with(|| HashValue::new())
             .push_val(value);
+    }
+
+    pub(crate) fn count(&self) -> usize {
+        self.count
     }
 }
