@@ -79,24 +79,24 @@ impl ConfigValue<'_> {
     }
 }
 
-impl<'a> Into<ConfigValue<'a>> for String {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::Str(self)
+impl From<String> for ConfigValue<'_> {
+    fn from(v: String) -> Self {
+        ConfigValue::Str(v)
     }
 }
 
-impl<'a> Into<ConfigValue<'a>> for &'a str {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::StrRef(self)
+impl<'a> From<&'a str> for ConfigValue<'a> {
+    fn from(c: &'a str) -> Self {
+        ConfigValue::StrRef(c)
     }
 }
 
 macro_rules! into_config_value_le {
     ($f:ident=$t:ident: $($x:ident),*) => {$(
-        impl<'a> Into<ConfigValue<'a>> for $x {
+        impl From<$x> for ConfigValue<'_> {
             #[allow(trivial_numeric_casts)]
-            fn into(self) -> ConfigValue<'a> {
-                ConfigValue::$f(self as $t)
+            fn from(c: $x) -> Self {
+                ConfigValue::$f(c as $t)
             }
         })*
     };
@@ -107,12 +107,12 @@ into_config_value_le!(Float = f64: f32, f64);
 
 macro_rules! into_config_value_u {
     ($($x:ident),*) => {$(
-        impl<'a> Into<ConfigValue<'a>> for $x {
-            fn into(self) -> ConfigValue<'a> {
-                if self <= i64::MAX as $x {
-                    return ConfigValue::Int(self as i64);
+        impl From<$x> for ConfigValue<'_> {
+            fn from(c: $x) -> Self {
+                if c <= i64::MAX as $x {
+                    return ConfigValue::Int(c as i64);
                 }
-                ConfigValue::Str(self.to_string())
+                ConfigValue::Str(c.to_string())
             }
         })*
     };
@@ -122,12 +122,12 @@ into_config_value_u!(u64, u128, usize);
 
 macro_rules! into_config_value {
     ($($x:ident),*) => {$(
-        impl<'a> Into<ConfigValue<'a>> for $x {
-            fn into(self) -> ConfigValue<'a> {
-                if self <= i64::MAX as $x && self>= i64::MIN as $x {
-                    return ConfigValue::Int(self as i64);
+        impl From<$x> for ConfigValue<'_> {
+            fn from(c: $x) -> Self {
+                if c <= i64::MAX as $x && c>= i64::MIN as $x {
+                    return ConfigValue::Int(c as i64);
                 }
-                ConfigValue::Str(self.to_string())
+                ConfigValue::Str(c.to_string())
             }
         })*
     };
@@ -135,16 +135,16 @@ macro_rules! into_config_value {
 
 into_config_value!(i128, isize);
 
-impl<'a> Into<ConfigValue<'a>> for bool {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::Bool(self)
+impl From<bool> for ConfigValue<'_> {
+    fn from(v: bool) -> Self {
+        ConfigValue::Bool(v)
     }
 }
 
 #[cfg(feature = "rand")]
-impl<'a> Into<ConfigValue<'a>> for RandValue {
-    fn into(self) -> ConfigValue<'a> {
-        ConfigValue::Rand(self)
+impl From<RandValue> for ConfigValue<'_> {
+    fn from(v: RandValue) -> Self {
+        ConfigValue::Rand(v)
     }
 }
 

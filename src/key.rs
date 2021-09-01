@@ -121,13 +121,12 @@ impl<'a> CacheKey<'a> {
     pub(crate) fn as_str(&self) -> &str {
         &self.cache.current
     }
-
-    /// To String.
-    pub(crate) fn to_string(&self) -> String {
-        self.as_str().to_string()
+}
+impl std::fmt::Display for CacheKey<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
-
 /// Partial key, plese refer to [`ConfigKey`].
 #[allow(single_use_lifetimes)]
 #[derive(Debug, PartialEq, Eq)]
@@ -169,7 +168,7 @@ impl<'a> Iterator for PartialKeyIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             PartialKeyIter::Str(s) => {
-                while let Some(v) = s.next() {
+                for v in s {
                     if v.is_empty() {
                         continue;
                     }
@@ -229,27 +228,27 @@ impl<'a> PartialKeyCollector<'a> {
 //     }
 // }
 
-impl<'a> Into<PartialKeyIter<'a>> for &'a str {
-    fn into(self) -> PartialKeyIter<'a> {
-        PartialKeyIter::Str(self.split(&['.', '[', ']'][..]))
+impl<'a> From<&'a str> for PartialKeyIter<'a> {
+    fn from(s: &'a str) -> Self {
+        PartialKeyIter::Str(s.split(&['.', '[', ']'][..]))
     }
 }
 
-impl<'a> Into<PartialKey<'a>> for usize {
-    fn into(self) -> PartialKey<'a> {
-        PartialKey::Int(self)
+impl From<usize> for PartialKey<'_> {
+    fn from(s: usize) -> Self {
+        PartialKey::Int(s)
     }
 }
 
-impl<'a> Into<PartialKeyIter<'a>> for usize {
-    fn into(self) -> PartialKeyIter<'a> {
-        PartialKeyIter::Int(Some(self))
+impl From<usize> for PartialKeyIter<'_> {
+    fn from(s: usize) -> Self {
+        PartialKeyIter::Int(Some(s))
     }
 }
 
-impl<'a> Into<PartialKeyIter<'a>> for &'a String {
-    fn into(self) -> PartialKeyIter<'a> {
-        self.as_str().into()
+impl<'a> From<&'a String> for PartialKeyIter<'a> {
+    fn from(s: &'a String) -> Self {
+        s.as_str().into()
     }
 }
 

@@ -1,5 +1,9 @@
 //! File config source.
-use std::{marker::PhantomData, path::PathBuf, time::SystemTime};
+use std::{
+    marker::PhantomData,
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
 
 use crate::{err::ConfigLock, ConfigError, Mutex};
 
@@ -19,7 +23,7 @@ pub(crate) struct FileLoader<L: ConfigSourceParser> {
     _data: PhantomData<L>,
 }
 
-fn modified_time(path: &PathBuf) -> Option<SystemTime> {
+fn modified_time(path: &Path) -> Option<SystemTime> {
     path.metadata().and_then(|a| a.modified()).ok()
 }
 

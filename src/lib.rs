@@ -100,7 +100,7 @@ pub use value::FromStringValue;
 use std::sync::*;
 
 pub(crate) mod macros {
-    macro_rules! log_cfg {
+    macro_rules! cfg_info {
     ($($arg:tt)+) => {
         #[cfg(feature = "log")]
         {
@@ -109,7 +109,16 @@ pub(crate) mod macros {
     };
     }
 
-    pub(crate) use log_cfg;
+    macro_rules! cfg_debug {
+    ($($arg:tt)+) => {
+        #[cfg(feature = "log")]
+        {
+            log::info!($($arg)+);
+        }
+    };
+    }
+    pub(crate) use cfg_debug;
+    pub(crate) use cfg_info;
 }
 
 /// Generate config instance from configuration.

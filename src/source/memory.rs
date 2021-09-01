@@ -109,7 +109,7 @@ impl HashSource {
             .and_then(|f| f.value.as_ref())
             .map(|v| match v {
                 ConfigValue::StrRef(v) => ConfigValue::StrRef(v),
-                ConfigValue::Str(v) => ConfigValue::StrRef(&v),
+                ConfigValue::Str(v) => ConfigValue::StrRef(v),
                 ConfigValue::Int(v) => ConfigValue::Int(*v),
                 ConfigValue::Float(v) => ConfigValue::Float(*v),
                 ConfigValue::Bool(v) => ConfigValue::Bool(*v),
@@ -171,10 +171,8 @@ impl ConfigSourceBuilder<'_> {
         &mut self,
         iter: I,
     ) -> Result<(), ConfigError> {
-        let mut i = 0;
-        for s in iter {
+        for (i, s) in iter.into_iter().enumerate() {
             self.push(i);
-            i += 1;
             let x = s.convert_source(self);
             self.pop();
             x?;
@@ -188,10 +186,7 @@ impl ConfigSourceBuilder<'_> {
         let mut vs = vec![];
         let iter: PartialKeyIter<'b> = key.into();
         for k in iter {
-            let v = self
-                .map
-                .entry(curr.clone())
-                .or_insert_with(|| HashValue::new());
+            let v = self.map.entry(curr.clone()).or_insert_with(HashValue::new);
             v.push_key(&k);
             k.update_string(&mut curr);
             vs.push(k);
@@ -219,7 +214,7 @@ impl ConfigSourceBuilder<'_> {
         self.count += 1;
         self.map
             .entry(self.curr())
-            .or_insert_with(|| HashValue::new())
+            .or_insert_with(HashValue::new)
             .push_val(value);
     }
 

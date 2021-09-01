@@ -12,7 +12,7 @@ use crate::{
     err::ConfigError,
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
-    macros::log_cfg,
+    macros::cfg_info,
     source::{
         cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
         register_files, ConfigSource, SourceOption,
@@ -116,7 +116,7 @@ impl<'a> ConfigContext<'a> {
                         let v = &(cv.buf.as_str())[last..];
                         let (key, def) = match v.find(':') {
                             Some(pos) => (&v[..pos], Some(&v[pos + 1..])),
-                            _ => (&v[..], None),
+                            _ => (v, None),
                         };
                         if !history.insert(key.to_string()) {
                             return Err(ConfigError::ConfigRecursiveError(current_key.to_string()));
@@ -202,6 +202,11 @@ impl<'a> ConfigContext<'a> {
         self.key.to_string()
     }
 
+    #[allow(dead_code)]
+    pub(crate) fn current_key_str(&self) -> &str {
+        self.key.as_str()
+    }
+
     #[inline]
     pub(crate) fn type_mismatch<T: Any>(&self, value: &ConfigValue<'_>) -> ConfigError {
         let tp = match value {
@@ -241,6 +246,11 @@ pub struct Configuration {
     pub(crate) source: HashSource,
     max: usize,
     loaders: Vec<Box<dyn ConfigSource + Send + 'static>>,
+}
+impl Default for Configuration {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Configuration {
@@ -326,7 +336,7 @@ impl Configuration {
         let base = builder.count();
         loader.load(builder)?;
         if builder.count() > base {
-            log_cfg!("Config source {} loaded.", loader.name());
+            cfg_info!("Config source {} loaded.", loader.name());
         }
         self.loaders.push(Box::new(loader));
         Ok(self)
@@ -408,6 +418,7 @@ impl Configuration {
             memory: HashSource::new("fixed:FromProgram/CommandLineArgs"),
             cargo: None,
             prefix: None,
+            init: None,
         }
     }
 
@@ -418,11 +429,12 @@ impl Configuration {
 }
 
 /// Predefined Configuration Builder. See [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
-#[allow(missing_debug_implementations)]
+#[allow(clippy::type_complexity, missing_debug_implementations)]
 pub struct PredefinedConfigurationBuilder {
     memory: HashSource,
     cargo: Option<Cargo>,
     prefix: Option<String>,
+    init: Option<Box<dyn FnOnce(&Configuration) -> Result<(), ConfigError> + 'static>>,
 }
 
 impl PredefinedConfigurationBuilder {
@@ -481,6 +493,15 @@ impl PredefinedConfigurationBuilder {
         self
     }
 
+    /// Set init func, which will be run after env source loaded.
+    pub fn set_init<F: FnOnce(&Configuration) -> Result<(), ConfigError> + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
+        self.init = Some(Box::new(f));
+        self
+    }
+
     /// Initialize configuration by multiple predefined sources.
     ///
     /// ## Predefined Sources.
@@ -527,8 +548,12 @@ impl PredefinedConfigurationBuilder {
             .prefix
             .or_else(|| config.get::<Option<String>>("env.prefix").ok().flatten())
             .or_else(|| var("CFG_ENV_PREFIX").ok())
-            .unwrap_or("CFG".to_owned());
+            .unwrap_or_else(|| "CFG".to_owned());
         config = config.register_prefix_env(&prefix)?;
+
+        if let Some(init) = self.init {
+            (init)(&config)?;
+        }
 
         // Layer 4, profile file.
         let app = config.get_predefined::<AppConfig>()?;

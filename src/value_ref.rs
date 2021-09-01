@@ -1,3 +1,4 @@
+use crate::macros::cfg_debug;
 use crate::*;
 use std::sync::Arc;
 
@@ -60,6 +61,9 @@ impl<T: FromConfig + Send + 'static> FromConfig for RefValue<T> {
         context.ref_value_flag = true;
         let v = do_from_config(context, value);
         context.ref_value_flag = false;
+        if v.is_ok() {
+            cfg_debug!("RefValue {} registered!", context.current_key_str());
+        }
         v
     }
 }
@@ -80,6 +84,7 @@ trait Ref: Send {
 
 impl<T: FromConfig + Send> Ref for RefValue<T> {
     fn refresh(&self, config: &Configuration) -> Result<(), ConfigError> {
+        cfg_debug!("RefValue {} refreshing...", &self.1);
         self.set(config.get(&self.1)?)
     }
 }

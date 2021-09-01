@@ -9,6 +9,12 @@ use super::{ConfigSource, ConfigSourceBuilder};
 #[allow(unreachable_pub)]
 pub struct Cargo(HashMap<String, String>);
 
+impl Default for Cargo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[allow(dead_code, unreachable_pub)]
 impl Cargo {
     #[doc(hidden)]
