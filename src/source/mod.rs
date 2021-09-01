@@ -116,6 +116,7 @@ file_block!(
     toml."toml"."../../app.toml" : "toml" | "tml" => crate::source::toml::Toml,
     yaml."yaml"."../../app.yaml" : "yaml" | "yml" => crate::source::yaml::Yaml,
     json."json"."../../app.json" : "json" => crate::source::json::Json,
+    ini."ini"."../../app.ini" : "ini" => crate::source::ini::Ini,
 );
 
 /// Inline config file in repo, see [Supported File Formats](index.html#supported-file-format).
@@ -127,6 +128,7 @@ macro_rules! inline_source {
         toml."toml": "toml" | "tml" => $crate::source::toml::Toml,
         yaml."yaml": "yaml" | "yml" => $crate::source::yaml::Yaml,
         json."json": "json" => $crate::source::json::Json,
+        ini."ini": "ini" => $crate::source::ini::Ini,
         )
     };
 }
