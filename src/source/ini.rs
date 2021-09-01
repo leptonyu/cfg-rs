@@ -1,9 +1,9 @@
 use crate::source::*;
 
-use ::ini::ini::Properties;
+use ::ini::Properties;
 pub use ::ini::Ini;
 
-impl ConfigSourceAdaptor for Properties {
+impl ConfigSourceAdaptor for &Properties {
     fn convert_source(self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         for (k, v) in self.iter() {
             builder.set(k, v.to_string());

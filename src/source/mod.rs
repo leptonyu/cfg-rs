@@ -161,6 +161,7 @@ macro_rules! inline_source_internal {
 /// * Toml format.
 /// * Yaml format.
 /// * Json format.
+/// * Ini  format.
 /// * ...
 pub trait ConfigSourceAdaptor {
     /// Convert adaptor to standard config source.

@@ -27,6 +27,7 @@ See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for ge
 * Toml: toml, tml
 * Yaml: yaml, yml
 * Json: json
+* Ini: ini
 
 ## How to Initialize Configuration
 
