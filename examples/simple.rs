@@ -16,6 +16,8 @@ struct ConfigSuit {
     bap: HashMap<String, Vec<bool>>,
     crr: Vec<FloatSuit>,
     err: R<u8>,
+    #[config(default = "${random.u64}")]
+    rand: u64,
 }
 #[derive(Debug, FromConfig)]
 struct FloatSuit {
