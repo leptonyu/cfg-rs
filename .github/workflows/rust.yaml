@@ -12,11 +12,30 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
     steps:
       - uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Install clippy
+        run: rustup component add clippy
       - name: Build
-        run: cargo build --verbose
+        run: |
+          cargo version
+          cargo build --verbose
+      - name: Run clippy
+        run: |
+          #!/bin/bash
+          set -e
+          cargo clippy -- -D warnings
       - name: Run tests
         run: |
           #!/bin/bash
@@ -31,6 +50,8 @@ jobs:
 
       - name: Run examples
         run: |
+          #!/bin/bash
+          set -e
           cargo run --example simple --features full
           cargo run --example test_suit
           cargo run --example salak
