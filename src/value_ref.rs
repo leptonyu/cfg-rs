@@ -112,7 +112,8 @@ impl Refresher {
             if g.len() >= self.max {
                 return Err(ConfigError::TooManyInstances(self.max));
             }
-            Ok(g.push(Box::new(r)))
+            g.push(Box::new(r));
+            Ok(())
         } else {
             Err(ConfigError::RefValueRecursiveError)
         }
