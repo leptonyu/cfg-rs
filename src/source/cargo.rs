@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ConfigError;
+use crate::{macros::impl_default, ConfigError};
 
 use super::{ConfigSource, ConfigSourceBuilder};
 
@@ -9,11 +9,7 @@ use super::{ConfigSource, ConfigSourceBuilder};
 #[allow(unreachable_pub)]
 pub struct Cargo(HashMap<String, String>);
 
-impl Default for Cargo {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+impl_default!(Cargo);
 
 #[allow(dead_code, unreachable_pub)]
 impl Cargo {

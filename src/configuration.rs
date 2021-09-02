@@ -12,7 +12,7 @@ use crate::{
     err::ConfigError,
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
-    macros::cfg_info,
+    macros::{cfg_log, impl_default},
     source::{
         cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
         register_files, ConfigSource, SourceOption,
@@ -247,11 +247,8 @@ pub struct Configuration {
     max: usize,
     loaders: Vec<Box<dyn ConfigSource + Send + 'static>>,
 }
-impl Default for Configuration {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
+impl_default!(Configuration);
 
 impl Configuration {
     /// Create an empty [`Configuration`].
@@ -333,11 +330,13 @@ impl Configuration {
         }
         let loader = CacheConfigSource::new(loader);
         let builder = &mut self.source.prefixed();
-        let base = builder.count();
         loader.load(builder)?;
-        if builder.count() > base {
-            cfg_info!("Config source {} loaded.", loader.name());
-        }
+        cfg_log!(
+            log::Level::Debug,
+            "Config source {}:{} registered.",
+            self.loaders.len() + 1,
+            loader.name()
+        );
         self.loaders.push(Box::new(loader));
         Ok(self)
     }
@@ -357,6 +356,7 @@ impl Configuration {
                 i.load(c)?;
             }
             self.source.refs.refresh(&s)?;
+            cfg_log!(log::Level::Info, "Configuration refreshed");
         }
         Ok((refreshed, s))
     }
@@ -553,6 +553,7 @@ impl PredefinedConfigurationBuilder {
 
         if let Some(init) = self.init {
             (init)(&config)?;
+            cfg_log!(log::Level::Info, "Early initialization completed.");
         }
 
         // Layer 4, profile file.
@@ -571,6 +572,10 @@ impl PredefinedConfigurationBuilder {
         path.push(app.name);
         config = register_files(config, &option, path, false)?;
 
+        cfg_log!(
+            log::Level::Info,
+            "Predefined configuration initialization completed."
+        );
         Ok(config)
     }
 }

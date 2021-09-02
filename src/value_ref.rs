@@ -1,4 +1,4 @@
-use crate::macros::cfg_debug;
+use crate::macros::cfg_log;
 use crate::*;
 use std::sync::Arc;
 
@@ -62,7 +62,11 @@ impl<T: FromConfig + Send + 'static> FromConfig for RefValue<T> {
         let v = do_from_config(context, value);
         context.ref_value_flag = false;
         if v.is_ok() {
-            cfg_debug!("RefValue {} registered!", context.current_key_str());
+            cfg_log!(
+                log::Level::Debug,
+                "RefValue {} registered!",
+                context.current_key_str()
+            );
         }
         v
     }
@@ -84,7 +88,7 @@ trait Ref: Send {
 
 impl<T: FromConfig + Send> Ref for RefValue<T> {
     fn refresh(&self, config: &Configuration) -> Result<(), ConfigError> {
-        cfg_debug!("RefValue {} refreshing...", &self.1);
+        cfg_log!(log::Level::Debug, "RefValue {} refreshing...", &self.1);
         self.set(config.get(&self.1)?)
     }
 }
@@ -103,12 +107,15 @@ impl Refresher {
     }
 
     fn push(&self, r: impl Ref + 'static) -> Result<(), ConfigError> {
-        let mut g = self.refs.try_lock_c()?;
-        if g.len() >= self.max {
-            return Err(ConfigError::TooManyInstances(self.max));
+        let g = self.refs.try_lock_c()?;
+        if let Some(mut g) = g {
+            if g.len() >= self.max {
+                return Err(ConfigError::TooManyInstances(self.max));
+            }
+            Ok(g.push(Box::new(r)))
+        } else {
+            Err(ConfigError::RefValueRecursiveError)
         }
-        g.push(Box::new(r));
-        Ok(())
     }
 
     pub(crate) fn refresh(&self, c: &Configuration) -> Result<(), ConfigError> {

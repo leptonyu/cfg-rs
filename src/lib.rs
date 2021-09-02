@@ -100,25 +100,35 @@ pub use value::FromStringValue;
 use std::sync::*;
 
 pub(crate) mod macros {
-    macro_rules! cfg_info {
-    ($($arg:tt)+) => {
+    macro_rules! cfg_log {
+    ($b:expr => $lvl:expr,$($arg:tt)+) => {
         #[cfg(feature = "log")]
         {
-            log::info!($($arg)+);
+            if  $b {
+                log::log!($lvl, $($arg)+);
+            }
+        }
+    };
+    ($lvl:expr,$($arg:tt)+) => {
+        #[cfg(feature = "log")]
+        {
+            log::log!($lvl, $($arg)+);
         }
     };
     }
 
-    macro_rules! cfg_debug {
-    ($($arg:tt)+) => {
-        #[cfg(feature = "log")]
-        {
-            log::info!($($arg)+);
-        }
-    };
+    macro_rules! impl_default {
+        ($x:ident) => {
+            impl Default for $x {
+                fn default() -> Self {
+                    Self::new()
+                }
+            }
+        };
     }
-    pub(crate) use cfg_debug;
-    pub(crate) use cfg_info;
+
+    pub(crate) use cfg_log;
+    pub(crate) use impl_default;
 }
 
 /// Generate config instance from configuration.

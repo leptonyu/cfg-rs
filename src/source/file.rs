@@ -52,7 +52,7 @@ fn load_path<L: ConfigSourceParser>(
 ) -> Result<(), ConfigError> {
     if path.exists() {
         *flag = false;
-        let c = std::fs::read_to_string(path)?;
+        let c = std::fs::read_to_string(&path)?;
         L::parse_source(&c)?.convert_source(builder)?;
     }
     Ok(())

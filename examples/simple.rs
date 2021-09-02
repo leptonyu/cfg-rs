@@ -33,7 +33,7 @@ struct IntSuit {
 }
 
 fn main() -> Result<(), ConfigError> {
-    set_var("RUST_LOG", "info");
+    set_var("RUST_LOG", "trace");
     env_logger::init();
     // This example need feature full to enable toml/yaml/json source, and load them from app.toml/yaml/json.
     let config = Configuration::with_predefined_builder()

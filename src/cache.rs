@@ -1,5 +1,6 @@
 use crate::{
     err::ConfigLock,
+    macros::cfg_log,
     source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
     ConfigError, Mutex,
 };
@@ -66,12 +67,20 @@ impl<L: ConfigSource> ConfigSource for CacheConfigSource<L> {
 
     fn load(&self, builder: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         let mut g = self.cache.lock_c()?;
+        let _c = builder.count();
         if g.1 || g.0.is_none() {
             let mut source = HashSource::new(format!("cache:{}", self.origin.name()));
             self.origin.load(&mut source.prefixed())?;
             *g = (Some(source), false);
         }
-        g.0.as_ref().expect("NP").load(builder)
+        let v = g.0.as_ref().expect("NP").load(builder);
+        cfg_log!(
+            builder.count() > _c =>
+            log::Level::Info,
+            "Config source {} loaded.",
+            self.name()
+        );
+        v
     }
 
     fn allow_refresh(&self) -> bool {
