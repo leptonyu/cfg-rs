@@ -37,13 +37,9 @@ jobs:
           cargo build --verbose
       - name: Run clippy
         run: |
-          #!/bin/bash
-          set -e
           cargo clippy -- -D warnings
       - name: Run tests
         run: |
-          #!/bin/bash
-          set -e
           cargo test --verbose
           cargo test --verbose --all-features
           cargo test --verbose --lib ## Default feature
@@ -54,8 +50,6 @@ jobs:
 
       - name: Run examples
         run: |
-          #!/bin/bash
-          set -e
           cargo run --example simple --features full
           cargo run --example test_suit
           cargo run --example salak
@@ -67,6 +61,4 @@ jobs:
 
       - name: Run benches
         run: |
-          #!/bin/bash
-          set -e
           cargo bench --all-features
