@@ -162,7 +162,7 @@ impl<'a> ConfigContext<'a> {
         default_value: Option<ConfigValue<'_>>,
         history: &mut HashSet<String>,
     ) -> Result<T, ConfigError> {
-        self.key.push(partial_key);
+        let mark = self.key.push(partial_key);
         let value = match self.source.get_value(&self.key).or(default_value) {
             Some(ConfigValue::StrRef(s)) => {
                 match Self::parse_placeholder(self.source, &self.key, s, history)? {
@@ -182,7 +182,7 @@ impl<'a> ConfigContext<'a> {
         };
 
         let v = T::from_config(self, value);
-        self.key.pop();
+        self.key.pop(mark);
         v
     }
 

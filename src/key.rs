@@ -42,7 +42,7 @@ pub type ConfigKey<'a> = CacheKey<'a>;
 #[derive(Debug)]
 pub(crate) struct CacheString {
     current: String,
-    mark: Vec<(usize, usize)>,
+    mark: usize,
 }
 thread_local! {
     static BUG: RefCell<CacheString> = RefCell::new(CacheString::new());
@@ -51,35 +51,31 @@ impl CacheString {
     pub(crate) fn new() -> CacheString {
         Self {
             current: String::with_capacity(10),
-            mark: Vec::with_capacity(3),
+            mark: 0,
         }
     }
 
     #[inline]
     #[allow(single_use_lifetimes)]
-    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) {
-        let mut step = 0;
-        let len = self.current.len();
+    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) -> usize {
+        let mark = self.mark;
+        self.mark = self.current.len();
         for i in iter {
-            step += 1;
             i.update_string(&mut self.current);
         }
-        self.mark.push((step, len));
+        mark
     }
 
     #[inline]
-    fn pop(&mut self) {
-        if let Some((s, l)) = self.mark.pop() {
-            if s > 0 {
-                self.current.truncate(l);
-            }
-        }
+    fn pop(&mut self, mark: usize) {
+        self.current.truncate(self.mark);
+        self.mark = mark;
     }
 
     #[inline]
     fn clear(&mut self) {
         self.current.clear();
-        self.mark.clear();
+        self.mark = 0;
     }
 
     #[inline]
@@ -110,11 +106,11 @@ impl Drop for CacheKey<'_> {
 }
 
 impl<'a> CacheKey<'a> {
-    pub(crate) fn push<I: Into<PartialKeyIter<'a>>>(&mut self, iter: I) {
-        self.cache.push(iter.into());
+    pub(crate) fn push<I: Into<PartialKeyIter<'a>>>(&mut self, iter: I) -> usize {
+        self.cache.push(iter.into())
     }
-    pub(crate) fn pop(&mut self) {
-        self.cache.pop();
+    pub(crate) fn pop(&mut self, mark: usize) {
+        self.cache.pop(mark);
     }
 
     /// As string
@@ -292,14 +288,15 @@ mod test {
             let mut che = CacheString::new();
             let mut key = che.new_key();
             let mut vec = vec![];
+            let mut xxx = vec![];
             $(
-                key.push($origin);
+                xxx.push(key.push($origin));
                 assert_eq!($norm, key.as_str());
                 vec.push(key.to_string());
             )+
             while let Some(v) = vec.pop() {
                 assert_eq!(&v, key.as_str());
-                key.pop();
+                key.pop(xxx.pop().unwrap());
             }
         };
     }
