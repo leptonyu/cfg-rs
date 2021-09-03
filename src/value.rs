@@ -148,6 +148,15 @@ impl From<RandValue> for ConfigValue<'_> {
     }
 }
 
+impl FromConfig for () {
+    fn from_config(
+        _: &mut ConfigContext<'_>,
+        _: Option<ConfigValue<'_>>,
+    ) -> Result<Self, ConfigError> {
+        Ok(())
+    }
+}
+
 impl<V: FromConfig> FromConfig for Result<V, ConfigError> {
     fn from_config(
         context: &mut ConfigContext<'_>,
