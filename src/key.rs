@@ -197,16 +197,6 @@ impl<'a> PartialKeyCollector<'a> {
         }
     }
 
-    // #[allow(dead_code)]
-    // /// Add string key.
-    // pub(crate) fn insert_str(&mut self, key: &'a str) {
-    //     if let Ok(i) = key.parse() {
-    //         self.insert_int(i);
-    //     } else {
-    //         self.str_key.insert(key);
-    //     }
-    // }
-
     /// Add index of array.
     pub(crate) fn insert_int(&mut self, key: usize) {
         if let Some(u) = self.int_key {
@@ -217,12 +207,6 @@ impl<'a> PartialKeyCollector<'a> {
         self.int_key = Some(key + 1);
     }
 }
-
-// impl<'a> Into<PartialKey<'a>> for &'a str {
-//     fn into(self) -> PartialKey<'a> {
-//         PartialKey::Str(self)
-//     }
-// }
 
 impl<'a> From<&'a str> for PartialKeyIter<'a> {
     fn from(s: &'a str) -> Self {
