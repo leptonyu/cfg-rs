@@ -75,10 +75,10 @@ impl<'a> ConfigContext<'a> {
         val: &str,
         history: &mut HashSet<String>,
     ) -> Result<(bool, Option<ConfigValue<'a>>), ConfigError> {
+        let pat: &[_] = &['$', '\\', '}'];
         CacheValue::with_key(move |cv| {
             cv.clear();
             let mut value = val;
-            let pat: &[_] = &['$', '\\', '}'];
             let mut flag = true;
             while let Some(pos) = value.find(pat) {
                 flag = false;

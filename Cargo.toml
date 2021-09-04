@@ -16,7 +16,7 @@ license = 'MIT'
 name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-version = "0.2.4"
+version = "0.2.5"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -38,7 +38,7 @@ members = [
 default = []
 full = ["toml", "yaml", "json", "rand", "ini", "log"]
 ini = ["rust-ini"]
-rand = ["rand_chacha"]
+rand = ["rand_chacha", "rand_core"]
 yaml = ["yaml-rust"]
 
 [dependencies]
@@ -46,6 +46,7 @@ cfg-derive = {path = './cfg-derive', version = '^0.1'}
 json = {version = "^0.12", optional = true}
 log = {version = "^0.4", optional = true}
 rand_chacha = {version = "^0.3", optional = true}
+rand_core = {version = "^0.6", optional = true}
 rust-ini = {version = "^0.17", optional = true}
 toml = {version = "^0.5", optional = true}
 yaml-rust = {version = "^0.4.5", optional = true}
