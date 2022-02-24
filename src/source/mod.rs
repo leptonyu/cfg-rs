@@ -21,6 +21,7 @@ pub(crate) mod memory;
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 pub(crate) mod random;
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 pub(crate) struct EnabledOption {
     #[config(default = true)]
