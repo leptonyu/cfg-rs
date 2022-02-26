@@ -2,6 +2,7 @@ use std::{path::PathBuf, time::Duration};
 
 use cfg_rs::*;
 
+#[allow(dead_code)]
 /// Generic Pool Configuration.
 #[derive(FromConfig, Debug)]
 pub struct PoolConfig {
@@ -25,6 +26,7 @@ pub struct PoolConfig {
     wait_for_init: bool,
 }
 
+#[allow(dead_code)]
 #[derive(FromConfig, Debug)]
 #[config(prefix = "postgresql")]
 pub struct PostgresConfig {
@@ -47,6 +49,7 @@ pub struct PostgresConfig {
     pool: PoolConfig,
 }
 
+#[allow(dead_code)]
 #[derive(FromConfig, Debug)]
 pub struct PostgresSslConfig {
     cert_path: PathBuf,

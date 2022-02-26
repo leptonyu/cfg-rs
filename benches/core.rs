@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use cfg_rs::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 #[config(prefix = "app")]
 struct AppConfig {
@@ -12,6 +13,7 @@ struct AppConfig {
     profile: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 #[config(prefix = "suit")]
 struct ConfigSuit {
@@ -26,12 +28,15 @@ struct ConfigSuit {
     crr: Vec<FloatSuit>,
     err: Result<u8, ConfigError>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct FloatSuit {
     v1: f32,
     v2: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct IntSuit {
     v1: u8,

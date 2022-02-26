@@ -3,6 +3,7 @@ use std::{collections::HashMap, env::set_var};
 
 type R<V> = Result<V, ConfigError>;
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 #[config(prefix = "suit")]
 struct ConfigSuit {
@@ -19,12 +20,15 @@ struct ConfigSuit {
     #[config(default = "${random.u64}")]
     rand: u64,
 }
+
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct FloatSuit {
     v1: f32,
     v2: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct IntSuit {
     v1: u8,

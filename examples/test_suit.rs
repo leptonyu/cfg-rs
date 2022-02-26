@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 type R<V> = Result<V, ConfigError>;
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct ConfigSuit {
     #[config(name = "val")]
@@ -16,12 +17,15 @@ struct ConfigSuit {
     crr: Vec<FloatSuit>,
     err: R<u8>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct FloatSuit {
     v1: f32,
     v2: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 struct IntSuit {
     v1: u8,

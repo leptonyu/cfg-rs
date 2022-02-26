@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use cfg_rs::*;
 
+#[allow(dead_code)]
 #[derive(FromConfig, Debug)]
 #[config(prefix = "salak")]
 struct Config {
