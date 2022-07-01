@@ -121,7 +121,8 @@ impl Refresher {
 
     pub(crate) fn refresh(&self, c: &Configuration) -> Result<(), ConfigError> {
         let g = self.refs.lock_c()?;
-        for i in g.iter() {
+        let it = g.iter();
+        for i in it {
             i.refresh(c)?;
         }
         Ok(())
