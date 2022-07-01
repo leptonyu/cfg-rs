@@ -94,7 +94,6 @@ pub use value_ref::RefValue;
 pub use source::cargo::Cargo;
 #[doc(hidden)]
 pub use source::file::inline_source_config;
-#[doc(hidden)]
 pub use value::FromStringValue;
 
 use std::sync::*;

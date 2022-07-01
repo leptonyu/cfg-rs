@@ -16,7 +16,7 @@ license = 'MIT'
 name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-version = "0.2.7"
+version = "0.2.8"
 
 [package.metadata.docs.rs]
 all-features = true
