@@ -65,7 +65,8 @@ impl<'a, T> ConfigLock<'a, T> for Mutex<T> {
 
     #[inline]
     fn try_lock_c(&'a self) -> Result<Option<MutexGuard<'a, T>>, ConfigError> {
-        match self.try_lock().map_err(ConfigError::try_lock_err) {
+        let v = self.try_lock().map_err(ConfigError::try_lock_err);
+        match v {
             Ok(ok) => Ok(Some(ok)),
             Err(Some(e)) => Err(e),
             _ => Ok(None),
