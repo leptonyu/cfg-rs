@@ -211,6 +211,7 @@ impl<V: FromConfig> FromConfig for HashMap<String, V> {
     }
 }
 
+#[doc(hidden)]
 pub trait FromValue: Sized {
     fn from_value(
         context: &mut ConfigContext<'_>,
@@ -263,8 +264,8 @@ impl FromValue for String {
 }
 
 /// Get from string.
-#[doc(hidden)]
 pub trait FromStringValue: Sized + Any {
+    /// Convert from string value.
     fn from_str_value(context: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError>;
 }
 

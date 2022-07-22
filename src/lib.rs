@@ -87,14 +87,13 @@ pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
-pub use value::ConfigValue;
+pub use value::{ConfigValue, FromStringValue, FromValue};
 pub use value_ref::RefValue;
 
 #[doc(hidden)]
 pub use source::cargo::Cargo;
 #[doc(hidden)]
 pub use source::file::inline_source_config;
-pub use value::FromStringValue;
 
 use std::sync::*;
 
