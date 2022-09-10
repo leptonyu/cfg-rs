@@ -52,7 +52,7 @@ toml = {version = "^0.5", optional = true}
 yaml-rust = {version = "^0.4.5", optional = true}
 
 [dev-dependencies]
-criterion = '0.3'
+criterion = '0.4'
 regex = '^1.6.0'
 env_logger = '0.9'
 log = '0.4'
