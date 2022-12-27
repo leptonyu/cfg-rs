@@ -19,6 +19,7 @@ jobs:
           - macos-latest
           - windows-latest
         rust:
+          - 1.54
           - stable
           - beta
           - nightly
