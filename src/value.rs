@@ -398,7 +398,7 @@ fn parse_duration_from_str(
             'm' | 'u' | 'n' if last == Some('s') => {
                 last = Some(c);
             }
-            c if ('0'..='9').contains(&c) => {
+            c if c.is_ascii_digit() => {
                 if last.is_none() {
                     last = Some('s');
                 }

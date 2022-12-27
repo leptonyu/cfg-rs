@@ -25,6 +25,7 @@ impl ConfigSource for PrefixEnvironment {
 
 impl PrefixEnvironment {
     /// Create new prefix env.
+    #[allow(clippy::uninlined_format_args)]
     pub(crate) fn new(prefix: &str) -> Self {
         let n = format!("{}_", prefix.to_uppercase());
         let nm = format!("prefix_env:{}**", n);
