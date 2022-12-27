@@ -139,9 +139,9 @@ mod test {
         let path: PathBuf = "target/file_2.tmp".into();
         let mut f = File::create(&path)?;
         let config = <FileLoader<Temp>>::new(path.clone(), false, true);
-        assert_eq!(false, config.refreshable()?);
+        assert!(!config.refreshable()?);
         update_file(&mut f)?;
-        assert_eq!(true, config.refreshable()?);
+        assert!(config.refreshable()?);
         std::fs::remove_file(path)?;
         Ok(())
     }
@@ -168,9 +168,9 @@ mod test {
             false,
             true,
         ))?;
-        assert_eq!(false, config.refresh()?);
+        assert!(!config.refresh()?);
         update_file(&mut f)?;
-        assert_eq!(true, config.refresh()?);
+        assert!(config.refresh()?);
         std::fs::remove_file(path)?;
         Ok(())
     }

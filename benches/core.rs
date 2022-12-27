@@ -45,7 +45,7 @@ struct IntSuit {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("app1", |b| b.iter(|| Configuration::with_predefined()));
+    c.bench_function("app1", |b| b.iter(Configuration::with_predefined));
 
     let env = Configuration::with_predefined_builder()
         .set("hello", "world")

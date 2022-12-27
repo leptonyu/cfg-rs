@@ -111,6 +111,6 @@ mod test {
             env!("CARGO_PKG_DESCRIPTION"),
             cargo.pkg.description.unwrap()
         );
-        assert_eq!(true, cargo.bin.is_none());
+        assert!(cargo.bin.is_none());
     }
 }

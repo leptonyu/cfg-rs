@@ -59,7 +59,7 @@ pub(crate) fn source_test_suit(src: impl ConfigSource + 'static) -> Result<(), C
     let crr = &v.crr[0];
     assert_eq!(1.0, crr.v1);
     assert_eq!(2.0, crr.v2);
-    assert_eq!(true, v.err.is_err());
+    assert!(v.err.is_err());
     Ok(())
 }
 

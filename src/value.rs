@@ -698,7 +698,7 @@ mod test {
         should_eq!(context: "123s" as Duration => Duration::new(123, 0));
         should_eq!(context: "10m" as Duration => Duration::new(10 * 60, 0));
         should_eq!(context: "123h" as Duration => Duration::new(123 * 3600, 0));
-        should_eq!(context: "123ms" as Duration => Duration::new(0, 123 * 1000_000));
+        should_eq!(context: "123ms" as Duration => Duration::new(0, 123 * 1_000_000));
         should_eq!(context: "123us" as Duration => Duration::new(0, 123 * 1000));
         should_eq!(context: "123ns" as Duration => Duration::new(0, 123));
         should_eq!(context: "1000ms" as Duration => Duration::new(1, 0));
@@ -720,7 +720,7 @@ mod test {
     fn option_test() {
         let mut context = TestContext::new();
         let x: Result<Option<Ordering>, ConfigError> = context.read("val");
-        assert_eq!(true, x.is_err());
+        assert!(x.is_err());
         match x.unwrap_err() {
             ConfigError::ConfigParseError(_, _) => {}
             _ => assert_eq!(true, false),

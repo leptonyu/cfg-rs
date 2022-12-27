@@ -33,7 +33,7 @@ fn main() -> Result<(), ConfigError> {
     });
 
     for _ in 0..10 {
-        if let Ok(_) = rx.recv() {
+        if rx.recv().is_ok() {
             println!("{}", v.get()?);
         }
     }

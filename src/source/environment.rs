@@ -50,7 +50,7 @@ mod test {
         assert_eq!("hello", value.unwrap());
 
         let value = config.get::<String>("world2");
-        assert_eq!(true, value.is_err());
+        assert!(value.is_err());
     }
 
     #[test]
@@ -69,7 +69,7 @@ mod test {
         assert_eq!(vs, value.unwrap());
 
         let value = config.get::<Vec<String>>("brr");
-        assert_eq!(true, value.is_err());
+        assert!(value.is_err());
 
         let value = config.get::<Vec<Option<String>>>("brr");
         let vs: Vec<Option<String>> = vec![None, Some("b0".to_string())];
