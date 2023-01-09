@@ -53,7 +53,7 @@ yaml-rust = {version = "^0.4.5", optional = true}
 
 [dev-dependencies]
 criterion = '0.4'
-regex = '^1.7.0'
+regex = '^1.7.1'
 env_logger = '0.10'
 log = '0.4'
 quickcheck = '1'
