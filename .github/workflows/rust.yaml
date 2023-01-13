@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [main]
+    branches: [main, Try]
   pull_request:
     branches: [main]
 
@@ -19,7 +19,7 @@ jobs:
           - macos-latest
           - windows-latest
         rust:
-          - 1.54
+          - "1.60"
           - stable
           - beta
           - nightly
