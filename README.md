@@ -18,6 +18,7 @@
 * Support refreshable value type [RefValue](struct.RefValue.html), it can be updated when refreshing.
 * Support refresh [Configuration](struct.Configuration.html).
 * Easy to use, easy to add new config source, easy to organize configuration, see [register_source](struct.Configuration.html#method.register_source).[^priority]
+* Not dependent with serde.
 
 See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for general usage information.
 
