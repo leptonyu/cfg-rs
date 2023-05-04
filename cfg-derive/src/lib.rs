@@ -73,28 +73,26 @@ fn derive_config_struct(name: &Ident, attrs: Vec<Attribute>, data: DataStruct) -
 }
 
 fn derive_config_attr(attrs: Vec<Attribute>) -> Option<String> {
+    let mut prefix = None;
     for attr in attrs {
-        if let Ok(Meta::List(list)) = attr.parse_meta() {
-            if !is_config(&list) {
-                continue;
-            }
-            for m in list.nested {
-                if let NestedMeta::Meta(Meta::NameValue(nv)) = m {
-                    if parse_path(nv.path) == "prefix" {
-                        match nv.lit {
-                            Lit::Str(s) => return Some(s.value()),
-                            _ => panic!("Only support string"),
-                        }
-                    } else {
-                        panic!("Only support prefix");
-                    }
+        if attr.path().is_ident("config") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("prefix") {
+                    let value = meta.value()?;
+                    let s: LitStr = value.parse()?;
+                    prefix = Some(s.value());
+                    Ok(())
                 } else {
-                    panic!("Only support prefix=\"xxx\"");
+                    Err(meta.error("Only support prefix"))
                 }
-            }
+            })
+            .unwrap();
+        }
+        if prefix.is_some() {
+            break;
         }
     }
-    None
+    prefix
 }
 
 struct FieldInfo {
@@ -129,35 +127,22 @@ fn derive_config_field(field: Field) -> FieldInfo {
 
 fn derive_config_field_attr(f: &mut FieldInfo, attrs: Vec<Attribute>) {
     for attr in attrs {
-        if let Ok(Meta::List(list)) = attr.parse_meta() {
-            if !is_config(&list) {
-                continue;
-            }
-            for m in list.nested {
-                if let NestedMeta::Meta(Meta::NameValue(nv)) = m {
-                    match &parse_path(nv.path)[..] {
-                        "default" => f.def = Some(parse_lit(nv.lit)),
-                        "name" => f.ren = parse_lit(nv.lit),
-                        "desc" => f.desc = Some(parse_lit(nv.lit)),
-                        _ => panic!("Only support default/name/desc"),
-                    }
+        if attr.path().is_ident("config") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("default") {
+                    f.def = Some(parse_lit(meta.value()?.parse::<Lit>()?));
+                } else if meta.path.is_ident("name") {
+                    f.ren = parse_lit(meta.value()?.parse::<Lit>()?);
+                } else if meta.path.is_ident("desc") {
+                    f.desc = Some(parse_lit(meta.value()?.parse::<Lit>()?));
                 } else {
-                    panic!("Only support NestedMeta::Meta(Meta::NameValue)");
+                    return Err(meta.error("Only support default/name/desc"));
                 }
-            }
+                Ok(())
+            })
+            .unwrap();
         }
     }
-}
-
-fn is_config(list: &MetaList) -> bool {
-    if let Some(v) = list.path.segments.iter().next() {
-        return v.ident == "config";
-    }
-    false
-}
-
-fn parse_path(path: Path) -> String {
-    path.segments.first().unwrap().ident.to_string()
 }
 
 fn parse_lit(lit: Lit) -> String {
@@ -167,11 +152,12 @@ fn parse_lit(lit: Lit) -> String {
             Ok(v) => v,
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         },
+        Lit::Byte(b) => (b.value() as char).to_string(),
         Lit::Int(i) => i.base10_digits().to_owned(),
         Lit::Float(f) => f.base10_digits().to_owned(),
         Lit::Bool(b) => b.value.to_string(),
         Lit::Char(c) => c.value().to_string(),
-        Lit::Byte(b) => (b.value() as char).to_string(),
         Lit::Verbatim(_) => panic!("cfg-rs not support Verbatim"),
+        _ => panic!("cfg-rs not support new types"),
     }
 }
