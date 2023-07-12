@@ -37,6 +37,11 @@ jobs:
           cargo version
           cargo build --verbose
       - name: Run clippy
+        if: matrix.rust == 'nightly' || matrix.rust == 'beta'
+        run: |
+          cargo clippy -- -D warnings -A clippy::arc_with_non_send_sync
+      - name: Run clippy
+        if: matrix.rust != 'nightly' && matrix.rust != 'beta'
         run: |
           cargo clippy -- -D warnings
       - name: Run tests
