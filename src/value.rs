@@ -284,7 +284,7 @@ impl<V: FromStringValue> FromValue for V {
 }
 
 #[inline]
-fn bool_from_str_value(context: &mut ConfigContext<'_>, value: &str) -> Result<bool, ConfigError> {
+fn bool_from_str_value(context: &ConfigContext<'_>, value: &str) -> Result<bool, ConfigError> {
     match &value.to_lowercase()[..] {
         "true" | "yes" => Ok(true),
         "false" | "no" => Ok(false),
@@ -351,7 +351,7 @@ impl FromValue for $x {
 impl_integer!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);
 
 #[inline]
-fn check_f64(context: &mut ConfigContext<'_>, f: f64) -> Result<f64, ConfigError> {
+fn check_f64(context: &ConfigContext<'_>, f: f64) -> Result<f64, ConfigError> {
     if f.is_finite() {
         Ok(f)
     } else {
@@ -380,7 +380,7 @@ impl_float!(f32, f64);
 
 #[inline]
 fn parse_duration_from_str(
-    context: &mut ConfigContext<'_>,
+    context: &ConfigContext<'_>,
     du: &str,
 ) -> Result<Duration, ConfigError> {
     let mut i = 0;
