@@ -31,7 +31,7 @@ rand = ["rand_chacha", "rand_core"]
 yaml = ["yaml-rust"]
 
 [dependencies]
-cfg-derive = { path = './cfg-derive', version = '^0.2' }
+cfg-derive = { path = './cfg-derive', version = '~0.2' }
 json = { version = "^0.12.4", optional = true }
 log = { version = "^0.4.20", optional = true }
 rand_chacha = { version = "^0.3.1", optional = true, features = ["std"] }
@@ -42,6 +42,7 @@ yaml-rust = { version = "^0.4.5", optional = true }
 
 [dev-dependencies]
 criterion = '>= 0.5.1'
+clap = '~4.2'
 regex = '^1.9.3'
 env_logger = '>= 0.10.0'
 log = '0.4'
