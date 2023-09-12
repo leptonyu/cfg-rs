@@ -42,7 +42,7 @@ yaml-rust = { version = "^0.4.5", optional = true }
 
 [dev-dependencies]
 criterion = '>= 0.5.1'
-clap = '~4.2'
+clap = '~4.4.3'
 regex = '^1.9.5'
 env_logger = '>= 0.10.0'
 log = '0.4'
