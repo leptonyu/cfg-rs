@@ -233,7 +233,7 @@ impl<V: FromValue> FromConfig for V {
         match value {
             None => Err(context.not_found()),
             Some(ConfigValue::Str(v)) if v.is_empty() => Self::empty_value(context),
-            Some(ConfigValue::StrRef(v)) if v.is_empty() => Self::empty_value(context),
+            Some(ConfigValue::StrRef("")) => Self::empty_value(context),
             Some(val) => V::from_value(context, val),
         }
     }
@@ -379,10 +379,7 @@ impl FromValue for $x {
 impl_float!(f32, f64);
 
 #[inline]
-fn parse_duration_from_str(
-    context: &ConfigContext<'_>,
-    du: &str,
-) -> Result<Duration, ConfigError> {
+fn parse_duration_from_str(context: &ConfigContext<'_>, du: &str) -> Result<Duration, ConfigError> {
     let mut i = 0;
     let mut multi = 1;
     let mut last = None;
