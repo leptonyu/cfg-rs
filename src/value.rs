@@ -1,7 +1,7 @@
 use std::{
     any::Any,
     cmp::Ordering,
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     ffi::OsString,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, SocketAddrV4, SocketAddrV6},
     path::PathBuf,
@@ -196,20 +196,27 @@ impl<V: FromConfig> FromConfig for Vec<V> {
     }
 }
 
-impl<V: FromConfig> FromConfig for HashMap<String, V> {
-    #[inline]
-    fn from_config(
-        context: &mut ConfigContext<'_>,
-        _: Option<ConfigValue<'_>>,
-    ) -> Result<Self, ConfigError> {
-        let mut vs = HashMap::new();
-        let list = context.collect_keys();
-        for k in list.str_key {
-            vs.insert(k.to_string(), context.parse_config(k, None)?);
+macro_rules! impl_map {
+    ($name:ident) => {
+        impl<V: FromConfig> FromConfig for $name<String, V> {
+            #[inline]
+            fn from_config(
+                context: &mut ConfigContext<'_>,
+                _: Option<ConfigValue<'_>>,
+            ) -> Result<Self, ConfigError> {
+                let mut vs = $name::new();
+                let list = context.collect_keys();
+                for k in list.str_key {
+                    vs.insert(k.to_string(), context.parse_config(k, None)?);
+                }
+                Ok(vs)
+            }
         }
-        Ok(vs)
-    }
+    };
 }
+
+impl_map!(HashMap);
+impl_map!(BTreeMap);
 
 #[doc(hidden)]
 pub trait FromValue: Sized {
@@ -734,5 +741,17 @@ mod test {
         assert_eq!("1", v);
         let v: String = context.read(true).unwrap();
         assert_eq!("true", v);
+    }
+
+    #[test]
+    #[allow(unused_qualifications)]
+    fn map_test() {
+        let mut context = TestContext::new();
+        let x: Result<BTreeMap<String, bool>, ConfigError> = context.read("val");
+        assert!(x.is_ok());
+        assert!(x.unwrap().is_empty());
+        let x: Result<HashMap<String, bool>, ConfigError> = context.read("val");
+        assert!(x.is_ok());
+        assert!(x.unwrap().is_empty());
     }
 }
