@@ -1,6 +1,5 @@
 use crate::macros::cfg_log;
 use crate::*;
-use std::sync::Arc;
 
 /// [`RefValue`] means reference of value or refreshable value,
 /// it holds a value which can be updated when [`Configuration`] is refreshed.

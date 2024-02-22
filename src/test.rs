@@ -11,7 +11,7 @@ pub(crate) trait TestConfigExt: ConfigSource + Sized + 'static {
 impl<C: ConfigSource + 'static> TestConfigExt for C {}
 
 type R<V> = Result<V, ConfigError>;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, FromConfig)]
 struct ConfigSuit {
@@ -21,6 +21,8 @@ struct ConfigSuit {
     brr: Vec<Vec<String>>,
     #[config(name = "val")]
     map: HashMap<String, usize>,
+    #[config(name = "val")]
+    bmap: BTreeMap<String, usize>,
     #[config(name = "map")]
     bap: HashMap<String, Vec<bool>>,
     crr: Vec<FloatSuit>,
@@ -50,6 +52,7 @@ pub(crate) fn source_test_suit(src: impl ConfigSource + 'static) -> Result<(), C
     assert_eq!(vec![brr], v.brr);
     for i in 1..=3 {
         assert_eq!(Some(&i), v.map.get(&format!("v{}", i)));
+        assert_eq!(Some(&i), v.bmap.get(&format!("v{}", i)));
     }
     assert_eq!(1, v.int.v1);
     assert_eq!(2, v.int.v2);

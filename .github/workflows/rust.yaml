@@ -2,7 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [main, Try]
+    branches: [main]
+    tags:
+    - v*
   pull_request:
     branches: [main]
 
