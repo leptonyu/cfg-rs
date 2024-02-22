@@ -43,7 +43,7 @@ yaml-rust = { version = "^0.4.5", optional = true }
 [dev-dependencies]
 criterion = '^0.5.1'
 clap = '= 4.4.7'
-regex = '^1.10'
+regex = '^1.10.3'
 log = '0.4'
 quickcheck = '1'
 quickcheck_macros = '1'
