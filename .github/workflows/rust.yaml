@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags:
-    - v*
+      - v*
   pull_request:
     branches: [main]
 
@@ -21,7 +21,7 @@ jobs:
           - macos-latest
           - windows-latest
         rust:
-          - "1.64"
+          - "1.74"
           - stable
           - beta
           - nightly

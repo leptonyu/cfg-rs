@@ -10,8 +10,8 @@ license = 'MIT'
 name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-rust-version = "1.64.0"
-version = "0.3.1"
+rust-version = "1.74.0"
+version = "0.4.0"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -36,14 +36,15 @@ json = { version = ">= 0.12.4", optional = true }
 log = { version = ">= 0.4.17", optional = true }
 rand_chacha = { version = ">= 0.3.1", optional = true, features = ["std"] }
 rand_core = { version = '>= 0.6.4', optional = true, features = ["std"] }
-rust-ini = { version = ">= 0.20", optional = true }
-toml = { version = ">= 0.7.3", optional = true }
+rust-ini = { version = ">= 0.18", optional = true }
+toml = { version = ">= 0.6.3", optional = true }
 yaml-rust = { version = ">= 0.4.5", optional = true }
 
 [dev-dependencies]
-criterion = '>= 0.4.0'
-regex = '>= 1.8.1'
-env_logger = '>= 0.9.0'
+env_logger = ">= 0.11"
+criterion = '>= 0.5.1'
+clap = '>= 4.5'
+regex = '>= 1.10'
 log = '>= 0.4'
 quickcheck = '1'
 quickcheck_macros = '1'
