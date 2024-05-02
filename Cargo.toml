@@ -46,7 +46,7 @@ criterion = '>= 0.5.1'
 clap = '>= 4.5.1'
 regex = '>= 1.10.3'
 log = '>= 0.4.20'
-quickcheck = '1'
+quickcheck = '1.0.3'
 quickcheck_macros = '1'
 
 [[example]]
