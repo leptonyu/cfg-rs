@@ -378,7 +378,7 @@ impl Configuration {
     /// Get config from configuration by key, see [`ConfigKey`] for the key's pattern details.
     ///
     /// * `key` - Config Key.
-    /// Key examples:
+    ///   Key examples:
     /// 1. `cfg.v1`
     /// 2. `cfg.v2[0]`
     /// 3. `cfg.v3[0][1]`

@@ -114,10 +114,10 @@ mod test {
 }
 
 file_block!(
-    toml."toml"."../../app.toml" : "toml" | "tml" => crate::source::toml::Toml,
-    yaml."yaml"."../../app.yaml" : "yaml" | "yml" => crate::source::yaml::Yaml,
-    json."json"."../../app.json" : "json" => crate::source::json::Json,
-    ini."ini"."../../app.ini" : "ini" => crate::source::ini::Ini,
+    toml."toml"."../../app.toml" : "toml" | "tml" => toml::Toml,
+    yaml."yaml"."../../app.yaml" : "yaml" | "yml" => yaml::Yaml,
+    json."json"."../../app.json" : "json" => json::Json,
+    ini."ini"."../../app.ini" : "ini" => ini::Ini,
 );
 
 /// Inline config file in repo, see [Supported File Formats](index.html#supported-file-format).
