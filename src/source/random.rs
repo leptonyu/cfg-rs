@@ -67,13 +67,19 @@ impl RandValue {
             RandValue::U32 => get_rand(|f| f.next_u32()).into(),
             RandValue::U64 => get_rand(|f| f.next_u64()).into(),
             RandValue::U128 => get_16(|f| u128::from_le_bytes(*f)).into(),
+            #[cfg(target_pointer_width = "64")]
             RandValue::Usize => get_8(|f| usize::from_le_bytes(*f)).into(),
+            #[cfg(target_pointer_width = "32")]
+            RandValue::Usize => get_4(|f| usize::from_le_bytes(*f)).into(),
             RandValue::I8 => get_1(|f| i8::from_le_bytes(*f)).into(),
             RandValue::I16 => get_2(|f| i16::from_le_bytes(*f)).into(),
             RandValue::I32 => get_4(|f| i32::from_le_bytes(*f)).into(),
             RandValue::I64 => get_8(|f| i64::from_le_bytes(*f)).into(),
             RandValue::I128 => get_16(|f| i128::from_le_bytes(*f)).into(),
+            #[cfg(target_pointer_width = "64")]
             RandValue::Isize => get_8(|f| isize::from_le_bytes(*f)).into(),
+            #[cfg(target_pointer_width = "32")]
+            RandValue::Isize => get_4(|f| isize::from_le_bytes(*f)).into(),
         }
     }
 }
