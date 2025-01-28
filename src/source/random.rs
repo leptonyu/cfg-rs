@@ -2,7 +2,7 @@
 use std::cell::RefCell;
 
 use rand_chacha::{
-    rand_core::{OsRng, RngCore, SeedableRng},
+    rand_core::{RngCore, SeedableRng},
     ChaCha12Rng,
 };
 
@@ -36,7 +36,7 @@ impl ConfigSource for Random {
 }
 
 thread_local! {
-    static RND: RefCell<ChaCha12Rng> = RefCell::new( ChaCha12Rng::from_rng(OsRng).unwrap());
+    static RND: RefCell<ChaCha12Rng> = RefCell::new( ChaCha12Rng::from_os_rng());
 }
 
 #[inline]

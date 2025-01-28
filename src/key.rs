@@ -189,7 +189,7 @@ pub struct PartialKeyCollector<'a> {
 }
 
 #[allow(single_use_lifetimes)]
-impl<'a> PartialKeyCollector<'a> {
+impl PartialKeyCollector<'_> {
     pub(crate) fn new() -> Self {
         Self {
             str_key: HashSet::new(),
