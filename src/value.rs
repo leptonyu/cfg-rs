@@ -342,7 +342,9 @@ impl_str_value!(
 #[allow(missing_debug_implementations)]
 pub struct FromStrHolder<V>(pub V);
 
-impl<V: FromStr<Err: std::error::Error> + 'static> FromStringValue for FromStrHolder<V> {
+impl<V: FromStr<Err = E> + 'static, E: std::error::Error + 'static> FromStringValue
+    for FromStrHolder<V>
+{
     #[inline]
     fn from_str_value(_: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError> {
         Ok(FromStrHolder(V::from_str(value)?))

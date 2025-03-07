@@ -11,7 +11,7 @@ name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
 rust-version = "1.74.0"
-version = "0.5.2"
+version = "0.5.3"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -48,7 +48,7 @@ yaml-rust = { version = ">= 0.4.5", optional = true }
 
 [dev-dependencies]
 env_logger = ">= 0.11.2"
-criterion2 = '>= 1.1.0'
+criterion2 = '>= 1.1.0, <3'
 clap = '>= 4.5.1'
 regex = '>= 1.10.3'
 log = '>= 0.4.20'
