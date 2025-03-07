@@ -489,7 +489,8 @@ impl_enum!(Ordering{
 });
 
 #[cfg(feature = "log")]
-mod log {
+#[doc(hidden)]
+pub mod log {
 
     use log::*;
 

@@ -87,6 +87,9 @@ pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
+#[allow(unused_imports)]
+#[cfg(feature = "log")]
+pub use value::log as _;
 pub use value::{ConfigValue, FromStrHolder, FromStringValue, FromValue};
 pub use value_ref::RefValue;
 
