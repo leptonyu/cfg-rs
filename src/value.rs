@@ -5,6 +5,7 @@ use std::{
     ffi::OsString,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, SocketAddrV4, SocketAddrV6},
     path::PathBuf,
+    str::FromStr,
     time::Duration,
 };
 
@@ -336,6 +337,17 @@ impl_str_value!(
     PathBuf,
     OsString
 );
+
+/// Wrapper for all FromStr type.
+#[allow(missing_debug_implementations)]
+pub struct FromStrHolder<V>(pub V);
+
+impl<V: FromStr<Err: std::error::Error> + 'static> FromStringValue for FromStrHolder<V> {
+    #[inline]
+    fn from_str_value(_: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError> {
+        Ok(FromStrHolder(V::from_str(value)?))
+    }
+}
 
 macro_rules! impl_integer {
     ($($x:ident),+) => {$(

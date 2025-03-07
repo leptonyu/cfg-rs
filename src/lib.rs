@@ -87,7 +87,7 @@ pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
-pub use value::{ConfigValue, FromStringValue, FromValue};
+pub use value::{ConfigValue, FromStrHolder, FromStringValue, FromValue};
 pub use value_ref::RefValue;
 
 #[doc(hidden)]
