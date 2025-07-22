@@ -145,6 +145,7 @@ impl<'a> ConfigContext<'a> {
             }
 
             if cv.stack.is_empty() {
+                cv.buf.push_str(value);
                 return Ok((false, Some(cv.buf.to_string().into())));
             }
 
@@ -639,6 +640,7 @@ mod test {
             .set("o", "\\")
             .set("p", "}")
             .set("q", "${")
+            .set("r", "${a}suffix")
             .new_config()
             .register_kv("test")
             .set("a0", "0")
@@ -671,6 +673,7 @@ mod test {
         should_eq!(config: "o" as String = "Err(ConfigParseError(\"o\", \"\\\\\"))");
         should_eq!(config: "p" as String = "Err(ConfigParseError(\"p\", \"}\"))");
         should_eq!(config: "q" as String = "Err(ConfigParseError(\"q\", \"${\"))");
+        should_eq!(config: "r" as String = "Ok(\"0suffix\")");
     }
 
     #[test]
