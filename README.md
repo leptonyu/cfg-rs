@@ -6,7 +6,7 @@
 [![dependency status](https://deps.rs/repo/github/leptonyu/cfg-rs/status.svg)](https://deps.rs/crate/cfg-rs)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/leptonyu/cfg-rs/blob/master/LICENSE-MIT)
 [![Actions Status](https://github.com/leptonyu/cfg-rs/workflows/Rust/badge.svg)](https://github.com/leptonyu/cfg-rs/actions)
-[![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.74+-green.svg)](#minimum-supported-rust-version)
+[![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.81+-green.svg)](#minimum-supported-rust-version)
 
 ## Major Features
 
