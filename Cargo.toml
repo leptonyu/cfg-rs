@@ -56,6 +56,9 @@ log = '>= 0.4.20'
 quickcheck = '1'
 quickcheck_macros = '1'
 
+[lints.rust]
+ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
+
 [[example]]
 name = "thread_pool"
 [[example]]

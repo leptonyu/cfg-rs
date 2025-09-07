@@ -790,4 +790,54 @@ mod test {
             _ => assert_eq!(true, false),
         }
     }
+
+    #[test]
+    fn configuration_refresh_tests() {
+        let mut cfg = Configuration::new();
+        // 没有注册 loader，刷新应返回 false
+        assert_eq!(cfg.refresh_ref().unwrap(), false);
+        assert_eq!(cfg.refresh().unwrap(), false);
+    }
+
+    #[test]
+    fn manual_source_chain_finish() {
+        let cfg = Configuration::new();
+        let manual = cfg.register_kv("ms").set("k", "v");
+        let cfg = manual.finish().unwrap();
+        let got = cfg.get::<String>("k").unwrap();
+        assert_eq!(got, "v".to_string());
+    }
+
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    #[test]
+    fn set_init_should_be_called() {
+        let called = Arc::new(AtomicBool::new(false));
+        let flag = called.clone();
+
+        let builder =
+            Configuration::with_predefined_builder().set_init(move |_cfg: &Configuration| {
+                // 标记为已调用
+                flag.store(true, Ordering::SeqCst);
+                Ok(())
+            });
+
+        // init 应成功并调用闭包
+        let _ = builder.init().unwrap();
+        assert!(called.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn set_init_error_propagates() {
+        let builder = Configuration::with_predefined_builder().set_init(|_cfg: &Configuration| {
+            Err(ConfigError::ConfigParseError(
+                "init".to_string(),
+                "err".to_string(),
+            ))
+        });
+
+        // init 应返回我们在闭包中产生的错误
+        assert!(builder.init().is_err());
+    }
 }

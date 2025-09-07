@@ -1,3 +1,4 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 use std::{
     any::Any,
     cmp::Ordering,
@@ -449,7 +450,7 @@ impl FromValue for Duration {
             ConfigValue::Str(du) => parse_duration_from_str(context, &du),
             ConfigValue::StrRef(du) => parse_duration_from_str(context, du),
             ConfigValue::Int(seconds) => Ok(Duration::from_secs(seconds as u64)),
-            ConfigValue::Float(sec) => Ok(Duration::new(0, 0).mul_f64(sec)),
+            ConfigValue::Float(sec) => Ok(Duration::new(1, 0).mul_f64(sec)),
             _ => Err(context.type_mismatch::<Self>(&value)),
         }
     }
@@ -515,8 +516,8 @@ pub mod log {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-
     use crate::{key::CacheString, Configuration};
 
     use super::*;
@@ -771,5 +772,423 @@ mod test {
         let x: Result<HashMap<String, bool>, ConfigError> = context.read("val");
         assert!(x.is_ok());
         assert!(x.unwrap().is_empty());
+    }
+
+    #[test]
+    fn config_value_clone_static_works() {
+        let v1 = ConfigValue::StrRef("abc");
+        let v2 = v1.clone_static();
+        match v2 {
+            ConfigValue::Str(ref s) => assert_eq!(s, "abc"),
+            _ => panic!("Expected Str variant"),
+        }
+
+        let v1 = ConfigValue::Str("def".to_string());
+        let v2 = v1.clone_static();
+        match v2 {
+            ConfigValue::Str(ref s) => assert_eq!(s, "def"),
+            _ => panic!("Expected Str variant"),
+        }
+
+        let v1 = ConfigValue::Int(42);
+        let v2 = v1.clone_static();
+        match v2 {
+            ConfigValue::Int(i) => assert_eq!(i, 42),
+            _ => panic!("Expected Int variant"),
+        }
+
+        let v1 = ConfigValue::Float(3.14);
+        let v2 = v1.clone_static();
+        match v2 {
+            ConfigValue::Float(f) => assert!((f - 3.14).abs() < 1e-6),
+            _ => panic!("Expected Float variant"),
+        }
+
+        let v1 = ConfigValue::Bool(true);
+        let v2 = v1.clone_static();
+        match v2 {
+            ConfigValue::Bool(b) => assert!(b),
+            _ => panic!("Expected Bool variant"),
+        }
+
+        #[cfg(feature = "rand")]
+        {
+            let v1 = ConfigValue::Rand(crate::value::RandValue::U8);
+            let v2 = v1.clone_static();
+            match v2 {
+                ConfigValue::Rand(crate::value::RandValue::U8) => {}
+                _ => panic!("Expected Rand(U8) variant"),
+            }
+        }
+    }
+
+    #[test]
+    fn from_config_for_unit_type() {
+        let mut context = TestContext::new();
+        // None value should return Ok(())
+        let v: Result<(), ConfigError> =
+            <()>::from_config(&mut context.0.source.new_context(&mut context.1), None);
+        assert!(v.is_ok());
+        // Some value should also return Ok(())
+        let v: Result<(), ConfigError> = <()>::from_config(
+            &mut context.0.source.new_context(&mut context.1),
+            Some(ConfigValue::Int(1)),
+        );
+        assert!(v.is_ok());
+    }
+
+    #[test]
+    fn from_value_for_from_string_value() {
+        struct Dummy;
+        impl FromStr for Dummy {
+            type Err = std::convert::Infallible;
+            fn from_str(_s: &str) -> Result<Self, Self::Err> {
+                Ok(Dummy)
+            }
+        }
+        impl FromStringValue for Dummy {
+            fn from_str_value(
+                _context: &mut ConfigContext<'_>,
+                _value: &str,
+            ) -> Result<Self, ConfigError> {
+                Ok(Dummy)
+            }
+        }
+
+        let mut context = TestContext::new();
+        // StrRef
+        let v = <Dummy as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::StrRef("abc"),
+        );
+        assert!(v.is_ok());
+
+        // Str
+        let v = <Dummy as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Str("abc".to_string()),
+        );
+        assert!(v.is_ok());
+
+        // 非字符串类型应报错
+        let v = <Dummy as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Int(1),
+        );
+        assert!(v.is_err());
+    }
+
+    #[test]
+    fn from_value_for_bool() {
+        let mut context = TestContext::new();
+
+        // StrRef true/false
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::StrRef("true"),
+        );
+        assert!(v.unwrap());
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::StrRef("no"),
+        );
+        assert_eq!(v.unwrap(), false);
+
+        // Str true/false
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Str("yes".to_string()),
+        );
+        assert_eq!(v.unwrap(), true);
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Str("false".to_string()),
+        );
+        assert_eq!(v.unwrap(), false);
+
+        // Bool
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Bool(true),
+        );
+        assert_eq!(v.unwrap(), true);
+
+        // 非法类型
+        let v = <bool as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Int(1),
+        );
+        assert!(v.is_err());
+    }
+
+    #[test]
+    fn from_str_holder_from_string_value() {
+        type Holder = FromStrHolder<u32>;
+
+        let mut context = TestContext::new();
+        // 正常解析
+        let r = Holder::from_str_value(&mut context.0.source.new_context(&mut context.1), "123");
+        assert!(r.is_ok());
+        assert_eq!(r.unwrap().0, 123u32);
+
+        // 错误解析
+        let r = Holder::from_str_value(&mut context.0.source.new_context(&mut context.1), "abc");
+        assert!(r.is_err());
+        // 错误类型为 ConfigError::ConfigCause(ParseIntError)
+        match r {
+            Err(ConfigError::ConfigCause(_)) => {}
+            _ => panic!("Expected ConfigCause"),
+        }
+    }
+
+    #[test]
+    fn from_value_for_integer_types() {
+        let mut context = TestContext::new();
+
+        macro_rules! check_int {
+            ($ty:ty, $val:expr, $expect:expr) => {
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::Int($val),
+                );
+                assert_eq!(v.unwrap(), $expect);
+
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::StrRef(&$val.to_string()),
+                );
+                assert_eq!(v.unwrap(), $expect);
+
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::Str($val.to_string()),
+                );
+                assert_eq!(v.unwrap(), $expect);
+
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::Float($val as f64),
+                );
+                assert_eq!(v.unwrap(), $expect);
+            };
+        }
+
+        check_int!(i8, 7, 7i8);
+        check_int!(i16, 8, 8i16);
+        check_int!(i32, 9, 9i32);
+        check_int!(i64, 10, 10i64);
+        check_int!(u8, 11, 11u8);
+        check_int!(u16, 12, 12u16);
+        check_int!(u32, 13, 13u32);
+        check_int!(u64, 14, 14u64);
+        check_int!(usize, 15, 15usize);
+
+        // 错误类型
+        let v = <i8 as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Bool(true),
+        );
+        assert!(v.is_err());
+    }
+
+    #[test]
+    fn from_value_for_float_types() {
+        let mut context = TestContext::new();
+
+        macro_rules! check_float {
+            ($ty:ty, $val:expr, $expect:expr) => {
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::Float($val),
+                );
+                assert!((v.unwrap() - $expect).abs() < 1e-6);
+
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::StrRef(&$val.to_string()),
+                );
+                assert!((v.unwrap() - $expect).abs() < 1e-6);
+
+                let v = <$ty as FromValue>::from_value(
+                    &mut context.0.source.new_context(&mut context.1),
+                    ConfigValue::Str($val.to_string()),
+                );
+                assert!((v.unwrap() - $expect).abs() < 1e-6);
+            };
+        }
+
+        check_float!(f32, 1.23, 1.23f32);
+        check_float!(f64, 4.56, 4.56f64);
+
+        let v = <f32 as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Bool(true),
+        );
+        assert!(v.is_err());
+    }
+
+    #[test]
+    fn parse_duration_from_str_cases() {
+        let mut context = TestContext::new();
+
+        // 秒
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "123s")
+                .unwrap(),
+            Duration::new(123, 0)
+        );
+        // 分钟
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "2m")
+                .unwrap(),
+            Duration::new(120, 0)
+        );
+        // 小时
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "3h")
+                .unwrap(),
+            Duration::new(3 * 3600, 0)
+        );
+        // 毫秒
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "5ms")
+                .unwrap(),
+            Duration::new(0, 5_000_000)
+        );
+        // 微秒
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "7us")
+                .unwrap(),
+            Duration::new(0, 7_000)
+        );
+        // 纳秒
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "9ns")
+                .unwrap(),
+            Duration::new(0, 9)
+        );
+        // 没有单位，默认为秒
+        assert_eq!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "11")
+                .unwrap(),
+            Duration::new(11, 0)
+        );
+        // 错误格式
+        assert!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "abc")
+                .is_err()
+        );
+        // 不支持的单位
+        assert!(
+            parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "1x")
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn from_value_for_duration() {
+        let mut context = TestContext::new();
+
+        // String (seconds)
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Str("123".to_string()),
+        );
+        assert_eq!(v.unwrap(), Duration::new(123, 0));
+
+        // String (with unit)
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Str("2m".to_string()),
+        );
+        assert_eq!(v.unwrap(), Duration::new(120, 0));
+
+        // StrRef
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::StrRef("3h"),
+        );
+        assert_eq!(v.unwrap(), Duration::new(3 * 3600, 0));
+
+        // Int
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Int(7),
+        );
+        assert_eq!(v.unwrap(), Duration::new(7, 0));
+
+        // Float
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Float(1.5),
+        );
+        assert!((v.unwrap().as_secs_f64() - 1.5).abs() < 1e-6);
+
+        // Invalid type
+        let v = <Duration as FromValue>::from_value(
+            &mut context.0.source.new_context(&mut context.1),
+            ConfigValue::Bool(true),
+        );
+        assert!(v.is_err());
+    }
+
+    #[test]
+    fn impl_enum_macro_test() {
+        #[derive(Debug, PartialEq)]
+        enum MyEnum {
+            Foo,
+            Bar,
+            Baz,
+        }
+        impl_enum!(MyEnum {
+            "foo" => MyEnum::Foo
+            "bar" => MyEnum::Bar
+            "baz" => MyEnum::Baz
+        });
+
+        let mut context = TestContext::new();
+
+        // Lowercase matches
+        assert_eq!(
+            <MyEnum as FromStringValue>::from_str_value(
+                &mut context.0.source.new_context(&mut context.1),
+                "foo"
+            )
+            .unwrap(),
+            MyEnum::Foo
+        );
+        assert_eq!(
+            <MyEnum as FromStringValue>::from_str_value(
+                &mut context.0.source.new_context(&mut context.1),
+                "bar"
+            )
+            .unwrap(),
+            MyEnum::Bar
+        );
+        assert_eq!(
+            <MyEnum as FromStringValue>::from_str_value(
+                &mut context.0.source.new_context(&mut context.1),
+                "baz"
+            )
+            .unwrap(),
+            MyEnum::Baz
+        );
+
+        // Uppercase matches (case-insensitive)
+        assert_eq!(
+            <MyEnum as FromStringValue>::from_str_value(
+                &mut context.0.source.new_context(&mut context.1),
+                "FOO"
+            )
+            .unwrap(),
+            MyEnum::Foo
+        );
+
+        // Unknown value returns error
+        let err = <MyEnum as FromStringValue>::from_str_value(
+            &mut context.0.source.new_context(&mut context.1),
+            "unknown",
+        );
+        assert!(err.is_err());
     }
 }

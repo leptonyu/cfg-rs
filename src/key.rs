@@ -57,7 +57,7 @@ impl CacheString {
 
     #[inline]
     #[allow(single_use_lifetimes)]
-    fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) -> usize {
+    pub(crate) fn push<'a, I: IntoIterator<Item = PartialKey<'a>>>(&mut self, iter: I) -> usize {
         let mark = self.mark;
         self.mark = self.current.len();
         for i in iter {

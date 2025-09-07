@@ -174,4 +174,71 @@ mod test {
         std::fs::remove_file(path)?;
         Ok(())
     }
+
+    #[test]
+    fn inline_source_config_success() {
+        // 使用 Temp 解析器，内容无所谓
+        let result = super::inline_source_config::<Temp>("inline".to_string(), "abc");
+        assert!(result.is_ok());
+        let hs = result.unwrap();
+        assert_eq!(hs.name(), "inline");
+    }
+
+    #[test]
+    fn inline_source_config_parse_error() {
+        struct Bad;
+        impl ConfigSourceAdaptor for Bad {
+            fn convert_source(self, _: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
+                Ok(())
+            }
+        }
+        impl ConfigSourceParser for Bad {
+            type Adaptor = Bad;
+            fn parse_source(_: &str) -> Result<Self::Adaptor, ConfigError> {
+                Err(ConfigError::ConfigParseError(
+                    "bad".to_string(),
+                    "fail".to_string(),
+                ))
+            }
+            fn file_extensions() -> Vec<&'static str> {
+                vec!["bad"]
+            }
+        }
+        let result = super::inline_source_config::<Bad>("bad".to_string(), "abc");
+        assert!(matches!(result, Err(ConfigError::ConfigParseError(_, _))));
+    }
+
+    #[test]
+    fn file_loader_load_required_not_exists() {
+        // 测试 required=true 且文件不存在时返回 ConfigFileNotExists
+        let path: PathBuf = "target/not_exist_file.tmp".into();
+        let loader = <FileLoader<Temp>>::new(path.clone(), true, true);
+        let mut hash_source = crate::source::memory::HashSource::new("test");
+        let mut builder = hash_source.prefixed();
+        let result = loader.load(&mut builder);
+        assert!(matches!(result, Err(ConfigError::ConfigFileNotExists(p)) if p == path));
+    }
+
+    #[test]
+    fn file_loader_load_ext_false_all_exts() {
+        // 测试 ext=false 时会尝试所有扩展名
+        let path: PathBuf = "target/file_multi_ext".into();
+        // 创建一个带 .tmp 扩展名的文件
+        let mut file_path = path.clone();
+        file_path.set_extension("tmp");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(b"abc").unwrap();
+        f.flush().unwrap();
+
+        let mut hash_source = crate::source::memory::HashSource::new("test");
+        let mut builder = hash_source.prefixed();
+        // 创建 loader 实例
+        let loader = <FileLoader<Temp>>::new(path.clone(), true, false);
+        // 应该能加载成功（flag 变为 false，不报错）
+        let result = loader.load(&mut builder);
+        assert!(result.is_ok());
+        assert!(result.is_ok());
+
+        std::fs::remove_file(file_path).unwrap();
+    }
 }
