@@ -11,7 +11,7 @@ name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
 rust-version = "1.81.0"
-version = "0.6.0"
+version = "0.6.1"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -26,9 +26,12 @@ members = ['.', 'cfg-derive']
 [features]
 default = []
 full = ["toml", "yaml", "json", "rand", "ini", "log"]
-ini = ["rust-ini"]
-rand = ["rand_chacha", "rand_core"]
-yaml = ["yaml-rust"]
+ini = ["dep:rust-ini"]
+rand = ["dep:rand_chacha", "dep:rand_core"]
+yaml = ["dep:yaml-rust2"]
+toml = ["dep:toml"]
+json = ["dep:json"]
+log = ["dep:log"]
 
 [dependencies]
 cfg-derive = { path = './cfg-derive', version = '^0.2' }
@@ -44,7 +47,7 @@ rand_core = { version = '>= 0.9.0', optional = true, features = [
 ] }
 rust-ini = { version = ">= 0.20.0", optional = true }
 toml = { version = ">= 0.8.10", optional = true }
-yaml-rust = { version = ">= 0.4.5", optional = true }
+yaml-rust2 = { version = ">= 0.10", optional = true }
 
 [dev-dependencies]
 env_logger = ">= 0.11.2"

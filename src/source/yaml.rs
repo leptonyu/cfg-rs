@@ -1,18 +1,18 @@
 //! Yaml config source.
-use yaml_rust::YamlLoader;
+use yaml_rust2::YamlLoader;
 
 use super::{memory::ConfigSourceBuilder, ConfigSourceAdaptor, ConfigSourceParser};
 use crate::ConfigError;
 
-impl ConfigSourceAdaptor for yaml_rust::Yaml {
+impl ConfigSourceAdaptor for yaml_rust2::Yaml {
     fn convert_source(self, source: &mut ConfigSourceBuilder<'_>) -> Result<(), ConfigError> {
         match self {
-            yaml_rust::Yaml::Real(v) => source.insert(v),
-            yaml_rust::Yaml::Integer(v) => source.insert(v),
-            yaml_rust::Yaml::String(v) => source.insert(v),
-            yaml_rust::Yaml::Boolean(v) => source.insert(v),
-            yaml_rust::Yaml::Array(v) => source.insert_array(v)?,
-            yaml_rust::Yaml::Hash(v) => source.insert_map(
+            yaml_rust2::Yaml::Real(v) => source.insert(v),
+            yaml_rust2::Yaml::Integer(v) => source.insert(v),
+            yaml_rust2::Yaml::String(v) => source.insert(v),
+            yaml_rust2::Yaml::Boolean(v) => source.insert(v),
+            yaml_rust2::Yaml::Array(v) => source.insert_array(v)?,
+            yaml_rust2::Yaml::Hash(v) => source.insert_map(
                 v.into_iter()
                     .filter_map(|(k, v)| k.as_str().map(|k| (k.to_string(), v))),
             )?,
@@ -44,7 +44,7 @@ impl ConfigSourceParser for Yaml {
 
 /// Yaml source.
 #[allow(missing_debug_implementations)]
-pub struct Yaml(Vec<yaml_rust::Yaml>);
+pub struct Yaml(Vec<yaml_rust2::Yaml>);
 
 #[cfg(test)]
 mod test {
