@@ -794,7 +794,7 @@ mod test {
     #[test]
     fn configuration_refresh_tests() {
         let mut cfg = Configuration::new();
-        // 没有注册 loader，刷新应返回 false
+        // No loader registered, refresh should return false
         assert_eq!(cfg.refresh_ref().unwrap(), false);
         assert_eq!(cfg.refresh().unwrap(), false);
     }
@@ -818,12 +818,12 @@ mod test {
 
         let builder =
             Configuration::with_predefined_builder().set_init(move |_cfg: &Configuration| {
-                // 标记为已调用
+                // Mark as called
                 flag.store(true, Ordering::SeqCst);
                 Ok(())
             });
 
-        // init 应成功并调用闭包
+        // init should succeed and call the closure
         let _ = builder.init().unwrap();
         assert!(called.load(Ordering::SeqCst));
     }
@@ -837,7 +837,42 @@ mod test {
             ))
         });
 
-        // init 应返回我们在闭包中产生的错误
+        // init should return the error produced in the closure
         assert!(builder.init().is_err());
+    }
+
+    #[test]
+    fn app_config_default_and_parse() {
+        // Construct a config with only the name field
+        let src = HashSource::new("test")
+            .set("app.name", "myapp")
+            .set("app.dir", "/tmp")
+            .set("app.profile", "dev");
+
+        let app_cfg = ConfigContext {
+            key: CacheString::new().new_key(),
+            source: &src,
+            ref_value_flag: false,
+        }
+        .parse_config::<AppConfig>("app", None)
+        .unwrap();
+
+        assert_eq!(app_cfg.name, "myapp");
+        assert_eq!(app_cfg.dir.as_deref(), Some("/tmp"));
+        assert_eq!(app_cfg.profile.as_deref(), Some("dev"));
+
+        // Test default values
+        let src2 = HashSource::new("test");
+        let app_cfg = ConfigContext {
+            key: CacheString::new().new_key(),
+            source: &src2,
+            ref_value_flag: false,
+        }
+        .parse_config::<AppConfig>("app", None)
+        .unwrap();
+
+        assert_eq!(app_cfg.name, "app");
+        assert_eq!(app_cfg.dir, None);
+        assert_eq!(app_cfg.profile, None);
     }
 }
