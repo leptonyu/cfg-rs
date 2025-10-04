@@ -515,6 +515,20 @@ pub mod log {
     });
 }
 
+#[cfg(feature = "coarsetime")]
+#[doc(hidden)]
+pub mod time {
+
+    impl crate::FromValue for coarsetime::Duration {
+        fn from_value(
+            context: &mut crate::ConfigContext<'_>,
+            value: crate::ConfigValue<'_>,
+        ) -> Result<Self, crate::ConfigError> {
+            std::time::Duration::from_value(context, value).map(|d| d.into())
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
@@ -725,6 +739,19 @@ mod test {
         should_eq!(context: "123us" as Duration => Duration::new(0, 123 * 1000));
         should_eq!(context: "123ns" as Duration => Duration::new(0, 123));
         should_eq!(context: "1000ms" as Duration => Duration::new(1, 0));
+
+        #[cfg(feature = "coarsetime")]
+        {
+            use coarsetime::Duration as CoarseDuration;
+            should_eq!(context: "123" as CoarseDuration => CoarseDuration::new(123, 0));
+            should_eq!(context: "123s" as CoarseDuration => CoarseDuration::new(123, 0));
+            should_eq!(context: "10m" as CoarseDuration => CoarseDuration::new(10 * 60, 0));
+            should_eq!(context: "123h" as CoarseDuration => CoarseDuration::new(123 * 3600, 0));
+            should_eq!(context: "123ms" as CoarseDuration => CoarseDuration::new(0, 123 * 1_000_000));
+            should_eq!(context: "123us" as CoarseDuration => CoarseDuration::new(0, 123 * 1000));
+            should_eq!(context: "123ns" as CoarseDuration => CoarseDuration::new(0, 123));
+            should_eq!(context: "1000ms" as CoarseDuration => CoarseDuration::new(1, 0));
+        }
     }
 
     #[test]
