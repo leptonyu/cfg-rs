@@ -29,6 +29,7 @@ mod derive;
 mod err;
 mod key;
 
+mod prelude;
 pub mod source;
 mod value;
 mod value_ref;
@@ -87,6 +88,7 @@ pub use derive::FromConfigWithPrefix;
 pub use err::ConfigError;
 pub(crate) use err::ConfigLock;
 pub use key::ConfigKey;
+pub use prelude::*;
 #[allow(unused_imports)]
 #[cfg(feature = "log")]
 pub use value::log as _;

@@ -802,6 +802,7 @@ mod test {
     }
 
     #[test]
+    #[allow(unused_qualifications)]
     fn config_value_clone_static_works() {
         let v1 = ConfigValue::StrRef("abc");
         let v2 = v1.clone_static();
