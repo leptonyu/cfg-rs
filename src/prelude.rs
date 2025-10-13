@@ -28,17 +28,13 @@ use crate::{ConfigError, ConfigValue, Configuration, FromConfig};
 #[macro_export]
 macro_rules! from_static_map {
     ( $ty:ty, { $( $key:expr => $value:expr ),* $(,)? } ) => {{
-        let mut config = Configuration::new().register_kv("default");
+        use $crate::*;
+        use std::collections::HashMap;
+        let mut config: HashMap<String, String> = HashMap::new();
         $(
-            config = config.set($key, $value);
+            config.insert($key.to_string(), $value.to_string());
         )*
-        #[allow(unused_mut)]
-        let mut config = config.finish().expect("config finish failed");
-        #[cfg(feature = "rand")]
-        {
-            config = config.register_random().expect("register_random failed");
-        }
-        config.get::<$ty>("").expect("config get failed")
+        from_map::<$ty, _, _, _>(config, "").expect("from_static_map failed")
     }};
 }
 
@@ -146,9 +142,9 @@ mod tests {
     #[test]
     fn test_from_env_happy_path() {
         // Use a unique prefix to avoid colliding with other env vars
-        let prefix = "CFG_TEST_APP";
-        std::env::set_var("CFG_TEST_APP_PORT", "9090");
-        std::env::set_var("CFG_TEST_APP_HOST", "127.0.0.1");
+        let prefix = "TEST_APP";
+        std::env::set_var("TEST_APP_PORT", "9090");
+        std::env::set_var("TEST_APP_HOST", "127.0.0.1");
 
         let cfg: TestApp = from_env(prefix).expect("from_env failed");
         assert_eq!(
@@ -160,8 +156,8 @@ mod tests {
         );
 
         // Clean up
-        std::env::remove_var("CFG_TEST_APP_PORT");
-        std::env::remove_var("CFG_TEST_APP_HOST");
+        std::env::remove_var("TEST_APP_PORT");
+        std::env::remove_var("TEST_APP_HOST");
     }
 
     #[test]
