@@ -35,6 +35,7 @@ impl ConfigSourceParser for Json {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use crate::{inline_source, test::source_test_suit, ConfigError};

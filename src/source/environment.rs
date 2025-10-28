@@ -33,6 +33,7 @@ impl PrefixEnvironment {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use std::{collections::HashMap, env::set_var};

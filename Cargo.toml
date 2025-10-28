@@ -11,7 +11,7 @@ name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
 rust-version = "1.81.0"
-version = "0.6.4"
+version = "0.6.5"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -61,7 +61,7 @@ quickcheck = '1'
 quickcheck_macros = '1'
 
 [lints.rust]
- unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
 
 [[example]]
 name = "thread_pool"

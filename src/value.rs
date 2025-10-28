@@ -529,8 +529,8 @@ pub mod time {
     }
 }
 
-#[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
+#[cfg(test)]
 mod test {
     use crate::{key::CacheString, Configuration};
 

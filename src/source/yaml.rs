@@ -46,6 +46,7 @@ impl ConfigSourceParser for Yaml {
 #[allow(missing_debug_implementations)]
 pub struct Yaml(Vec<yaml_rust2::Yaml>);
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use super::*;

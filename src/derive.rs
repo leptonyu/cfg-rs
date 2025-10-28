@@ -6,6 +6,7 @@ pub trait FromConfigWithPrefix: FromConfig {
     fn prefix() -> &'static str;
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use crate::{source::memory::HashSource, test::TestConfigExt, *};

@@ -93,6 +93,7 @@ pub(crate) fn register_files(
 }
 
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     $(

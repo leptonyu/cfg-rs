@@ -74,6 +74,7 @@ impl<'a, T> ConfigLock<'a, T> for Mutex<T> {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod tests {
     use super::*;
