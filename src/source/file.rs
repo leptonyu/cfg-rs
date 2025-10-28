@@ -104,6 +104,7 @@ pub fn inline_source_config<S: ConfigSourceParser>(
     Ok(m)
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use std::{fs::File, io::Write, path::PathBuf};

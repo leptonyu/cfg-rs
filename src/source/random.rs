@@ -84,6 +84,7 @@ impl RandValue {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
 

@@ -128,6 +128,7 @@ impl Refresher {
     }
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
     use std::sync::Arc;

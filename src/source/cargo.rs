@@ -74,6 +74,7 @@ init_cargo_env!(builder:? "CARGO_BIN_NAME");
     };
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
 

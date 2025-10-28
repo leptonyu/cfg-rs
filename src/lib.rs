@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![doc(issue_tracker_base_url = "https://github.com/leptonyu/cfg-rs/issues/")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+#![allow(unused_attributes)]
 #![warn(
     anonymous_parameters,
     missing_copy_implementations,
@@ -17,6 +19,7 @@
     variant_size_differences
 )]
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test;
 #[cfg(test)]

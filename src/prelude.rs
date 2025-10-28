@@ -110,6 +110,7 @@ pub fn from_env<T: FromConfig>(prefix: &str) -> Result<T, ConfigError> {
     config.get("")
 }
 
+#[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod tests {
     use super::*;
