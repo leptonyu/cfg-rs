@@ -14,6 +14,7 @@ type R<V> = Result<V, ConfigError>;
 use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, FromConfig)]
+#[config(crate = "crate")]
 struct ConfigSuit {
     #[config(name = "val")]
     int: IntSuit,
@@ -29,12 +30,14 @@ struct ConfigSuit {
     err: R<u8>,
 }
 #[derive(Debug, FromConfig)]
+#[config(crate = "crate")]
 struct FloatSuit {
     v1: f32,
     v2: f64,
 }
 
 #[derive(Debug, FromConfig)]
+#[config(crate = "crate")]
 struct IntSuit {
     v1: u8,
     v2: u16,

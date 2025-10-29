@@ -139,10 +139,12 @@ mod test {
     };
 
     #[derive(FromConfig)]
+    #[config(crate = "crate")]
     struct A {
         _ref_b: RefValue<B>,
     }
     #[derive(FromConfig)]
+    #[config(crate = "crate")]
     struct B {
         _ref_c: RefValue<u8>,
     }

@@ -43,13 +43,13 @@ jobs:
           cargo clippy -- -D warnings
       - name: Run tests
         run: |
-          cargo test --verbose
-          cargo test --verbose --all-features
-          cargo test --verbose --lib ## Default feature
-          cargo test --verbose --lib --no-default-features 
-          cargo test --verbose --lib --no-default-features --features=toml
-          cargo test --verbose --lib --no-default-features --features=yaml
-          cargo test --verbose --lib --no-default-features --features=rand
+          cargo test --verbose --workspace
+          cargo test --verbose --workspace --all-features
+          cargo test --verbose --workspace --lib ## Default feature
+          cargo test --verbose --workspace --lib --no-default-features 
+          cargo test --verbose --workspace --lib --no-default-features --features=toml
+          cargo test --verbose --workspace --lib --no-default-features --features=yaml
+          cargo test --verbose --workspace --lib --no-default-features --features=rand
 
       - name: Run examples
         run: |

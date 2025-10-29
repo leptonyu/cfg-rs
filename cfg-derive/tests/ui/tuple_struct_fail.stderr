@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/ui/tuple_struct_fail.rs:3:10
+  |
+3 | #[derive(FromConfig)]
+  |          ^^^^^^^^^^
+  |
+  = help: message: Only support named body

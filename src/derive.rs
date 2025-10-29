@@ -11,7 +11,7 @@ pub trait FromConfigWithPrefix: FromConfig {
 mod test {
     use crate::{source::memory::HashSource, test::TestConfigExt, *};
     #[derive(FromConfig, Debug, PartialEq, Eq)]
-    #[config(prefix = "app")]
+    #[config(prefix = "app", crate = "crate")]
     pub(crate) struct ConfigObject {
         hello: String,
         option: Option<String>,

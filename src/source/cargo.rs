@@ -82,6 +82,7 @@ mod test {
     use crate::*;
 
     #[derive(FromConfig)]
+    #[config(crate = "crate")]
     struct CargoPkg {
         name: String,
         version: String,
@@ -89,13 +90,14 @@ mod test {
     }
 
     #[derive(FromConfig)]
+    #[config(crate = "crate")]
     struct CargoBin {
         #[allow(dead_code)]
         name: String,
     }
 
     #[derive(FromConfig)]
-    #[config(prefix = "cargo")]
+    #[config(prefix = "cargo", crate = "crate")]
     struct CargoEnv {
         pkg: CargoPkg,
         bin: Option<CargoBin>,

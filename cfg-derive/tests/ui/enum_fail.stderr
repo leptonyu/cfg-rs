@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/ui/enum_fail.rs:3:10
+  |
+3 | #[derive(FromConfig)]
+  |          ^^^^^^^^^^
+  |
+  = help: message: Only support struct

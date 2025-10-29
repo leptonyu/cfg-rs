@@ -582,7 +582,7 @@ impl PredefinedConfigurationBuilder {
 }
 
 #[derive(Debug, FromConfig)]
-#[config(prefix = "app")]
+#[config(prefix = "app", crate = "crate")]
 struct AppConfig {
     #[config(default = "app")]
     name: String,

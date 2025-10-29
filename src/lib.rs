@@ -58,6 +58,24 @@ use key::PartialKeyCollector;
 /// }
 /// ```
 ///
+/// # Crate Annotation Attribute
+///
+/// * `#[config(crate = "cfg")]`
+///
+/// This attr will specify the crate name of `cfg-rs` in generated code. It is useful when you rename the crate in `Cargo.toml`.
+///
+/// ```ignore,rust
+/// // In Cargo.toml
+/// // [dependencies]
+/// // cfg = { path = "../cfg-rs" }
+///
+/// #[derive(FromConfig)]
+/// #[config(crate = "cfg")]
+/// struct Test {
+///   //fields...   
+/// }
+/// ```
+///
 /// # Field Annotation Attribute
 ///
 /// * `#[config(name = "val")]`
@@ -128,7 +146,7 @@ pub(crate) mod macros {
 
     macro_rules! impl_default {
         ($x:ident) => {
-            impl Default for $x {
+            impl ::core::default::Default for $x {
                 fn default() -> Self {
                     Self::new()
                 }

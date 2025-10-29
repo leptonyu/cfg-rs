@@ -115,10 +115,10 @@ pub fn from_env<T: FromConfig>(prefix: &str) -> Result<T, ConfigError> {
 mod tests {
     use super::*;
     use crate::FromConfig;
-    use crate::{ConfigContext, ConfigValue};
     use std::collections::HashMap;
 
     #[derive(Debug, PartialEq, FromConfig)]
+    #[config(crate = "crate")]
     struct TestApp {
         port: u16,
         host: String,
@@ -183,6 +183,7 @@ mod tests {
         // Single entry form should also work
         // host is missing so deriving FromConfig would error; instead test getting a struct with only port
         #[derive(Debug, PartialEq, FromConfig)]
+        #[config(crate = "crate")]
         struct OnlyPort {
             port: u16,
         }

@@ -31,6 +31,10 @@ pub fn derive_config(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 fn derive_config_struct(name: &Ident, attrs: Vec<Attribute>, data: DataStruct) -> TokenStream {
+    // Resolve cfg-rs crate path without relying on proc_macro_crate.
+    // Default to ::cfg_rs, allow override via #[config(crate = "your_crate_name")]
+    let mut cfg_crate_path = quote!(::cfg_rs);
+
     let fields = derive_config_fields(data);
     let fs: Vec<Ident> = fields.iter().map(|f| f.name.clone()).collect();
     let rs: Vec<&str> = fields.iter().map(|f| f.ren.as_str()).collect();
@@ -43,14 +47,14 @@ fn derive_config_struct(name: &Ident, attrs: Vec<Attribute>, data: DataStruct) -
         .collect();
     let body = quote! {
         Self {
-                #(#fs: context.parse_config(#rs#ds)?,)*
+                #(#fs: context.parse_config(#rs #ds)?,)*
         }
     };
 
-    let prefix = match derive_config_attr(attrs) {
+    let prefix = match derive_config_prefix(attrs, &mut cfg_crate_path) {
         Some(p) => quote! {
             #[automatically_derived]
-            impl FromConfigWithPrefix for #name {
+            impl #cfg_crate_path::FromConfigWithPrefix for #name {
                 fn prefix() -> &'static str {
                     #p
                 }
@@ -61,12 +65,12 @@ fn derive_config_struct(name: &Ident, attrs: Vec<Attribute>, data: DataStruct) -
 
     quote! {
         #[automatically_derived]
-        impl FromConfig for #name {
+        impl #cfg_crate_path::FromConfig for #name {
             fn from_config(
-                context: &mut ConfigContext<'_>,
-                value: Option<ConfigValue<'_>>,
-            ) -> Result<Self, ConfigError> {
-                Ok(#body)
+                context: &mut #cfg_crate_path::ConfigContext<'_>,
+                value: ::core::option::Option<#cfg_crate_path::ConfigValue<'_>>,
+            ) -> ::core::result::Result<Self, #cfg_crate_path::ConfigError> {
+                ::core::result::Result::Ok(#body)
             }
         }
 
@@ -74,7 +78,7 @@ fn derive_config_struct(name: &Ident, attrs: Vec<Attribute>, data: DataStruct) -
     }
 }
 
-fn derive_config_attr(attrs: Vec<Attribute>) -> Option<String> {
+fn derive_config_prefix(attrs: Vec<Attribute>, crate_path: &mut TokenStream) -> Option<String> {
     let mut prefix = None;
     for attr in attrs {
         if attr.path().is_ident("config") {
@@ -83,6 +87,12 @@ fn derive_config_attr(attrs: Vec<Attribute>) -> Option<String> {
                     let value = meta.value()?;
                     let s: LitStr = value.parse()?;
                     prefix = Some(s.value());
+                    Ok(())
+                } else if meta.path.is_ident("crate") {
+                    let value = meta.value()?;
+                    let s: LitStr = value.parse()?;
+                    let ident = Ident::new(&s.value(), s.span());
+                    *crate_path = quote!(#ident);
                     Ok(())
                 } else {
                     Err(meta.error("Only support prefix"))

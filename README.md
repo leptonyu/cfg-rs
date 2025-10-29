@@ -125,11 +125,10 @@ See [register_kv](struct.Configuration.html#method.register_kv), [register_file]
 - From inline map (macro):
 
 ```rust
-use cfg_rs::*;
-#[derive(Debug, FromConfig)]
+#[derive(Debug, cfg_rs::FromConfig)]
 struct AppCfg { port: u16, host: String }
 
-let cfg: AppCfg = from_static_map!(AppCfg, {
+let cfg: AppCfg = cfg_rs::from_static_map!(AppCfg, {
     "port" => "8080",
     "host" => "localhost",
 });
@@ -138,14 +137,13 @@ let cfg: AppCfg = from_static_map!(AppCfg, {
 - From environment variables:
 
 ```rust
-use cfg_rs::*;
 
-#[derive(Debug, FromConfig)]
+#[derive(Debug, cfg_rs::FromConfig)]
 struct AppCfg { port: u16, host: String }
 
 std::env::set_var("CFG_APP_PORT", "8080");
 std::env::set_var("CFG_APP_HOST", "localhost");
-let cfg: AppCfg = from_env("CFG_APP").unwrap();
+let cfg: AppCfg = cfg_rs::from_env("CFG_APP").unwrap();
 ```
 
 ## Derive typed configs
@@ -153,9 +151,8 @@ let cfg: AppCfg = from_env("CFG_APP").unwrap();
 Implement strong-typed configs via derive:
 
 ```rust,no_run
-use cfg_rs::*;
 
-#[derive(Debug, FromConfig)]
+#[derive(Debug, cfg_rs::FromConfig)]
 #[config(prefix = "cfg.app")] // optional, implements FromConfigWithPrefix
 struct AppCfg {
     port: u16,              // required
