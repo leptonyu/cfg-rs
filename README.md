@@ -4,89 +4,208 @@
 [![Crates.io](https://img.shields.io/crates/d/cfg-rs?style=flat-square)](https://crates.io/crates/cfg-rs)
 [![Documentation](https://docs.rs/cfg-rs/badge.svg)](https://docs.rs/cfg-rs)
 [![dependency status](https://deps.rs/repo/github/leptonyu/cfg-rs/status.svg)](https://deps.rs/crate/cfg-rs)
-[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/leptonyu/cfg-rs/blob/master/LICENSE-MIT)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/leptonyu/cfg-rs/blob/master/LICENSE)
 [![Actions Status](https://github.com/leptonyu/cfg-rs/workflows/Rust/badge.svg)](https://github.com/leptonyu/cfg-rs/actions)
 [![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.81+-green.svg)](#minimum-supported-rust-version)
 
-## Major Features
+cfg-rs is a lightweight, flexible configuration loader for Rust applications. It composes multiple sources (files, env, inline maps, random, etc.), supports live refresh, placeholder expansion, and derive-based typed configs — all without a serde dependency.
 
-* One method to get all config objects, see [get](struct.Configuration.html#method.get).
-* Automatic derive config object, see [FromConfig](derive.FromConfig.html).
-* Support default value for config object by auto deriving, see [derived attr](derive.FromConfig.html#field-annotation-attribute).
-* Config value placeholder parsing, e.g. `${config.key}`, see [placeholder](enum.ConfigValue.html#placeholder-expression).
-* Random config value, e.g. `configuration.get::<u8>("random.u8")` will get random `u8` value.
-* Support refreshable value type [RefValue](struct.RefValue.html), it can be updated when refreshing.
-* Support refresh [Configuration](struct.Configuration.html).
-* Easy to use, easy to add new config source, easy to organize configuration, see [register_source](struct.Configuration.html#method.register_source).[^priority]
-* Not dependent with serde.
+See the examples directory for end-to-end demos: https://github.com/leptonyu/cfg-rs/tree/main/examples
 
-See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) for general usage information.
+## Features
 
-[^priority]: Config order is determined by the order of registering sources, register earlier have higher priority.
+- Single call to load typed config: see [Configuration::get](struct.Configuration.html#method.get)
+- Derive your config types: see [FromConfig](derive.FromConfig.html)
+- Default values via field attributes: see [field attributes](derive.FromConfig.html#field-annotation-attribute)
+- Placeholder expansion like `${cfg.key}`: see [ConfigValue](enum.ConfigValue.html#placeholder-expression)
+- Random values under the `rand` feature (e.g. `configuration.get::<u8>("random.u8")`)
+- Refreshable values via [RefValue](struct.RefValue.html) and refreshable [Configuration](struct.Configuration.html)
+- Pluggable sources with clear priority: see [register_source](struct.Configuration.html#method.register_source)[^priority]
+- No serde dependency
 
-#### Supported File Format
+[^priority]: Source precedence follows registration order — earlier registrations have higher priority.
 
-* Toml: toml, tml
-* Yaml: yaml, yml
-* Json: json
-* Ini: ini
+## Supported formats and feature flags
 
-## How to Initialize Configuration
+Built-in file parsers (enable via Cargo features):
 
-* Use Predefined Source Configuration in One Line
+- `toml`: extensions `.toml`, `.tml`
+- `yaml`: extensions `.yaml`, `.yml`
+- `json`: extension `.json`
+- `ini`: extension `.ini`
 
-```rust,no_run
-use cfg_rs::*;
-let configuration = Configuration::with_predefined().unwrap();
-// use configuration.
+Other useful features:
+
+- `rand`: random value provider (e.g. `random.u8`, `random.string`)
+- `log`: minimal logging integration for value parsing
+- `coarsetime`: coarse time helpers for time-related values
+
+## Installation
+
+Add to your Cargo.toml with the features you need:
+
+```toml
+[dependencies]
+cfg-rs = { version = "^0.6", features = ["toml"] }
 ```
-See [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
 
-* Customize Predefined Source Configuration Builder
+For a batteries-included setup, use the convenience feature set:
+
+```toml
+cfg-rs = { version = "^0.6", features = ["full"] }
+```
+
+## Quick start
+
+### 1) One-liner with predefined sources
+
+```rust
+use cfg_rs::*;
+
+let configuration = Configuration::with_predefined().unwrap();
+// use configuration.get::<T>("your.key") or derive types (see below)
+```
+
+See [PredefinedConfigurationBuilder::init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
+
+### 2) Customize predefined builder
 
 ```rust,no_run
 use cfg_rs::*;
 init_cargo_env!();
+
 let configuration = Configuration::with_predefined_builder()
     .set_cargo_env(init_cargo_env())
     .init()
     .unwrap();
-// use configuration.
 ```
-See [init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
 
-* Organize Your Own Sources
+### 3) Compose your own sources (priority = registration order)
 
 ```rust,no_run
 use cfg_rs::*;
 init_cargo_env!();
+
 let mut configuration = Configuration::new()
-    // Layer 0: Register cargo env config source.
+    // Layer 0: Cargo env source.
     .register_source(init_cargo_env()).unwrap()
-    // Layer 1: Register customized config.
-    .register_kv("customized_config")
+    // Layer 1: Inline key-values.
+    .register_kv("inline")
         .set("hello", "world")
         .finish()
         .unwrap();
-    // Layer 2: Register random value config.
+
+// Layer 2: Random values (feature = "rand").
 #[cfg(feature = "rand")]
 {
-configuration = configuration.register_random().unwrap();
+    configuration = configuration.register_random().unwrap();
 }
-    // Layer 3: Register all env variables `CFG_*`.
-configuration = configuration.register_prefix_env("CFG").unwrap()
-    // Layer 4: Register yaml file(Need feature yaml).
-    .register_file("/conf/app.yaml", true).unwrap();
 
+// Layer 3: All environment variables with prefix `CFG_`.
+configuration = configuration.register_prefix_env("CFG").unwrap();
+
+// Layer 4: File(s) — extension inferred by feature (e.g. yaml).
+configuration = configuration.register_file("/conf/app.yaml", true).unwrap();
+
+// Optional: register an inline file content (e.g. TOML) and merge.
 #[cfg(feature = "toml")]
 {
     let toml = inline_source!("../app.toml").unwrap();
     configuration = configuration.register_source(toml).unwrap();
 }
 
-// use configuration.
+// Finally use it.
+// let port: u16 = configuration.get("server.port").unwrap();
 ```
-See [register_kv](struct.Configuration.html#method.register_kv), [register_file](struct.Configuration.html#method.register_file), [register_random](struct.Configuration.html#method.register_random), [register_prefix_env](struct.Configuration.html#method.register_prefix_env) for details.
+
+See [register_kv](struct.Configuration.html#method.register_kv), [register_file](struct.Configuration.html#method.register_file), [register_random](struct.Configuration.html#method.register_random), and [register_prefix_env](struct.Configuration.html#method.register_prefix_env).
+
+### 4) Handy helpers for tests and small apps
+
+- From inline map (macro):
+
+```rust
+use cfg_rs::*;
+#[derive(Debug, FromConfig)]
+struct AppCfg { port: u16, host: String }
+
+let cfg: AppCfg = from_static_map!(AppCfg, {
+    "port" => "8080",
+    "host" => "localhost",
+});
+```
+
+- From environment variables:
+
+```rust
+use cfg_rs::*;
+
+#[derive(Debug, FromConfig)]
+struct AppCfg { port: u16, host: String }
+
+std::env::set_var("CFG_APP_PORT", "8080");
+std::env::set_var("CFG_APP_HOST", "localhost");
+let cfg: AppCfg = from_env("CFG_APP").unwrap();
+```
+
+## Derive typed configs
+
+Implement strong-typed configs via derive:
+
+```rust,no_run
+use cfg_rs::*;
+
+#[derive(Debug, FromConfig)]
+#[config(prefix = "cfg.app")] // optional, implements FromConfigWithPrefix
+struct AppCfg {
+    port: u16,              // required
+    #[config(default = true)]
+    enabled: bool,          // has default value
+    #[config(name = "ip")] // remap field name
+    host: String,
+}
+```
+
+Attributes summary:
+
+- `#[config(prefix = "cfg.app")]` on struct: implement `FromConfigWithPrefix`
+- `#[config(name = "...")]` on field: rename field key
+- `#[config(default = <expr>)]` on field: default value when missing
+
+See the full reference in [derive.FromConfig](derive.FromConfig.html).
+
+## Placeholders, randoms, and refresh
+
+- Placeholder expansion: use `${some.key}` inside string values; see [ConfigValue](enum.ConfigValue.html#placeholder-expression)
+- Random values: under `rand`, keys like `random.u8`, `random.string` provide per-read randoms
+- Refreshing: `Configuration::refresh()` re-reads sources that allow refresh; `RefValue<T>` updates on refresh
+
+## Examples
+
+Browse runnable examples covering common patterns:
+
+- `simple`: minimal setup (full feature set)
+- `profile`: working with profiles (requires `toml`)
+- `watch`: basic file watching and refresh (requires `yaml`)
+- `refresh`: manual refresh and `RefValue`
+- `logger`: logging integration (requires `full`)
+- `thread_pool`, `salak`, `test_suit`: larger samples and integrations
+
+https://github.com/leptonyu/cfg-rs/tree/main/examples
+
+## Minimum supported Rust version
+
+rustc 1.81+
+
+## License
+
+MIT © contributors. See [LICENSE](https://github.com/leptonyu/cfg-rs/blob/main/LICENSE).
+
+## Tips and notes
+
+- Source priority is deterministic: earlier registrations override later ones[^priority]
+- This crate intentionally does not depend on serde
+- Docs.rs builds enable all features for a comprehensive reference
 
 
 
