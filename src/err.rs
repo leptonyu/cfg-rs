@@ -1,5 +1,6 @@
 use crate::*;
 use std::error::Error;
+use std::fmt::Display;
 use std::path::PathBuf;
 
 /// Configuration Error.
@@ -33,6 +34,51 @@ impl<E: Error + 'static> From<E> for ConfigError {
     #[inline]
     fn from(e: E) -> Self {
         ConfigError::ConfigCause(Box::new(e))
+    }
+}
+
+impl Display for ConfigError {
+    #[inline]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigError::ConfigNotFound(key) => {
+                write!(f, "Configuration not found: {}", key)
+            }
+            ConfigError::ConfigRecursiveNotFound(key) => {
+                write!(f, "Configuration recursive not found: {}", key)
+            }
+            ConfigError::ConfigTypeMismatch(key, expected, found) => {
+                write!(
+                    f,
+                    "Configuration type mismatch for key '{}': expected {}, found {}",
+                    key, expected, found
+                )
+            }
+            ConfigError::ConfigParseError(key, msg) => {
+                write!(f, "Configuration parse error for key '{}': {}", key, msg)
+            }
+            ConfigError::ConfigRecursiveError(key) => {
+                write!(f, "Configuration recursive error for key '{}'", key)
+            }
+            ConfigError::ConfigFileNotExists(path) => {
+                write!(f, "Configuration file does not exist: {:?}", path)
+            }
+            ConfigError::ConfigFileNotSupported(path) => {
+                write!(f, "Configuration file not supported: {:?}", path)
+            }
+            ConfigError::RefValueRecursiveError => {
+                write!(f, "Reference value recursive error")
+            }
+            ConfigError::TooManyInstances(count) => {
+                write!(f, "Too many instances: {}", count)
+            }
+            ConfigError::LockPoisoned => {
+                write!(f, "Lock poisoned")
+            }
+            ConfigError::ConfigCause(e) => {
+                write!(f, "Configuration error caused by: {}", e)
+            }
+        }
     }
 }
 
@@ -81,6 +127,90 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::thread;
     use std::time::Duration;
+
+    #[test]
+    fn display_config_not_found() {
+        let e = ConfigError::ConfigNotFound("db.url".into());
+        assert_eq!(format!("{}", e), "Configuration not found: db.url");
+    }
+
+    #[test]
+    fn display_config_recursive_not_found() {
+        let e = ConfigError::ConfigRecursiveNotFound("${missing}".into());
+        assert_eq!(
+            format!("{}", e),
+            "Configuration recursive not found: ${missing}"
+        );
+    }
+
+    #[test]
+    fn display_config_type_mismatch() {
+        let e = ConfigError::ConfigTypeMismatch("app.port".into(), "u16", "String");
+        assert_eq!(
+            format!("{}", e),
+            "Configuration type mismatch for key 'app.port': expected u16, found String"
+        );
+    }
+
+    #[test]
+    fn display_config_parse_error() {
+        let e = ConfigError::ConfigParseError("app.timeout".into(), "invalid number".into());
+        assert_eq!(
+            format!("{}", e),
+            "Configuration parse error for key 'app.timeout': invalid number"
+        );
+    }
+
+    #[test]
+    fn display_config_recursive_error() {
+        let e = ConfigError::ConfigRecursiveError("a -> b -> a".into());
+        assert_eq!(
+            format!("{}", e),
+            "Configuration recursive error for key 'a -> b -> a'"
+        );
+    }
+
+    #[test]
+    fn display_config_file_not_exists_contains_path() {
+        let p = PathBuf::from("/tmp/file.toml");
+        let s = format!("{}", ConfigError::ConfigFileNotExists(p.clone()));
+        assert!(s.starts_with("Configuration file does not exist: "));
+        // Be tolerant to potential platform/debug formatting differences by checking containment.
+        assert!(s.contains("/tmp/file.toml"), "{}", s);
+    }
+
+    #[test]
+    fn display_config_file_not_supported_contains_path() {
+        let p = PathBuf::from("/tmp/file.unsupported");
+        let s = format!("{}", ConfigError::ConfigFileNotSupported(p.clone()));
+        assert!(s.starts_with("Configuration file not supported: "));
+        assert!(s.contains("/tmp/file.unsupported"), "{}", s);
+    }
+
+    #[test]
+    fn display_ref_value_recursive_error() {
+        let e = ConfigError::RefValueRecursiveError;
+        assert_eq!(format!("{}", e), "Reference value recursive error");
+    }
+
+    #[test]
+    fn display_too_many_instances() {
+        let e = ConfigError::TooManyInstances(42);
+        assert_eq!(format!("{}", e), "Too many instances: 42");
+    }
+
+    #[test]
+    fn display_lock_poisoned() {
+        let e = ConfigError::LockPoisoned;
+        assert_eq!(format!("{}", e), "Lock poisoned");
+    }
+
+    #[test]
+    fn display_config_cause() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
+        let e: ConfigError = io_err.into();
+        assert_eq!(format!("{}", e), "Configuration error caused by: io");
+    }
 
     #[test]
     fn config_error_from_converts_to_configcause() {
