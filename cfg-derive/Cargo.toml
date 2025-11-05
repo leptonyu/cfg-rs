@@ -10,7 +10,7 @@ license = 'MIT'
 name = "cfg-derive"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-version = "0.3.0"
+version = "0.3.1"
 
 [lib]
 proc-macro = true
@@ -19,6 +19,3 @@ proc-macro = true
 quote = '1'
 syn = { version = '2', features = ['extra-traits'] }
 
-[dev-dependencies]
-trybuild = "1"
-cfg-rs = { path = ".." }
