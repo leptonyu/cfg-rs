@@ -34,6 +34,7 @@ mod key;
 
 mod prelude;
 pub mod source;
+pub mod validate;
 mod value;
 mod value_ref;
 
