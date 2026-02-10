@@ -30,12 +30,15 @@ pub enum ConfigError {
     ConfigCause(Box<dyn Error + 'static>),
 }
 
-impl<E: Error + 'static> From<E> for ConfigError {
+impl ConfigError {
     #[inline]
-    fn from(e: E) -> Self {
+    /// Creates a `ConfigError` from another error type.
+    pub fn from_cause<E: Error + 'static>(e: E) -> Self {
         ConfigError::ConfigCause(Box::new(e))
     }
 }
+
+impl Error for ConfigError {}
 
 impl Display for ConfigError {
     #[inline]
@@ -208,14 +211,14 @@ mod tests {
     #[test]
     fn display_config_cause() {
         let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
-        let e: ConfigError = io_err.into();
+        let e = ConfigError::from_cause(io_err);
         assert_eq!(format!("{}", e), "Configuration error caused by: io");
     }
 
     #[test]
     fn config_error_from_converts_to_configcause() {
         let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
-        let ce: ConfigError = io_err.into();
+        let ce = ConfigError::from_cause(io_err);
         match ce {
             ConfigError::ConfigCause(_) => {}
             _ => panic!("Expected ConfigCause variant"),

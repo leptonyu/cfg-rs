@@ -34,7 +34,9 @@ impl ConfigSourceAdaptor for Yaml {
 impl ConfigSourceParser for Yaml {
     type Adaptor = Yaml;
     fn parse_source(content: &str) -> Result<Self::Adaptor, ConfigError> {
-        Ok(Yaml(YamlLoader::load_from_str(content)?))
+        Ok(Yaml(
+            YamlLoader::load_from_str(content).map_err(ConfigError::from_cause)?,
+        ))
     }
 
     fn file_extensions() -> Vec<&'static str> {

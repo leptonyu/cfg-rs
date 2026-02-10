@@ -31,7 +31,7 @@ fn main() -> Result<(), ConfigError> {
     let config = Configuration::with_predefined()?;
     let env = config.get_predefined::<LogEnv>()?;
     log::set_max_level(env.level);
-    log::set_boxed_logger(Box::new(Logger::from(env)))?;
+    log::set_boxed_logger(Box::new(Logger::from(env))).map_err(ConfigError::from_cause)?;
     let mut i = 0;
     for name in config.source_names() {
         i += 1;

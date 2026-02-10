@@ -52,7 +52,7 @@ fn load_path<L: ConfigSourceParser>(
 ) -> Result<(), ConfigError> {
     if path.exists() {
         *flag = false;
-        let c = std::fs::read_to_string(&path)?;
+        let c = std::fs::read_to_string(&path).map_err(ConfigError::from_cause)?;
         L::parse_source(&c)?.convert_source(builder)?;
     }
     Ok(())
@@ -138,23 +138,32 @@ mod test {
     #[test]
     fn refresh_file_test() -> Result<(), ConfigError> {
         let path: PathBuf = "target/file_2.tmp".into();
-        let mut f = File::create(&path)?;
+        let mut f = File::create(&path).map_err(ConfigError::from_cause)?;
         let config = <FileLoader<Temp>>::new(path.clone(), false, true);
         assert!(!config.refreshable()?);
         update_file(&mut f)?;
         assert!(config.refreshable()?);
-        std::fs::remove_file(path)?;
+        std::fs::remove_file(path).map_err(ConfigError::from_cause)?;
         Ok(())
     }
 
     fn update_file(f: &mut File) -> Result<(), ConfigError> {
-        let last = f.metadata()?.modified()?;
+        let last = f
+            .metadata()
+            .map_err(ConfigError::from_cause)?
+            .modified()
+            .map_err(ConfigError::from_cause)?;
         let mut i = 0;
-        while last == f.metadata()?.modified()? {
+        while last
+            == f.metadata()
+                .map_err(ConfigError::from_cause)?
+                .modified()
+                .map_err(ConfigError::from_cause)?
+        {
             i += 1;
             println!("Round: {}", i);
-            f.write_all(b"hello")?;
-            f.flush()?;
+            f.write_all(b"hello").map_err(ConfigError::from_cause)?;
+            f.flush().map_err(ConfigError::from_cause)?;
             std::thread::sleep(std::time::Duration::new(0, 1000000));
         }
         Ok(())
@@ -163,7 +172,7 @@ mod test {
     #[test]
     fn refresh_test() -> Result<(), ConfigError> {
         let path: PathBuf = "target/file.tmp".into();
-        let mut f = File::create(&path)?;
+        let mut f = File::create(&path).map_err(ConfigError::from_cause)?;
         let mut config = Configuration::new().register_source(<FileLoader<Temp>>::new(
             path.clone(),
             false,
@@ -172,7 +181,7 @@ mod test {
         assert!(!config.refresh()?);
         update_file(&mut f)?;
         assert!(config.refresh()?);
-        std::fs::remove_file(path)?;
+        std::fs::remove_file(path).map_err(ConfigError::from_cause)?;
         Ok(())
     }
 

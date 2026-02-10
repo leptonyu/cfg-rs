@@ -27,7 +27,7 @@ impl ConfigSourceAdaptor for Json {
 impl ConfigSourceParser for Json {
     type Adaptor = Json;
     fn parse_source(content: &str) -> Result<Self::Adaptor, ConfigError> {
-        Ok(json::parse(content)?)
+        Ok(json::parse(content).map_err(ConfigError::from_cause)?)
     }
 
     fn file_extensions() -> Vec<&'static str> {

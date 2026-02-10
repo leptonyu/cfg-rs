@@ -322,7 +322,7 @@ impl FromStringValue for $x {
     #[inline]
     fn from_str_value(_: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError> {
         use std::str::FromStr;
-        Ok(<$x>::from_str(value)?)
+        <$x>::from_str(value).map_err(ConfigError::from_cause)
     }
 }
             )+}
@@ -348,7 +348,9 @@ impl<V: FromStr<Err = E> + 'static, E: std::error::Error + 'static> FromStringVa
 {
     #[inline]
     fn from_str_value(_: &mut ConfigContext<'_>, value: &str) -> Result<Self, ConfigError> {
-        Ok(FromStrHolder(V::from_str(value)?))
+        Ok(FromStrHolder(
+            V::from_str(value).map_err(ConfigError::from_cause)?,
+        ))
     }
 }
 
@@ -359,9 +361,9 @@ impl FromValue for $x {
     fn from_value(context: &mut ConfigContext<'_>, value: ConfigValue<'_>) -> Result<Self, ConfigError> {
         use std::convert::TryFrom;
         match value {
-            ConfigValue::StrRef(s) => Ok(s.parse::<$x>()?),
-            ConfigValue::Str(s) => Ok(s.parse::<$x>()?),
-            ConfigValue::Int(s) => Ok($x::try_from(s)?),
+            ConfigValue::StrRef(s) => Ok(s.parse::<$x>().map_err(ConfigError::from_cause)?),
+            ConfigValue::Str(s) => Ok(s.parse::<$x>().map_err(ConfigError::from_cause)?),
+            ConfigValue::Int(s) => Ok($x::try_from(s).map_err(ConfigError::from_cause)?),
             ConfigValue::Float(s) => Ok(check_f64(context, s)? as $x),
             _ => Err(context.type_mismatch::<$x>(&value)),
         }
@@ -387,8 +389,8 @@ impl FromValue for $x {
     #[allow(trivial_numeric_casts)]
     fn from_value(context: &mut ConfigContext<'_>, value: ConfigValue<'_>) -> Result<Self, ConfigError> {
         match value {
-            ConfigValue::StrRef(s) => Ok(s.parse::<$x>()?),
-            ConfigValue::Str(s) => Ok(s.parse::<$x>()?),
+            ConfigValue::StrRef(s) => Ok(s.parse::<$x>().map_err(ConfigError::from_cause)?),
+            ConfigValue::Str(s) => Ok(s.parse::<$x>().map_err(ConfigError::from_cause)?),
             ConfigValue::Int(s) => Ok(s as $x),
             ConfigValue::Float(s) => Ok(check_f64(context, s)? as $x),
             _ => Err(context.type_mismatch::<$x>(&value)),

@@ -13,7 +13,8 @@ fn write_f(f: &str) -> Result<(), ConfigError> {
                 .unwrap()
                 .as_millis()
         ),
-    )?;
+    )
+    .map_err(ConfigError::from_cause)?;
 
     Ok(())
 }
@@ -37,6 +38,6 @@ fn main() -> Result<(), ConfigError> {
             println!("{}", v.get()?);
         }
     }
-    std::fs::remove_file(p)?;
+    std::fs::remove_file(p).map_err(ConfigError::from_cause)?;
     Ok(())
 }

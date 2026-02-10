@@ -24,7 +24,7 @@ impl ConfigSourceAdaptor for Toml {
 impl ConfigSourceParser for Toml {
     type Adaptor = Toml;
     fn parse_source(c: &str) -> Result<Self::Adaptor, ConfigError> {
-        Ok(toml::from_str::<Value>(c)?)
+        Ok(toml::from_str::<Value>(c).map_err(ConfigError::from_cause)?)
     }
 
     fn file_extensions() -> Vec<&'static str> {

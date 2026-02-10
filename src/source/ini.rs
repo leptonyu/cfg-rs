@@ -24,7 +24,7 @@ impl ConfigSourceParser for Ini {
     type Adaptor = Ini;
 
     fn parse_source(c: &str) -> Result<Self::Adaptor, ConfigError> {
-        Ok(Self::load_from_str(c)?)
+        Ok(Self::load_from_str(c).map_err(ConfigError::from_cause)?)
     }
 
     fn file_extensions() -> Vec<&'static str> {
