@@ -39,6 +39,7 @@ Other useful features:
 - `rand`: random value provider (e.g. `random.u8`, `random.string`)
 - `log`: minimal logging integration for value parsing
 - `coarsetime`: coarse time helpers for time-related values
+- `regex`: regex validation support for `#[validate(regex = ...)]` and `#[validate(email)]`
 
 ## Installation
 
@@ -170,6 +171,53 @@ Attributes summary:
 - `#[config(default = <expr>)]` on field: default value when missing
 
 See the full reference in [derive.FromConfig](derive.FromConfig.html).
+
+## Validation
+
+The derive macro supports field-level validation via `#[validate(...)]`.
+The rules are implemented in [src/validate.rs](src/validate.rs) and are
+invoked after parsing field values.
+
+Available validators:
+
+- `range(min = <expr>, max = <expr>)` for comparable values
+- `length(min = <usize>, max = <usize>)` for string/collection/path length
+- `not_empty` for any type implementing `ValidateLength`
+- `validate_not_empty(field, value)` helper for any type implementing `ValidateLength`
+- `regex = "..."` (feature = `regex`) for regex matching on strings
+- `email` (feature = `regex`) for basic email format checks
+- `custom = "path::to::fn"` for user-defined validation
+
+Example:
+
+```rust,no_run
+#[derive(Debug, cfg_rs::FromConfig)]
+#[config(prefix = "app")]
+struct AppCfg {
+    #[validate(range(min = 1, max = 65535))]
+    port: u16,
+    #[validate(length(min = 1, max = 32))]
+    name: String,
+    #[validate(custom = "check_threads")]
+    threads: usize,
+    #[cfg(feature = "regex")]
+    #[validate(regex = "^u[a-z]+$")]
+    user: String,
+    #[cfg(feature = "regex")]
+    #[validate(email)]
+    email: String,
+}
+
+fn check_threads(v: &usize) -> Result<(), cfg_rs::ConfigError> {
+    if *v == 0 {
+        return Err(cfg_rs::ConfigError::ConfigParseError(
+            "app.threads".to_string(),
+            "threads must be > 0".to_string(),
+        ));
+    }
+    Ok(())
+}
+```
 
 ## Placeholders, randoms, and refresh
 

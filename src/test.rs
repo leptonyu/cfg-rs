@@ -12,6 +12,7 @@ impl<C: ConfigSource + 'static> TestConfigExt for C {}
 
 type R<V> = Result<V, ConfigError>;
 use std::collections::{BTreeMap, HashMap};
+use std::path::PathBuf;
 
 #[derive(Debug, FromConfig)]
 #[config(crate = "crate")]
@@ -87,4 +88,122 @@ fn in_memory_test() {
             .set("suit.brr[0][0]", "b00"),
     )
     .unwrap();
+}
+
+#[allow(dead_code)]
+#[derive(Debug, FromConfig)]
+#[config(crate = "crate", prefix = "validate")]
+struct ValidateCfg {
+    #[validate(range(min = 1, max = 3), message = "port must be between 1 and 3")]
+    port: u8,
+    #[validate(length(min = 1, max = 5))]
+    name: String,
+    #[validate(not_empty)]
+    alias: String,
+    #[validate(length(min = 1, max = 2))]
+    tags: Vec<String>,
+    #[validate(length(min = 1, max = 10))]
+    path: PathBuf,
+    #[validate(custom = "check_threads")]
+    threads: usize,
+    #[validate(length(min = 1, max = 3))]
+    optional: Option<String>,
+    #[cfg(feature = "regex")]
+    #[validate(regex = "^u[a-z]+$")]
+    user: String,
+    #[cfg(feature = "regex")]
+    #[validate(email)]
+    email: String,
+}
+
+fn check_threads(v: &usize) -> Result<(), ConfigError> {
+    if *v == 0 {
+        return Err(ConfigError::ConfigParseError(
+            "validate.threads".to_string(),
+            "threads must be > 0".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+#[test]
+fn validate_annotations_happy_path() {
+    let config = HashSource::new("validate")
+        .set("validate.port", "2")
+        .set("validate.name", "rust")
+        .set("validate.alias", "rs")
+        .set("validate.tags[0]", "a")
+        .set("validate.path", "/tmp")
+        .set("validate.threads", "2")
+        .set("validate.user", "user")
+        .set("validate.email", "user@example.com")
+        .set("validate.optional", "opt")
+        .new_config();
+
+    let cfg: ValidateCfg = config.get_predefined().unwrap();
+    assert_eq!(cfg.port, 2);
+    assert_eq!(cfg.name, "rust");
+    assert_eq!(cfg.tags.len(), 1);
+    assert_eq!(cfg.threads, 2);
+}
+
+#[test]
+fn validate_annotations_custom_error() {
+    let config = HashSource::new("validate")
+        .set("validate.port", "2")
+        .set("validate.name", "rust")
+        .set("validate.alias", "rs")
+        .set("validate.tags[0]", "a")
+        .set("validate.path", "/tmp")
+        .set("validate.threads", "0")
+        .set("validate.user", "user")
+        .set("validate.email", "user@example.com")
+        .new_config();
+
+    let err = config.get_predefined::<ValidateCfg>().unwrap_err();
+    match err {
+        ConfigError::ConfigParseError(key, _) => assert_eq!(key, "validate.threads"),
+        _ => panic!("unexpected error: {:?}", err),
+    }
+}
+
+#[cfg(feature = "regex")]
+#[test]
+fn validate_annotations_regex_email_error() {
+    let config = HashSource::new("validate")
+        .set("validate.port", "2")
+        .set("validate.name", "rust")
+        .set("validate.alias", "rs")
+        .set("validate.tags[0]", "a")
+        .set("validate.path", "/tmp")
+        .set("validate.threads", "2")
+        .set("validate.user", "BAD")
+        .set("validate.email", "not-an-email")
+        .new_config();
+
+    let err = config.get_predefined::<ValidateCfg>().unwrap_err();
+    match err {
+        ConfigError::ConfigParseError(key, _) => assert_eq!(key, "validate.user"),
+        _ => panic!("unexpected error: {:?}", err),
+    }
+}
+
+#[test]
+fn validate_annotations_not_empty_error() {
+    let config = HashSource::new("validate")
+        .set("validate.port", "2")
+        .set("validate.name", "rust")
+        .set("validate.alias", "")
+        .set("validate.tags[0]", "a")
+        .set("validate.path", "/tmp")
+        .set("validate.threads", "2")
+        .set("validate.user", "user")
+        .set("validate.email", "user@example.com")
+        .new_config();
+
+    let err = config.get_predefined::<ValidateCfg>().unwrap_err();
+    match err {
+        ConfigError::ConfigParseError(key, _) => assert_eq!(key, "validate.alias"),
+        _ => panic!("unexpected error: {:?}", err),
+    }
 }
