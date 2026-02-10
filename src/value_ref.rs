@@ -17,6 +17,9 @@ use crate::*;
 ///   ref_c: RefValue<u8>,
 /// }
 /// ```
+///
+/// `RefValue` can be read from multiple threads, but registration/refresh is expected
+/// to happen on a single thread (see `Refresher`).
 #[allow(missing_debug_implementations)]
 pub struct RefValue<T>(Arc<Mutex<T>>, String);
 
@@ -106,6 +109,8 @@ impl Refresher {
     }
 
     fn push(&self, r: impl Ref + 'static) -> Result<(), ConfigError> {
+        // Use try_lock to avoid re-entrant deadlocks during refresh.
+        // Lock contention is treated as recursive usage; Refresher should be single-threaded.
         let g = self.refs.try_lock_c()?;
         if let Some(mut g) = g {
             if g.len() >= self.max {
@@ -133,6 +138,8 @@ impl Refresher {
 mod test {
     use std::sync::Arc;
 
+    use super::{Ref, Refresher};
+    use crate::err::ConfigLock;
     use crate::{
         source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
         Mutex, *,
@@ -251,6 +258,26 @@ mod test {
 
         for i in 0..1000 {
             should_eq_mut!(config: r.v = i);
+        }
+    }
+
+    struct DummyRef;
+
+    impl Ref for DummyRef {
+        fn refresh(&self, _: &Configuration) -> Result<(), ConfigError> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn refresher_try_lock_conflict_returns_error() {
+        let refresher = Refresher::new();
+        let _guard = refresher.refs.lock_c().unwrap();
+
+        let err = refresher.push(DummyRef).unwrap_err();
+        match err {
+            ConfigError::RefValueRecursiveError => {}
+            _ => panic!("unexpected error: {:?}", err),
         }
     }
 
