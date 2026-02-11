@@ -141,8 +141,9 @@ mod test {
     use super::{Ref, Refresher};
     use crate::err::ConfigLock;
     use crate::{
-        source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
-        Mutex, *,
+        Mutex,
+        source::{ConfigSource, ConfigSourceBuilder, memory::HashSource},
+        *,
     };
 
     #[derive(FromConfig)]

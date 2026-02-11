@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{macros::impl_default, ConfigError};
+use crate::{ConfigError, macros::impl_default};
 
 use super::{ConfigSource, ConfigSourceBuilder};
 

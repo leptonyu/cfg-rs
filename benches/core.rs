@@ -1,7 +1,7 @@
 use std::{collections::HashMap, hint::black_box};
 
 use cfg_rs::*;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 #[allow(dead_code)]
 #[derive(Debug, FromConfig)]

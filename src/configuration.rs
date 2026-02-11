@@ -1,5 +1,5 @@
 use std::{
-    any::{type_name, Any},
+    any::{Any, type_name},
     borrow::Borrow,
     cell::RefCell,
     collections::HashSet,
@@ -8,18 +8,18 @@ use std::{
 };
 
 use crate::{
+    FromConfig, FromConfigWithPrefix, PartialKeyCollector,
     cache::CacheConfigSource,
     err::ConfigError,
     impl_cache,
     key::{CacheString, ConfigKey, PartialKeyIter},
     macros::{cfg_log, impl_default},
     source::{
-        cargo::Cargo, environment::PrefixEnvironment, memory::HashSource, register_by_ext,
-        register_files, ConfigSource, SourceOption,
+        ConfigSource, SourceOption, cargo::Cargo, environment::PrefixEnvironment,
+        memory::HashSource, register_by_ext, register_files,
     },
     value::ConfigValue,
     value_ref::Refresher,
-    FromConfig, FromConfigWithPrefix, PartialKeyCollector,
 };
 
 /// Configuration Context.
@@ -809,8 +809,8 @@ mod test {
         assert_eq!(got, "v".to_string());
     }
 
-    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
     fn set_init_should_be_called() {

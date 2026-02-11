@@ -1,5 +1,6 @@
 use cfg_rs::*;
 
+#[allow(dead_code)]
 #[derive(Debug, FromConfig)]
 #[config(prefix = "app")]
 struct AppCfg {
@@ -9,18 +10,15 @@ struct AppCfg {
     host: String,
     #[validate(regex = "^[a-z0-9_]+$")]
     user: String,
-    #[validate(email)]
+    #[validate(regex = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")]
     email: String,
-    #[validate(custom = "check_threads")]
+    #[validate(custom = check_threads)]
     threads: usize,
 }
 
-fn check_threads(v: &usize) -> Result<(), ConfigError> {
+fn check_threads(v: &usize) -> Result<(), String> {
     if *v == 0 {
-        return Err(ConfigError::ConfigParseError(
-            "app.threads".to_string(),
-            "threads must be > 0".to_string(),
-        ));
+        return Err("threads must be > 0".to_string());
     }
     Ok(())
 }

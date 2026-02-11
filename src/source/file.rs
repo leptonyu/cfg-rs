@@ -5,11 +5,11 @@ use std::{
     time::SystemTime,
 };
 
-use crate::{err::ConfigLock, ConfigError, Mutex};
+use crate::{ConfigError, Mutex, err::ConfigLock};
 
 use super::{
-    memory::{ConfigSourceBuilder, HashSource},
     ConfigSource, ConfigSourceAdaptor, ConfigSourceParser,
+    memory::{ConfigSourceBuilder, HashSource},
 };
 
 /// FileLoader
@@ -110,8 +110,8 @@ mod test {
     use std::{fs::File, io::Write, path::PathBuf};
 
     use crate::{
-        source::{ConfigSource, ConfigSourceAdaptor, ConfigSourceBuilder, ConfigSourceParser},
         ConfigError, Configuration,
+        source::{ConfigSource, ConfigSourceAdaptor, ConfigSourceBuilder, ConfigSourceParser},
     };
 
     use super::FileLoader;

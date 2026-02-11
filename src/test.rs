@@ -1,5 +1,5 @@
-use crate::source::memory::HashSource;
 use crate::source::ConfigSource;
+use crate::source::memory::HashSource;
 use crate::*;
 
 pub(crate) trait TestConfigExt: ConfigSource + Sized + 'static {
@@ -104,7 +104,7 @@ struct ValidateCfg {
     tags: Vec<String>,
     #[validate(length(min = 1, max = 10))]
     path: PathBuf,
-    #[validate(custom = "check_threads")]
+    #[validate(custom = check_threads)]
     threads: usize,
     #[validate(length(min = 1, max = 3))]
     optional: Option<String>,
@@ -112,16 +112,13 @@ struct ValidateCfg {
     #[validate(regex = "^u[a-z]+$")]
     user: String,
     #[cfg(feature = "regex")]
-    #[validate(email)]
+    #[validate(regex = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")]
     email: String,
 }
 
-fn check_threads(v: &usize) -> Result<(), ConfigError> {
+fn check_threads(v: &usize) -> Result<(), String> {
     if *v == 0 {
-        return Err(ConfigError::ConfigParseError(
-            "validate.threads".to_string(),
-            "threads must be > 0".to_string(),
-        ));
+        return Err("threads must be > 0".to_string());
     }
     Ok(())
 }
@@ -205,5 +202,29 @@ fn validate_annotations_not_empty_error() {
     match err {
         ConfigError::ConfigParseError(key, _) => assert_eq!(key, "validate.alias"),
         _ => panic!("unexpected error: {:?}", err),
+    }
+}
+
+#[derive(Debug, FromConfig)]
+#[config(crate = "crate")]
+#[allow(dead_code)]
+struct MultiRuleValidation {
+    #[validate(length(min = 0, max = 4), not_empty, message = "empty")]
+    name: String,
+}
+
+#[test]
+fn test_validate_multiple_rules_in_one_attribute() {
+    let mut map = HashMap::new();
+    map.insert("name", "");
+
+    let err =
+        from_map::<MultiRuleValidation, _, _, _>(map, "").expect_err("expected validation failure");
+    match err {
+        ConfigError::ConfigParseError(field, message) => {
+            assert_eq!(field, "name");
+            assert_eq!(message, "empty");
+        }
+        other => panic!("unexpected error: {:?}", other),
     }
 }

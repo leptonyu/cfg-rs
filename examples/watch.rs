@@ -26,11 +26,13 @@ fn main() -> Result<(), ConfigError> {
     let (tx, rx) = channel();
     let v: RefValue<u128> = conf.get("timstamp")?;
 
-    std::thread::spawn(move || loop {
-        write_f(p).unwrap();
-        std::thread::sleep(Duration::new(0, 5000000));
-        conf.refresh_ref().unwrap();
-        tx.send(1u8).unwrap();
+    std::thread::spawn(move || {
+        loop {
+            write_f(p).unwrap();
+            std::thread::sleep(Duration::new(0, 5000000));
+            conf.refresh_ref().unwrap();
+            tx.send(1u8).unwrap();
+        }
     });
 
     for _ in 0..10 {

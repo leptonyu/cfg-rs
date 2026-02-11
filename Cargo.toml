@@ -3,14 +3,14 @@ authors = ['Daniel Yu <leptonyu@gmail.com>']
 categories = ['config']
 description = 'A rust configuration loader'
 documentation = 'https://docs.rs/cfg-rs/'
-edition = "2018"
+edition = "2024"
 homepage = 'https://github.com/leptonyu/cfg-rs'
 keywords = ['configuration', 'config', 'settings', 'env', 'environment']
 license = 'MIT'
 name = "cfg-rs"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-rust-version = "1.81.0"
+rust-version = "1.85.0"
 version = "1.0.0"
 
 [package.metadata.docs.rs]
@@ -33,7 +33,7 @@ toml = ["dep:toml"]
 json = ["dep:json"]
 log = ["dep:log"]
 coarsetime = ["dep:coarsetime"]
-regex = ["dep:regex"]
+regex = ["dep:regex", "cfg-derive/regex"]
 
 [dependencies]
 cfg-derive = { path = './cfg-derive', version = '^1.0.0' }

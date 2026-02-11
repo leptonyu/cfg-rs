@@ -6,10 +6,10 @@ use std::{
 };
 
 use crate::{
+    ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
     key::{PartialKey, PartialKeyIter},
     source::{ConfigSource, ConfigSourceAdaptor},
     value_ref::Refresher,
-    ConfigError, ConfigKey, ConfigValue, PartialKeyCollector,
 };
 
 /// Hash Source.
