@@ -198,15 +198,16 @@ impl<V: FromConfig> FromConfig for Vec<V> {
     }
 }
 
-macro_rules! impl_map {
-    ($name:ident) => {
-        impl<V: FromConfig> FromConfig for $name<String, V> {
+macro_rules! impl_map_hash {
+    // Accept forms like `HashMap::new` or `HashMap::with_hasher(Default::default())`
+    ($name:ident :: $($ctor:tt)+) => {
+        impl<V: FromConfig, S: std::hash::BuildHasher + Default> FromConfig for $name<String, V, S> {
             #[inline]
             fn from_config(
                 context: &mut ConfigContext<'_>,
                 _: Option<ConfigValue<'_>>,
             ) -> Result<Self, ConfigError> {
-                let mut vs = $name::new();
+                let mut vs = $name:: $($ctor)+;
                 let list = context.collect_keys();
                 for k in list.str_key {
                     vs.insert(k.to_string(), context.parse_config(k, None)?);
@@ -217,8 +218,29 @@ macro_rules! impl_map {
     };
 }
 
-impl_map!(HashMap);
-impl_map!(BTreeMap);
+impl_map_hash!(HashMap::with_hasher(Default::default()));
+
+macro_rules! impl_map {
+    // Accept forms like `HashMap::new` or `HashMap::with_hasher(Default::default())`
+    ($name:ident :: $($ctor:tt)+) => {
+        impl<V: FromConfig> FromConfig for $name<String, V> {
+            #[inline]
+            fn from_config(
+                context: &mut ConfigContext<'_>,
+                _: Option<ConfigValue<'_>>,
+            ) -> Result<Self, ConfigError> {
+                let mut vs = $name:: $($ctor)+;
+                let list = context.collect_keys();
+                for k in list.str_key {
+                    vs.insert(k.to_string(), context.parse_config(k, None)?);
+                }
+                Ok(vs)
+            }
+        }
+    };
+}
+
+impl_map!(BTreeMap::new());
 
 #[doc(hidden)]
 pub trait FromValue: Sized {
@@ -800,6 +822,14 @@ mod test {
         let x: Result<BTreeMap<String, bool>, ConfigError> = context.read("val");
         assert!(x.is_ok());
         assert!(x.unwrap().is_empty());
+        let x: Result<HashMap<String, bool>, ConfigError> = context.read("val");
+        assert!(x.is_ok());
+        assert!(x.unwrap().is_empty());
+    }
+
+    #[test]
+    fn hash_map_with_hasher_test() {
+        let mut context = TestContext::new();
         let x: Result<HashMap<String, bool>, ConfigError> = context.read("val");
         assert!(x.is_ok());
         assert!(x.unwrap().is_empty());
