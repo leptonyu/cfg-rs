@@ -2,6 +2,8 @@ use std::borrow::Borrow;
 
 use crate::{ConfigError, ConfigValue, Configuration, FromConfig};
 
+/// Test macro to generate config instance from a static map of key-value pairs.
+///
 /// Macro to generate config instance from a map of key-value pairs.
 /// The keys in the map are config keys, e.g. "port".
 /// The values in the map are string values, e.g. "8080".
@@ -39,6 +41,7 @@ macro_rules! from_static_map {
 }
 
 /// Generate config instance from a map of key-value pairs.
+///
 /// The keys in the map are full config keys, e.g. "cfg.app.port".
 /// The values in the map are string values, e.g. "8080".
 /// The `prefix` is used to scope the config keys, e.g. "cfg.app".
@@ -83,6 +86,7 @@ pub fn from_map<
 }
 
 /// Generate config instance from environment variables.
+///
 /// The `prefix` is used to scope the config keys, e.g. "CFG_APP".
 /// This function will return an error if any required config is missing or
 /// if any config value cannot be parsed into the expected type.
@@ -94,8 +98,10 @@ pub fn from_map<
 ///     port: u16,
 ///     host: String,
 /// }
-/// std::env::set_var("CFG_APP_PORT", "8080");
-/// std::env::set_var("CFG_APP_HOST", "localhost");
+/// unsafe {
+///     std::env::set_var("CFG_APP_PORT", "8080");
+///     std::env::set_var("CFG_APP_HOST", "localhost");
+/// }
 /// let config: AppConfig = from_env("CFG_APP").unwrap();
 /// assert_eq!(config.port, 8080);
 /// assert_eq!(config.host, "localhost");
@@ -144,8 +150,10 @@ mod tests {
     fn test_from_env_happy_path() {
         // Use a unique prefix to avoid colliding with other env vars
         let prefix = "TEST_APP";
-        std::env::set_var("TEST_APP_PORT", "9090");
-        std::env::set_var("TEST_APP_HOST", "127.0.0.1");
+        unsafe {
+            std::env::set_var("TEST_APP_PORT", "9090");
+            std::env::set_var("TEST_APP_HOST", "127.0.0.1");
+        }
 
         let cfg: TestApp = from_env(prefix).expect("from_env failed");
         assert_eq!(
@@ -157,8 +165,10 @@ mod tests {
         );
 
         // Clean up
-        std::env::remove_var("TEST_APP_PORT");
-        std::env::remove_var("TEST_APP_HOST");
+        unsafe {
+            std::env::remove_var("TEST_APP_PORT");
+            std::env::remove_var("TEST_APP_HOST");
+        }
     }
 
     #[test]

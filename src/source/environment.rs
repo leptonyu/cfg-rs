@@ -3,7 +3,7 @@ use std::env::vars;
 
 use crate::ConfigError;
 
-use super::{memory::ConfigSourceBuilder, ConfigSource};
+use super::{ConfigSource, memory::ConfigSourceBuilder};
 
 /// Prefixed environment source.
 #[derive(Debug)]
@@ -44,7 +44,7 @@ mod test {
 
     #[test]
     fn env_key_test() {
-        set_var("HELLO_WORLD", "hello");
+        unsafe { set_var("HELLO_WORLD", "hello") };
 
         let config = PrefixEnvironment::new("hello").new_config();
 
@@ -57,10 +57,12 @@ mod test {
 
     #[test]
     fn env_arr_test() {
-        set_var("HELLO_ARR_0", "h0");
-        set_var("HELLO_ARR_1", "h1");
-        set_var("HELLO_BRR_1", "b0");
-        set_var("HELLO_CRR_0_0", "c0");
+        unsafe {
+            set_var("HELLO_ARR_0", "h0");
+            set_var("HELLO_ARR_1", "h1");
+            set_var("HELLO_BRR_1", "b0");
+            set_var("HELLO_CRR_0_0", "c0");
+        }
         let config = PrefixEnvironment::new("hello").new_config();
 
         let value = config.get::<Vec<String>>("arr");
@@ -88,9 +90,11 @@ mod test {
 
     #[test]
     fn env_map_test() {
-        set_var("HELLO_MAP_0", "h0");
-        set_var("HELLO_MAP_K1", "v1");
-        set_var("HELLO_MAP_K2", "v2");
+        unsafe {
+            set_var("HELLO_MAP_0", "h0");
+            set_var("HELLO_MAP_K1", "v1");
+            set_var("HELLO_MAP_K2", "v2");
+        }
         let config = PrefixEnvironment::new("hello").new_config();
         let value = config.get::<HashMap<String, String>>("map");
         let mut map: HashMap<String, String> = HashMap::new();

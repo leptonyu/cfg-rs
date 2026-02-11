@@ -30,7 +30,7 @@ pub(crate) struct EnabledOption {
 }
 
 macro_rules! file_block {
-    ($($nm:ident.$name:literal.$file:literal: $($k:pat)|* => $x:path,)+) => {
+    ($($nm:ident.$name:literal.$file:literal: $($k:pat_param)|* => $x:path,)+) => {
 $(
 #[doc(hidden)]
 #[cfg(feature = $name)]
@@ -139,7 +139,7 @@ macro_rules! inline_source {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! inline_source_internal {
-    ($path:literal: $($nm:ident.$name:literal: $($k:pat)|* => $x:path,)+) => {
+    ($path:literal: $($nm:ident.$name:literal: $($k:pat_param)|* => $x:path,)+) => {
         match $path.rsplit_once(".") {
             Some((_, ext)) => {
                 let _name = format!("inline:{}", $path);

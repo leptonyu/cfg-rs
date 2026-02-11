@@ -1,8 +1,8 @@
 use crate::{
+    ConfigError, Mutex,
     err::ConfigLock,
     macros::cfg_log,
-    source::{memory::HashSource, ConfigSource, ConfigSourceBuilder},
-    ConfigError, Mutex,
+    source::{ConfigSource, ConfigSourceBuilder, memory::HashSource},
 };
 
 #[macro_export]

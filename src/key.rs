@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashSet};
 
-use crate::{impl_cache, ConfigError};
+use crate::{ConfigError, impl_cache};
 
 /// Config key, [ConfigSource](source/trait.ConfigSource.html) use this key to access config properties.
 ///

@@ -6,11 +6,11 @@
 [![dependency status](https://deps.rs/repo/github/leptonyu/cfg-rs/status.svg)](https://deps.rs/crate/cfg-rs)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/leptonyu/cfg-rs/blob/master/LICENSE)
 [![Actions Status](https://github.com/leptonyu/cfg-rs/workflows/Rust/badge.svg)](https://github.com/leptonyu/cfg-rs/actions)
-[![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.81+-green.svg)](#minimum-supported-rust-version)
+[![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.85+-green.svg)](#minimum-supported-rust-version)
 
 cfg-rs is a lightweight, flexible configuration loader for Rust applications. It composes multiple sources (files, env, inline maps, random, etc.), supports live refresh, placeholder expansion, and derive-based typed configs — all without a serde dependency.
 
-See the examples directory for end-to-end demos: https://github.com/leptonyu/cfg-rs/tree/main/examples
+See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) directory for end-to-end demos.
 
 ## Features
 
@@ -39,7 +39,7 @@ Other useful features:
 - `rand`: random value provider (e.g. `random.u8`, `random.string`)
 - `log`: minimal logging integration for value parsing
 - `coarsetime`: coarse time helpers for time-related values
-- `regex`: regex validation support for `#[validate(regex = ...)]` and `#[validate(email)]`
+- `regex`: regex validation support for `#[validate(regex = ...)]`
 
 ## Installation
 
@@ -111,7 +111,7 @@ configuration = configuration.register_file("/conf/app.yaml", true).unwrap();
 // Optional: register an inline file content (e.g. TOML) and merge.
 #[cfg(feature = "toml")]
 {
-    let toml = inline_source!("../app.toml").unwrap();
+    let toml = inline_source!("app.toml").unwrap();
     configuration = configuration.register_source(toml).unwrap();
 }
 
@@ -142,8 +142,10 @@ let cfg: AppCfg = cfg_rs::from_static_map!(AppCfg, {
 #[derive(Debug, cfg_rs::FromConfig)]
 struct AppCfg { port: u16, host: String }
 
-std::env::set_var("CFG_APP_PORT", "8080");
-std::env::set_var("CFG_APP_HOST", "localhost");
+unsafe {
+    std::env::set_var("CFG_APP_PORT", "8080");
+    std::env::set_var("CFG_APP_HOST", "localhost");
+}
 let cfg: AppCfg = cfg_rs::from_env("CFG_APP").unwrap();
 ```
 
@@ -183,14 +185,17 @@ Available validators:
 - `range(min = <expr>, max = <expr>)` for comparable values
 - `length(min = <usize>, max = <usize>)` for string/collection/path length
 - `not_empty` for any type implementing `ValidateLength`
-- `validate_not_empty(field, value)` helper for any type implementing `ValidateLength`
-- `regex = "..."` (feature = `regex`) for regex matching on strings
-- `email` (feature = `regex`) for basic email format checks
+- `regex = "..."` (feature = `regex`) for regex matching on strings (pattern can be a string literal or `const &str`)
 - `custom = "path::to::fn"` for user-defined validation
+
+Note: `cfg(feature = "...")` checks features of your crate, not dependency features. If you want to gate regex/email fields, define a feature in your crate that enables `cfg-rs/regex` (e.g. `regex = ["cfg-rs/regex"]`) and use that feature in `#[cfg(...)]`.
 
 Example:
 
 ```rust,no_run
+#[cfg(feature = "regex")]
+const USER_RE: &str = "^u[a-z]+$";
+
 #[derive(Debug, cfg_rs::FromConfig)]
 #[config(prefix = "app")]
 struct AppCfg {
@@ -198,22 +203,16 @@ struct AppCfg {
     port: u16,
     #[validate(length(min = 1, max = 32))]
     name: String,
-    #[validate(custom = "check_threads")]
+    #[validate(custom = check_threads)]
     threads: usize,
     #[cfg(feature = "regex")]
-    #[validate(regex = "^u[a-z]+$")]
+    #[validate(regex = USER_RE)]
     user: String,
-    #[cfg(feature = "regex")]
-    #[validate(email)]
-    email: String,
 }
 
-fn check_threads(v: &usize) -> Result<(), cfg_rs::ConfigError> {
+fn check_threads(v: &usize) -> Result<(), String> {
     if *v == 0 {
-        return Err(cfg_rs::ConfigError::ConfigParseError(
-            "app.threads".to_string(),
-            "threads must be > 0".to_string(),
-        ));
+        return Err("threads must be > 0".to_string());
     }
     Ok(())
 }
@@ -238,13 +237,12 @@ Browse runnable examples covering common patterns:
 
 https://github.com/leptonyu/cfg-rs/tree/main/examples
 
-## Minimum supported Rust version
-
-rustc 1.81+
-
 ## License
 
 MIT © contributors. See [LICENSE](https://github.com/leptonyu/cfg-rs/blob/main/LICENSE).
+
+## Minimum supported Rust version
+This crate supports Rust **1.85** and newer. Older Rust versions are not guaranteed to compile or be tested.
 
 ## Tips and notes
 

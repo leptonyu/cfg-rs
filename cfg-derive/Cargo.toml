@@ -15,7 +15,11 @@ version = "1.0.0"
 [lib]
 proc-macro = true
 
+[features]
+regex = ["dep:regex"]
+
 [dependencies]
 quote = '1'
 syn = { version = '2', features = ['extra-traits'] }
+regex = { version = ">= 1.10.3", optional = true }
 

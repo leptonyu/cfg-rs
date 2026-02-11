@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{err::ConfigError, ConfigContext, FromConfig};
+use crate::{ConfigContext, FromConfig, err::ConfigError};
 
 /// Config value, [ConfigSource](source/trait.ConfigSource.html) use this value to store config properties.
 ///
@@ -372,7 +372,9 @@ impl FromValue for $x {
     )+};
 }
 
-impl_integer!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);
+impl_integer!(
+    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+);
 
 #[inline]
 fn check_f64(context: &mut ConfigContext<'_>, f: f64) -> Result<f64, ConfigError> {
@@ -469,7 +471,7 @@ impl FromValue for Duration {
 /// ```
 #[macro_export]
 macro_rules! impl_enum {
-    ($x:path {$($($k:pat)|* => $v:expr)+ }) => {
+    ($x:path {$($($k:pat_param)|* => $v:expr)+ }) => {
         impl $crate::FromStringValue for $x {
             fn from_str_value(context: &mut $crate::ConfigContext<'_>, value: &str) -> Result<Self, $crate::ConfigError> {
                 match &value.to_lowercase()[..] {
@@ -534,7 +536,7 @@ pub mod time {
 #[cfg_attr(coverage_nightly, coverage(off))]
 #[cfg(test)]
 mod test {
-    use crate::{key::CacheString, Configuration};
+    use crate::{Configuration, key::CacheString};
 
     use super::*;
 

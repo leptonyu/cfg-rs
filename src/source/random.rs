@@ -2,12 +2,12 @@
 use std::cell::RefCell;
 
 use rand_chacha::{
-    rand_core::{RngCore, SeedableRng},
     ChaCha12Rng,
+    rand_core::{RngCore, SeedableRng},
 };
 
-use super::{memory::ConfigSourceBuilder, ConfigSource};
-use crate::{value::RandValue, ConfigError, ConfigValue};
+use super::{ConfigSource, memory::ConfigSourceBuilder};
+use crate::{ConfigError, ConfigValue, value::RandValue};
 
 /// Random source.
 #[allow(missing_debug_implementations, missing_copy_implementations)]

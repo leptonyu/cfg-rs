@@ -21,7 +21,7 @@ jobs:
           - macos-latest
           - windows-latest
         rust:
-          - "1.81"
+          - "1.85"
           - stable
           - beta
           - nightly
@@ -61,6 +61,7 @@ jobs:
           cargo run --example refresh
           cargo run --example watch --features yaml
           cargo run --example profile --features toml
+          cargo run --example validate --features regex
 
           #  - name: Run benches
           #run: |
