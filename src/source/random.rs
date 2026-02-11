@@ -1,10 +1,6 @@
 //! Random source.
-use std::cell::RefCell;
 
-use rand_chacha::{
-    ChaCha12Rng,
-    rand_core::{RngCore, SeedableRng},
-};
+use rand::Rng;
 
 use super::{ConfigSource, memory::ConfigSourceBuilder};
 use crate::{ConfigError, ConfigValue, value::RandValue};
@@ -35,24 +31,14 @@ impl ConfigSource for Random {
     }
 }
 
-thread_local! {
-    static RND: RefCell<ChaCha12Rng> = RefCell::new( ChaCha12Rng::from_os_rng());
-}
-
-#[inline]
-fn get_rand<R, F: Fn(&mut ChaCha12Rng) -> R>(f: F) -> R {
-    RND.with(move |x| (f)(&mut x.borrow_mut()))
-}
-
 macro_rules! get_val {
     ($($f:ident.$n:literal),+) => {$(
         #[inline]
         fn $f<R, F: Fn(&[u8; $n]) -> R>(f: F) -> R {
-            get_rand(|c| {
-                let mut x = [0; $n];
-                c.fill_bytes(&mut x);
-                (f)(&x)
-            })
+            let mut rng = rand::rng();
+            let mut x = [0; $n];
+            rng.fill_bytes(&mut x);
+            (f)(&x)
         }
         )+};
 }
@@ -62,10 +48,10 @@ get_val!(get_1.1, get_2.2, get_4.4, get_8.8, get_16.16);
 impl RandValue {
     pub(crate) fn normalize(self) -> ConfigValue<'static> {
         match self {
-            RandValue::U8 => get_rand(|f| f.next_u32() as u8).into(),
-            RandValue::U16 => get_rand(|f| f.next_u32() as u16).into(),
-            RandValue::U32 => get_rand(|f| f.next_u32()).into(),
-            RandValue::U64 => get_rand(|f| f.next_u64()).into(),
+            RandValue::U8 => get_1(|f| u8::from_le_bytes(*f)).into(),
+            RandValue::U16 => get_2(|f| u16::from_le_bytes(*f)).into(),
+            RandValue::U32 => get_4(|f| u32::from_le_bytes(*f)).into(),
+            RandValue::U64 => get_8(|f| u64::from_le_bytes(*f)).into(),
             RandValue::U128 => get_16(|f| u128::from_le_bytes(*f)).into(),
             #[cfg(target_pointer_width = "64")]
             RandValue::Usize => get_8(|f| usize::from_le_bytes(*f)).into(),
