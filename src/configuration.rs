@@ -796,8 +796,8 @@ mod test {
     fn configuration_refresh_tests() {
         let mut cfg = Configuration::new();
         // No loader registered, refresh should return false
-        assert_eq!(cfg.refresh_ref().unwrap(), false);
-        assert_eq!(cfg.refresh().unwrap(), false);
+        assert!(!cfg.refresh_ref().unwrap());
+        assert!(!cfg.refresh().unwrap());
     }
 
     #[test]

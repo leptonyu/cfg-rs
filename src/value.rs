@@ -859,10 +859,10 @@ mod test {
             _ => panic!("Expected Int variant"),
         }
 
-        let v1 = ConfigValue::Float(3.14);
+        let v1 = ConfigValue::Float(std::f64::consts::PI);
         let v2 = v1.clone_static();
         match v2 {
-            ConfigValue::Float(f) => assert!((f - 3.14).abs() < 1e-6),
+            ConfigValue::Float(f) => assert!((f - std::f64::consts::PI).abs() < 1e-6),
             _ => panic!("Expected Float variant"),
         }
 
@@ -954,26 +954,26 @@ mod test {
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::StrRef("no"),
         );
-        assert_eq!(v.unwrap(), false);
+        assert!(!v.unwrap());
 
         // Str true/false
         let v = <bool as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Str("yes".to_string()),
         );
-        assert_eq!(v.unwrap(), true);
+        assert!(v.unwrap());
         let v = <bool as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Str("false".to_string()),
         );
-        assert_eq!(v.unwrap(), false);
+        assert!(!v.unwrap());
 
         // Bool
         let v = <bool as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Bool(true),
         );
-        assert_eq!(v.unwrap(), true);
+        assert!(v.unwrap());
 
         // 非法类型
         let v = <bool as FromValue>::from_value(

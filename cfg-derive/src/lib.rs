@@ -68,11 +68,11 @@ fn derive_config_struct(
             for rule in &field.validates {
                 if let ValidateRule::Regex { pattern, .. } = rule {
                     let key = pattern.to_token_stream().to_string();
-                    if !map.contains_key(&key) {
+                    map.entry(key).or_insert_with(|| {
                         let ident = quote::format_ident!("__CFG_REGEX_{}", idx);
                         idx += 1;
-                        map.insert(key, ident);
-                    }
+                        ident
+                    });
                 }
             }
         }
