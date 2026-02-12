@@ -34,6 +34,7 @@ If you are new to this crate, read in this order:
 - Placeholder expansion like `${cfg.key}`: see [ConfigValue](enum.ConfigValue.html#placeholder-expression)
 - Random values under the `rand` feature (e.g. `configuration.get::<u8>("random.u8")`)
 - Refreshable values via [RefValue](struct.RefValue.html) and refreshable [Configuration](struct.Configuration.html)
+- Field-level validation via `#[validate(...)]` rules (range, length, not_empty, custom, regex)
 - Pluggable sources with clear priority: see [register_source](struct.Configuration.html#method.register_source)[^priority]
 - No serde dependency
 
@@ -52,10 +53,11 @@ Built-in file parsers (enable via Cargo features):
 
 Other useful features:
 
+- `validate` (built-in): supports `#[validate(range)]`, `#[validate(length)]`, `#[validate(not_empty)]`, and `#[validate(custom = ...)]`
 - `rand`: random value provider (e.g. `random.u8`, `random.string`)
 - `log`: minimal logging integration for value parsing
 - `coarsetime`: coarse time helpers for time-related values
-- `regex`: regex validation support for `#[validate(regex = ...)]`
+- `regex`: enables `#[validate(regex = ...)]` validator
 
 Tip: in application crates, define your own feature aliases (e.g. `full-config = ["cfg-rs/full"]`) so downstream users can enable capabilities consistently.
 
