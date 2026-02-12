@@ -210,14 +210,14 @@ mod tests {
 
     #[test]
     fn display_config_cause() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
+        let io_err = std::io::Error::other("io");
         let e = ConfigError::from_cause(io_err);
         assert_eq!(format!("{}", e), "Configuration error caused by: io");
     }
 
     #[test]
     fn config_error_from_converts_to_configcause() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
+        let io_err = std::io::Error::other("io");
         let ce = ConfigError::from_cause(io_err);
         match ce {
             ConfigError::ConfigCause(_) => {}

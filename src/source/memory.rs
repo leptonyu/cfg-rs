@@ -365,7 +365,7 @@ mod tests {
             let mut builder = hs.prefixed();
             builder.set("s1", "abc");
             builder.set("i1", 123);
-            builder.set("f1", 3.14);
+            builder.set("f1", std::f64::consts::PI);
             builder.set("b1", true);
         }
         // String
@@ -390,8 +390,8 @@ mod tests {
         let mut key = cache.new_key();
         key.push("f1");
         match hs.get_value(&key) {
-            Some(ConfigValue::Float(f)) if (f - 3.14).abs() < 1e-6 => {}
-            _ => panic!("Expected Float(3.14)"),
+            Some(ConfigValue::Float(f)) if (f - std::f64::consts::PI).abs() < 1e-6 => {}
+            _ => panic!("Expected Float(PI)"),
         }
         // Bool
         let mut cache = crate::key::CacheString::new();
