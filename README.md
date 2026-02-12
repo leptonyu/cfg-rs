@@ -120,7 +120,7 @@ fn check_workers(v: &usize) -> Result<(), String> {
 }
 
 let cfg: AppCfg = cfg_rs::from_static_map!(AppCfg, {
-    "app.service_name" => "api",
+    "service_name" => "api",
     "server.host" => "0.0.0.0",
 });
 assert_eq!(cfg.name, "api");
