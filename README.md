@@ -12,6 +12,20 @@ cfg-rs is a lightweight, flexible configuration loader for Rust applications. It
 
 See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) directory for end-to-end demos.
 
+## Documentation map
+
+If you are new to this crate, read in this order:
+
+1. **Quick start** in this README
+2. **Examples** for end-to-end usage patterns
+3. **docs.rs API reference** for type-level details
+4. **CONTRIBUTING.md** for contribution and documentation standards
+
+- Examples: <https://github.com/leptonyu/cfg-rs/tree/main/examples>
+- API docs: <https://docs.rs/cfg-rs>
+- Contributing guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+
 ## Features
 
 - Single call to load typed config: see [Configuration::get](struct.Configuration.html#method.get)
@@ -29,10 +43,12 @@ See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) direct
 
 Built-in file parsers (enable via Cargo features):
 
-- `toml`: extensions `.toml`, `.tml`
-- `yaml`: extensions `.yaml`, `.yml`
-- `json`: extension `.json`
-- `ini`: extension `.ini`
+| Feature | File extensions | Notes |
+| --- | --- | --- |
+| `toml` | `.toml`, `.tml` | Typed values and nested tables |
+| `yaml` | `.yaml`, `.yml` | Friendly for hand-written configs |
+| `json` | `.json` | Good for generated or machine-edited config |
+| `ini` | `.ini` | Flat/simple legacy formats |
 
 Other useful features:
 
@@ -41,19 +57,21 @@ Other useful features:
 - `coarsetime`: coarse time helpers for time-related values
 - `regex`: regex validation support for `#[validate(regex = ...)]`
 
+Tip: in application crates, define your own feature aliases (e.g. `full-config = ["cfg-rs/full"]`) so downstream users can enable capabilities consistently.
+
 ## Installation
 
 Add to your Cargo.toml with the features you need:
 
 ```toml
 [dependencies]
-cfg-rs = { version = "^0.6", features = ["toml"] }
+cfg-rs = { version = "^1.0", features = ["toml"] }
 ```
 
 For a batteries-included setup, use the convenience feature set:
 
 ```toml
-cfg-rs = { version = "^0.6", features = ["full"] }
+cfg-rs = { version = "^1.0", features = ["full"] }
 ```
 
 ## Quick start
@@ -251,4 +269,14 @@ This crate supports Rust **1.85** and newer. Older Rust versions are not guarant
 - Docs.rs builds enable all features for a comprehensive reference
 
 
+## Open-source documentation improvement checklist
 
+If you maintain this project, these upgrades usually provide the biggest payoff:
+
+- Add a **versioned migration section** in release notes for each breaking/non-trivial change.
+- Keep a **"common recipes"** section (env + file layering, validation patterns, refresh loop).
+- Add **"troubleshooting"** for frequent errors (missing feature flags, key prefix mismatch, parse failures).
+- Keep examples aligned with latest API and feature naming.
+- Treat README + examples + doc comments as one documentation surface; update all three together in PRs.
+
+These habits improve first-run success for users and reduce repeated issue triage for maintainers.
