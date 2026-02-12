@@ -76,43 +76,97 @@ For a batteries-included setup, use the convenience feature set:
 cfg-rs = { version = "^1.0", features = ["full"] }
 ```
 
-## Quick start
+## Example guide
 
-### 1) One-liner with predefined sources
+This README organizes examples into two tracks:
+
+1. Derive-first typed config (`#[config(...)]` + `#[validate(...)]`)
+2. Source composition (from simple to complex)
+
+### 1) Derive-first (recommended)
+
+Use derive for app-facing config structs. This single example covers:
+
+- `#[config(name = "...")]`
+- `#[config(default = ...)]`
+- Placeholder defaults via `${...}` in values
+- `#[validate(...)]`
+
+```rust
+#[derive(Debug, cfg_rs::FromConfig)]
+#[config(prefix = "app")]
+struct AppCfg {
+    #[config(name = "service_name", default = "demo")]
+    #[validate(length(min = 1, max = 32))]
+    name: String,
+
+    #[config(default = "${server.host:127.0.0.1}")]
+    host: String,
+
+    #[config(default = "${server.port:8080}")]
+    #[validate(range(min = 1, max = 65535))]
+    port: u16,
+
+    #[config(default = 4)]
+    #[validate(custom = check_workers)]
+    workers: usize,
+}
+
+fn check_workers(v: &usize) -> Result<(), String> {
+    if *v == 0 {
+        return Err("workers must be > 0".to_string());
+    }
+    Ok(())
+}
+
+let cfg: AppCfg = cfg_rs::from_static_map!(AppCfg, {
+    "app.service_name" => "api",
+    "server.host" => "0.0.0.0",
+});
+assert_eq!(cfg.name, "api");
+assert_eq!(cfg.host, "0.0.0.0");
+assert_eq!(cfg.port, 8080);
+```
+
+Notes:
+
+- Placeholder expressions are value syntax, not a separate derive attribute.
+- Full derive attribute reference: [derive.FromConfig](derive.FromConfig.html)
+- Validation rules: `range`, `length`, `not_empty`, `custom`, `regex` (feature = `regex`)
+
+### 2) Source composition (simple -> complex)
+
+#### a) Simplest: predefined stack
 
 ```rust
 use cfg_rs::*;
 
 let configuration = Configuration::with_predefined().unwrap();
-// use configuration.get::<T>("your.key") or derive types (see below)
+// let port: u16 = configuration.get("app.port").unwrap();
 ```
 
-See [PredefinedConfigurationBuilder::init](struct.PredefinedConfigurationBuilder.html#method.init) for details.
-
-### 2) Customize predefined builder
+#### b) Common: explicit env + file
 
 ```rust,no_run
 use cfg_rs::*;
-init_cargo_env!();
 
-let configuration = Configuration::with_predefined_builder()
-    .set_cargo_env(init_cargo_env())
-    .init()
-    .unwrap();
+let configuration = Configuration::new()
+    .register_prefix_env("APP").unwrap()
+    .register_file("./app.toml", true).unwrap();
 ```
 
-### 3) Compose your own sources (priority = registration order)
+#### c) Advanced: layered sources with deterministic priority
 
 ```rust,no_run
 use cfg_rs::*;
 init_cargo_env!();
 
 let mut configuration = Configuration::new()
-    // Layer 0: Cargo env source.
+    // Layer 0 (highest): Cargo env source.
     .register_source(init_cargo_env()).unwrap()
     // Layer 1: Inline key-values.
     .register_kv("inline")
-        .set("hello", "world")
+        .set("app.name", "demo")
         .finish()
         .unwrap();
 
@@ -122,121 +176,21 @@ let mut configuration = Configuration::new()
     configuration = configuration.register_random().unwrap();
 }
 
-// Layer 3: All environment variables with prefix `CFG_`.
-configuration = configuration.register_prefix_env("CFG").unwrap();
+// Layer 3: Environment variables with prefix `APP_`.
+configuration = configuration.register_prefix_env("APP").unwrap();
 
-// Layer 4: File(s) — extension inferred by feature (e.g. yaml).
-configuration = configuration.register_file("/conf/app.yaml", true).unwrap();
+// Layer 4 (lowest): File source.
+configuration = configuration.register_file("./app.yaml", true).unwrap();
 
-// Optional: register an inline file content (e.g. TOML) and merge.
+// Optional: merge inline file content.
 #[cfg(feature = "toml")]
 {
     let toml = inline_source!("app.toml").unwrap();
     configuration = configuration.register_source(toml).unwrap();
 }
-
-// Finally use it.
-// let port: u16 = configuration.get("server.port").unwrap();
 ```
 
 See [register_kv](struct.Configuration.html#method.register_kv), [register_file](struct.Configuration.html#method.register_file), [register_random](struct.Configuration.html#method.register_random), and [register_prefix_env](struct.Configuration.html#method.register_prefix_env).
-
-### 4) Handy helpers for tests and small apps
-
-- From inline map (macro):
-
-```rust
-#[derive(Debug, cfg_rs::FromConfig)]
-struct AppCfg { port: u16, host: String }
-
-let cfg: AppCfg = cfg_rs::from_static_map!(AppCfg, {
-    "port" => "8080",
-    "host" => "localhost",
-});
-```
-
-- From environment variables:
-
-```rust
-
-#[derive(Debug, cfg_rs::FromConfig)]
-struct AppCfg { port: u16, host: String }
-
-unsafe {
-    std::env::set_var("CFG_APP_PORT", "8080");
-    std::env::set_var("CFG_APP_HOST", "localhost");
-}
-let cfg: AppCfg = cfg_rs::from_env("CFG_APP").unwrap();
-```
-
-## Derive typed configs
-
-Implement strong-typed configs via derive:
-
-```rust,no_run
-
-#[derive(Debug, cfg_rs::FromConfig)]
-#[config(prefix = "cfg.app")] // optional, implements FromConfigWithPrefix
-struct AppCfg {
-    port: u16,              // required
-    #[config(default = true)]
-    enabled: bool,          // has default value
-    #[config(name = "ip")] // remap field name
-    host: String,
-}
-```
-
-Attributes summary:
-
-- `#[config(prefix = "cfg.app")]` on struct: implement `FromConfigWithPrefix`
-- `#[config(name = "...")]` on field: rename field key
-- `#[config(default = <expr>)]` on field: default value when missing
-
-See the full reference in [derive.FromConfig](derive.FromConfig.html).
-
-## Validation
-
-The derive macro supports field-level validation via `#[validate(...)]`.
-The rules are implemented in [src/validate.rs](src/validate.rs) and are
-invoked after parsing field values.
-
-Available validators:
-
-- `range(min = <expr>, max = <expr>)` for comparable values
-- `length(min = <usize>, max = <usize>)` for string/collection/path length
-- `not_empty` for any type implementing `ValidateLength`
-- `regex = "..."` (feature = `regex`) for regex matching on strings (pattern can be a string literal or `const &str`)
-- `custom = "path::to::fn"` for user-defined validation
-
-Note: `cfg(feature = "...")` checks features of your crate, not dependency features. If you want to gate regex/email fields, define a feature in your crate that enables `cfg-rs/regex` (e.g. `regex = ["cfg-rs/regex"]`) and use that feature in `#[cfg(...)]`.
-
-Example:
-
-```rust,no_run
-#[cfg(feature = "regex")]
-const USER_RE: &str = "^u[a-z]+$";
-
-#[derive(Debug, cfg_rs::FromConfig)]
-#[config(prefix = "app")]
-struct AppCfg {
-    #[validate(range(min = 1, max = 65535))]
-    port: u16,
-    #[validate(length(min = 1, max = 32))]
-    name: String,
-    #[validate(custom = check_threads)]
-    threads: usize,
-    #[cfg(feature = "regex")]
-    #[validate(regex = USER_RE)]
-    user: String,
-}
-
-fn check_threads(v: &usize) -> Result<(), String> {
-    if *v == 0 {
-        return Err("threads must be > 0".to_string());
-    }
-    Ok(())
-}
-```
 
 ## Placeholders, randoms, and refresh
 
@@ -244,9 +198,7 @@ fn check_threads(v: &usize) -> Result<(), String> {
 - Random values: under `rand`, keys like `random.u8`, `random.string` provide per-read randoms
 - Refreshing: `Configuration::refresh()` re-reads sources that allow refresh; `RefValue<T>` updates on refresh
 
-## Examples
-
-Browse runnable examples covering common patterns:
+## Runnable examples
 
 - `simple`: minimal setup (full feature set)
 - `profile`: working with profiles (requires `toml`)
