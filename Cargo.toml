@@ -48,7 +48,7 @@ regex = { version = ">= 1.10.3", optional = true }
 
 [dev-dependencies]
 env_logger = ">= 0.11.2"
-criterion = '^0.7'
+criterion = '^0.8.0'
 clap = '>= 4.5.1'
 regex = '>= 1.10.3'
 log = '>= 0.4.20'
