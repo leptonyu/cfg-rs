@@ -117,7 +117,7 @@ pub use value::log as _;
 #[allow(unused_imports)]
 #[cfg(feature = "coarsetime")]
 pub use value::time as _;
-pub use value::{ConfigValue, FromStrHolder, FromStringValue, FromValue};
+pub use value::{ByteSize, ConfigValue, FromStrHolder, FromStringValue, FromValue};
 pub use value_ref::RefValue;
 
 #[doc(hidden)]

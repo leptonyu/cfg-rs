@@ -12,6 +12,9 @@ use std::{
 
 use crate::{ConfigContext, FromConfig, err::ConfigError};
 
+mod byte;
+pub use self::byte::ByteSize;
+
 /// Config value, [ConfigSource](source/trait.ConfigSource.html) use this value to store config properties.
 ///
 /// # Placeholder expression
