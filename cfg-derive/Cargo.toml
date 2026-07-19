@@ -20,6 +20,6 @@ regex = ["dep:regex"]
 
 [dependencies]
 quote = '1'
-syn = { version = '2', features = ['extra-traits'] }
+syn = { version = '3', features = ['extra-traits'] }
 regex = { version = ">= 1.10.3", optional = true }
 
