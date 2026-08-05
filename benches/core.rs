@@ -1,7 +1,10 @@
 use std::{collections::HashMap, hint::black_box};
 
 use cfg_rs::*;
-use criterion::{Criterion, criterion_group, criterion_main};
+
+fn main() {
+    divan::main();
+}
 
 #[allow(dead_code)]
 #[derive(Debug, FromConfig)]
@@ -44,10 +47,8 @@ struct IntSuit {
     v3: u32,
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("app1", |b| b.iter(Configuration::with_predefined));
-
-    let env = Configuration::with_predefined_builder()
+thread_local! {
+    static ENV: Configuration = Configuration::with_predefined_builder()
         .set("hello", "world")
         .set("hello.a1.b2.c3.d4.e5.f6.f7", "world")
         .set("rand", "${random.u8}")
@@ -65,43 +66,87 @@ fn criterion_benchmark(c: &mut Criterion) {
         .set("suit.brr[0][0]", "b00")
         .init()
         .unwrap();
-
-    c.bench_function("conf0", |b| {
-        b.iter(|| env.get::<AppConfig>(black_box("suit")))
-    });
-    c.bench_function("conf1", |b| b.iter(|| env.get_predefined::<AppConfig>()));
-    c.bench_function("conf2", |b| b.iter(|| env.get_predefined::<ConfigSuit>()));
-
-    c.bench_function("hello1", |b| {
-        b.iter(|| env.get::<String>(black_box("hello")))
-    });
-
-    c.bench_function("hello2", |b| {
-        b.iter(|| env.get::<Option<String>>(black_box("hello")))
-    });
-    let rv = env.get::<RefValue<String>>(black_box("hello")).unwrap();
-
-    c.bench_function("ref1", |b| {
-        b.iter(|| rv.get());
-    });
-
-    c.bench_function("long1", |b| {
-        b.iter(|| env.get::<String>(black_box("hello.a1.b2.c3.d4.e5.f6.f7")))
-    });
-
-    c.bench_function("long2", |b| {
-        b.iter(|| env.get::<Option<String>>(black_box("hello.a1.b2.c3.d4.e5.f6.f7")))
-    });
-
-    c.bench_function("not", |b| {
-        b.iter(|| env.get::<Option<String>>(black_box("world")))
-    });
-
-    c.bench_function("rand1", |b| {
-        b.iter(|| env.get::<String>(black_box("random.u8")))
-    });
-    c.bench_function("rand2", |b| b.iter(|| env.get::<String>(black_box("rand"))));
 }
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+fn with_env<R>(f: impl FnOnce(&Configuration) -> R) -> R {
+    ENV.with(f)
+}
+
+thread_local! {
+    static RV: RefValue<String> =
+        with_env(|env| env.get::<RefValue<String>>(black_box("hello")).unwrap());
+}
+
+fn with_rv<R>(f: impl FnOnce(&RefValue<String>) -> R) -> R {
+    RV.with(f)
+}
+
+#[divan::bench]
+fn app1() -> Configuration {
+    Configuration::with_predefined().unwrap()
+}
+
+#[divan::bench]
+fn conf0() -> AppConfig {
+    with_env(|env| env.get::<AppConfig>(black_box("suit")).unwrap())
+}
+
+#[divan::bench]
+fn conf1() -> AppConfig {
+    with_env(|env| env.get_predefined::<AppConfig>().unwrap())
+}
+
+#[divan::bench]
+fn conf2() -> ConfigSuit {
+    with_env(|env| env.get_predefined::<ConfigSuit>().unwrap())
+}
+
+#[divan::bench]
+fn hello1() -> String {
+    with_env(|env| env.get::<String>(black_box("hello")).unwrap())
+}
+
+#[divan::bench]
+fn hello2() -> Option<String> {
+    with_env(|env| env.get::<Option<String>>(black_box("hello")).unwrap())
+}
+
+#[divan::bench]
+fn ref1() -> String {
+    with_rv(|rv| rv.get().unwrap())
+}
+
+#[divan::bench]
+fn long1() -> String {
+    with_env(|env| {
+        env.get::<String>(black_box("hello.a1.b2.c3.d4.e5.f6.f7"))
+            .unwrap()
+    })
+}
+
+#[divan::bench]
+fn long2() -> Option<String> {
+    with_env(|env| {
+        env.get::<Option<String>>(black_box("hello.a1.b2.c3.d4.e5.f6.f7"))
+            .unwrap()
+    })
+}
+
+#[divan::bench]
+fn not() -> Option<String> {
+    with_env(|env| env.get::<Option<String>>(black_box("world")).unwrap())
+}
+
+/// Requires the `rand` feature; returns the lookup result as-is so the
+/// benchmark also runs under default features (measuring the miss path).
+#[divan::bench]
+fn rand1() -> Result<String, ConfigError> {
+    with_env(|env| env.get::<String>(black_box("random.u8")))
+}
+
+/// Requires the `rand` feature; returns the lookup result as-is so the
+/// benchmark also runs under default features (measuring the miss path).
+#[divan::bench]
+fn rand2() -> Result<String, ConfigError> {
+    with_env(|env| env.get::<String>(black_box("rand")))
+}
