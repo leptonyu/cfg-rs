@@ -15,6 +15,17 @@ conversation with the maintainer happens in that language. Translate before the
 change lands; existing non-English text is a bug and should be fixed when it is
 touched.
 
+## No subagents
+
+Do not delegate repository work to subagents, parallel agents, or any other
+spawned agent. Every read, edit, build, test and verification step must happen
+directly in this working copy, in the main session.
+
+The repository is small enough to work on directly. A delegated agent shares
+neither the review context nor the file ownership of this checkout, and a
+subagent has already overwritten a source file here by using it as scratch
+space.
+
 ## Project layout
 
 - `src/` — `cfg-rs`, the configuration library (edition 2024, `rust-version = "1.85.0"`).
