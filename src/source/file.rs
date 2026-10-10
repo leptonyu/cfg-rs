@@ -187,7 +187,7 @@ mod test {
 
     #[test]
     fn inline_source_config_success() {
-        // 使用 Temp 解析器，内容无所谓
+        // Use the Temp parser; the content does not matter
         let result = super::inline_source_config::<Temp>("inline".to_string(), "abc");
         assert!(result.is_ok());
         let hs = result.unwrap();
@@ -220,7 +220,7 @@ mod test {
 
     #[test]
     fn file_loader_load_required_not_exists() {
-        // 测试 required=true 且文件不存在时返回 ConfigFileNotExists
+        // required=true plus a missing file must return ConfigFileNotExists
         let path: PathBuf = "target/not_exist_file.tmp".into();
         let loader = <FileLoader<Temp>>::new(path.clone(), true, true);
         let mut hash_source = crate::source::memory::HashSource::new("test");
@@ -231,9 +231,9 @@ mod test {
 
     #[test]
     fn file_loader_load_ext_false_all_exts() {
-        // 测试 ext=false 时会尝试所有扩展名
+        // ext=false must try every known extension
         let path: PathBuf = "target/file_multi_ext".into();
-        // 创建一个带 .tmp 扩展名的文件
+        // Create a file carrying the .tmp extension
         let mut file_path = path.clone();
         file_path.set_extension("tmp");
         let mut f = File::create(&file_path).unwrap();
@@ -242,9 +242,9 @@ mod test {
 
         let mut hash_source = crate::source::memory::HashSource::new("test");
         let mut builder = hash_source.prefixed();
-        // 创建 loader 实例
+        // Build the loader
         let loader = <FileLoader<Temp>>::new(path.clone(), true, false);
-        // 应该能加载成功（flag 变为 false，不报错）
+        // Loading must succeed (the flag flips to false, no error)
         let result = loader.load(&mut builder);
         assert!(result.is_ok());
         assert!(result.is_ok());

@@ -240,7 +240,7 @@ mod tests {
         // join to ensure the panic happened and the mutex is poisoned
         let _ = h.join();
 
-        // 用作用域包裹，确保 borrow 生命周期不会超出 m 的作用域
+        // Scoped block: the borrow must not outlive `m`
         {
             let try_result = m.try_lock();
             match try_result {

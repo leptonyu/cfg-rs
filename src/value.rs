@@ -935,7 +935,7 @@ mod test {
         );
         assert!(v.is_ok());
 
-        // 非字符串类型应报错
+        // A non-string value must fail
         let v = <Dummy as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Int(1),
@@ -978,7 +978,7 @@ mod test {
         );
         assert!(v.unwrap());
 
-        // 非法类型
+        // Invalid type
         let v = <bool as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Int(1),
@@ -991,15 +991,15 @@ mod test {
         type Holder = FromStrHolder<u32>;
 
         let mut context = TestContext::new();
-        // 正常解析
+        // Parses successfully
         let r = Holder::from_str_value(&mut context.0.source.new_context(&mut context.1), "123");
         assert!(r.is_ok());
         assert_eq!(r.unwrap().0, 123u32);
 
-        // 错误解析
+        // Fails to parse
         let r = Holder::from_str_value(&mut context.0.source.new_context(&mut context.1), "abc");
         assert!(r.is_err());
-        // 错误类型为 ConfigError::ConfigCause(ParseIntError)
+        // The error must be ConfigError::ConfigCause(ParseIntError)
         match r {
             Err(ConfigError::ConfigCause(_)) => {}
             _ => panic!("Expected ConfigCause"),
@@ -1048,7 +1048,7 @@ mod test {
         check_int!(u64, 14, 14u64);
         check_int!(usize, 15, 15usize);
 
-        // 错误类型
+        // Invalid type
         let v = <i8 as FromValue>::from_value(
             &mut context.0.source.new_context(&mut context.1),
             ConfigValue::Bool(true),
@@ -1096,54 +1096,54 @@ mod test {
     fn parse_duration_from_str_cases() {
         let mut context = TestContext::new();
 
-        // 秒
+        // Seconds
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "123s")
                 .unwrap(),
             Duration::new(123, 0)
         );
-        // 分钟
+        // Minutes
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "2m")
                 .unwrap(),
             Duration::new(120, 0)
         );
-        // 小时
+        // Hours
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "3h")
                 .unwrap(),
             Duration::new(3 * 3600, 0)
         );
-        // 毫秒
+        // Milliseconds
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "5ms")
                 .unwrap(),
             Duration::new(0, 5_000_000)
         );
-        // 微秒
+        // Microseconds
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "7us")
                 .unwrap(),
             Duration::new(0, 7_000)
         );
-        // 纳秒
+        // Nanoseconds
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "9ns")
                 .unwrap(),
             Duration::new(0, 9)
         );
-        // 没有单位，默认为秒
+        // No unit: defaults to seconds
         assert_eq!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "11")
                 .unwrap(),
             Duration::new(11, 0)
         );
-        // 错误格式
+        // Malformed input
         assert!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "abc")
                 .is_err()
         );
-        // 不支持的单位
+        // Unsupported unit
         assert!(
             parse_duration_from_str(&mut context.0.source.new_context(&mut context.1), "1x")
                 .is_err()
