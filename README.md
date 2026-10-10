@@ -8,7 +8,7 @@
 [![Actions Status](https://github.com/leptonyu/cfg-rs/workflows/Rust/badge.svg)](https://github.com/leptonyu/cfg-rs/actions)
 [![Minimum supported Rust version](https://img.shields.io/badge/rustc-1.85+-green.svg)](#minimum-supported-rust-version)
 
-cfg-rs is a lightweight, flexible configuration loader for Rust applications. It composes multiple sources (files, env, inline maps, random, etc.), supports live refresh, placeholder expansion, and derive-based typed configs — all without a serde dependency.
+cfg-rs is a lightweight, flexible configuration loader for Rust applications. It composes multiple sources (files, env, inline maps, random, etc.), supports live refresh, placeholder expansion, and derive-based typed configs — with no serde in the core.
 
 See the [examples](https://github.com/leptonyu/cfg-rs/tree/main/examples) directory for end-to-end demos.
 
@@ -36,7 +36,7 @@ If you are new to this crate, read in this order:
 - Refreshable values via [RefValue](struct.RefValue.html) and refreshable [Configuration](struct.Configuration.html)
 - Field-level validation via `#[validate(...)]` rules (range, length, not_empty, custom, regex)
 - Pluggable sources with clear priority: see [register_source](struct.Configuration.html#method.register_source)[^priority]
-- No serde dependency
+- No serde in the core; `serde_json` is pulled in only by the optional `json` feature
 
 [^priority]: Source precedence follows registration order — earlier registrations have higher priority.
 
@@ -48,7 +48,7 @@ Built-in file parsers (enable via Cargo features):
 | --- | --- | --- |
 | `toml` | `.toml`, `.tml` | Typed values and nested tables |
 | `yaml` | `.yaml`, `.yml` | Friendly for hand-written configs |
-| `json` | `.json` | Good for generated or machine-edited config |
+| `json` | `.json` | Good for generated or machine-edited config (via `serde_json`) |
 | `ini` | `.ini` | Flat/simple legacy formats |
 
 Other useful features:
@@ -219,5 +219,5 @@ This crate supports Rust **1.85** and newer. Older Rust versions are not guarant
 ## Tips and notes
 
 - Source priority is deterministic: earlier registrations override later ones[^priority]
-- This crate intentionally does not depend on serde
+- The core does not depend on serde; only the optional `json` feature pulls in `serde_json`
 - Docs.rs builds enable all features for a comprehensive reference

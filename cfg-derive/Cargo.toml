@@ -10,7 +10,7 @@ license = 'MIT'
 name = "cfg-derive"
 readme = 'README.md'
 repository = 'https://github.com/leptonyu/cfg-rs'
-version = "1.0.0"
+version = "1.0.1"
 
 [lib]
 proc-macro = true
@@ -19,7 +19,7 @@ proc-macro = true
 regex = ["dep:regex"]
 
 [dependencies]
-quote = '1'
-syn = { version = '3', features = ['extra-traits'] }
-regex = { version = ">= 1.10.3", optional = true }
+quote = '1.0.47'
+syn = { version = '3.0.7', features = ['extra-traits'] }
+regex = { version = "1.13.1", optional = true }
 
